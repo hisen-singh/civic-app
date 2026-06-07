@@ -1,5 +1,12 @@
 import 'react-native-gesture-handler';
 import React, { useCallback, useRef, useEffect, useState } from 'react';
+import * as Sentry from '@sentry/react-native';
+
+Sentry.init({
+  dsn: 'https://d5b01a64380af12501ef47bdc7b3df95@o4511522407383040.ingest.us.sentry.io/4511522411511808', // Get from sentry.io (free tier)
+  enableInExpoDevelopment: false,
+  debug: false,
+});
 import { View, Text, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';

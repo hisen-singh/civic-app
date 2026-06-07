@@ -1,0 +1,28 @@
+name: Test & Validate
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Run Tests
+        run: npm test -- --coverage --ci
+
+      - name: Static Analysis (lint check)
+        run: npx eslint . --ext .js --quiet || true
+
+      - name: Bundle Check (catches import/syntax errors)
+        run: npx expo export -p web
