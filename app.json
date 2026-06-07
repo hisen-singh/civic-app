@@ -1,0 +1,46 @@
+{
+  "expo": {
+    "name": "Civic",
+    "slug": "civic-app",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#0A0E1A"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.civic.app",
+      "buildNumber": "1"
+    },
+    "android": {
+      "package": "com.civic.app",
+      "versionCode": 1,
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#0A0E1A"
+      },
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "ACCESS_FINE_LOCATION",
+        "ACCESS_COARSE_LOCATION",
+        "CAMERA",
+        "READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "favicon": "./assets/favicon.png",
+      "name": "Civic"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "29d13ce5-2f5d-4def-a55e-cd428313bfbe"
+      }
+    },
+    "owner": "l3nsingh"
+  }
+}

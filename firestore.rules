@@ -1,0 +1,77 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ─── HELPER FUNCTIONS ───────────────────────────────────────────────────
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    // ─── ISSUES ─────────────────────────────────────────────────────────────
+    match /issues/{issueId} {
+      // Anyone signed in can read issues
+      allow read: if isSignedIn();
+
+      // Only signed-in users can create – must provide their own authorId
+      allow create: if isSignedIn()
+        && request.resource.data.authorId == request.auth.uid
+        && request.resource.data.title is string
+        && request.resource.data.title.size() > 0
+        && request.resource.data.title.size() <= 200;
+
+      // Only signed-in users can update – restrict which fields they can touch
+      allow update: if isSignedIn()
+        && (
+          // Anyone can upvote or join as solver
+          request.resource.data.diff(resource.data).affectedKeys()
+            .hasOnly(['votes', 'voters', 'solvers', 'status', 'comments'])
+        );
+
+      // Only the author can delete their own issue
+      allow delete: if isOwner(resource.data.authorId);
+    }
+
+    // ─── ARCHIVED ISSUES (read-only) ────────────────────────────────────────
+    match /archivedIssues/{issueId} {
+      allow read: if isSignedIn();
+      allow write: if false; // only backend can write
+    }
+
+    // ─── WATCH AREAS ────────────────────────────────────────────────────────
+    match /watchAreas/{areaId} {
+      // Users can only read/write their own watch areas
+      allow read, create: if isSignedIn()
+        && request.auth.uid == request.resource.data.userId;
+      allow update, delete: if isSignedIn()
+        && request.auth.uid == resource.data.userId;
+    }
+
+    // ─── NOTIFICATIONS ──────────────────────────────────────────────────────
+    match /notifications/{notifId} {
+      // Users can only read their own notifications
+      allow read: if isOwner(resource.data.userId);
+
+      // Users can only mark their own notifications as read (update 'read' field only)
+      allow update: if isOwner(resource.data.userId)
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
+      // Only the backend (Cloud Functions) can create/delete notifications
+      allow create, delete: if false;
+    }
+
+    // ─── USERS ──────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      // Users can read their own data; others can only read public fields
+      allow read: if isSignedIn();
+
+      // Users can only write their own doc (e.g. save FCM token, avatar)
+      // trustScore, rank are managed exclusively by Cloud Functions
+      allow write: if isOwner(userId)
+        && !request.resource.data.keys().hasAny(['trustScore', 'rank', 'reported', 'solved']);
+    }
+
+  }
+}
