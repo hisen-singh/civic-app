@@ -73,7 +73,7 @@ export default function SolveScreen() {
             setSolvedCount(mySolves.length);
             setTotalXP(mySolves.length * 100 + myActive.length * 30);
 
-            // Calculate streak (simplified: consecutive days with a solve in last 7 days)
+            // Calculate streak (consecutive days with a solve, starting from today)
             const today = new Date();
             let streak = 0;
             for (let d = 0; d < 7; d++) {
@@ -84,13 +84,13 @@ export default function SolveScreen() {
                     if (!i.createdAt) return false;
                     return i.createdAt.startsWith(dateStr);
                 });
-                if (hasSolveOnDay || d === 0) {
+                if (hasSolveOnDay) {
                     streak++;
                 } else {
                     break;
                 }
             }
-            setActiveStreak(Math.max(streak - 1, 0));
+            setActiveStreak(streak);
 
             setIssues(solveable);
         } catch (e) {

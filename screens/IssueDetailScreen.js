@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Linking, Animated } from 'react-native';
+import { View, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Linking, Animated, Alert } from 'react-native';
 import { Text, TextInput, Avatar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
@@ -8,6 +8,7 @@ import { useAuth } from '../contexts/AuthContext';
 import IssueCard from '../components/IssueCard';
 import BeforeAfterCard from '../components/BeforeAfterCard';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
+import { timeAgo, isValidYouTubeUrl } from '../utils/timeAgo';
 import * as ImagePicker from 'expo-image-picker';
 
 export default function IssueDetailScreen({ route, navigation }) {
@@ -34,8 +35,7 @@ export default function IssueDetailScreen({ route, navigation }) {
             const fetchLatest = async () => {
                 setLoading(true);
                 try {
-                    const allIssues = await IssueService.getAllIssues(true);
-                    const updated = allIssues.find(i => i.id === resolvedId);
+                    const updated = await IssueService.getIssueById(resolvedId);
                     if (updated) setCurrentIssue(updated);
                     
                     const fetchedComments = await IssueService.getComments(resolvedId);
@@ -81,21 +81,7 @@ export default function IssueDetailScreen({ route, navigation }) {
         }
     };
 
-    // Time-ago formatter
-    const timeAgo = (dateStr) => {
-        if (!dateStr) return '';
-        const now = new Date();
-        const date = new Date(dateStr);
-        const seconds = Math.floor((now - date) / 1000);
-        if (seconds < 60) return 'just now';
-        const minutes = Math.floor(seconds / 60);
-        if (minutes < 60) return `${minutes}m ago`;
-        const hours = Math.floor(minutes / 60);
-        if (hours < 24) return `${hours}h ago`;
-        const days = Math.floor(hours / 24);
-        if (days < 7) return `${days}d ago`;
-        return date.toLocaleDateString();
-    };
+    // timeAgo is now imported from utils/timeAgo.js
 
     if (loading || !currentIssue) {
         return (
@@ -123,7 +109,11 @@ export default function IssueDetailScreen({ route, navigation }) {
                 <TouchableOpacity 
                     onPress={() => {
                         if (currentIssue.youtubeUrl) {
-                            Linking.openURL(currentIssue.youtubeUrl);
+                            if (isValidYouTubeUrl(currentIssue.youtubeUrl)) {
+                                Linking.openURL(currentIssue.youtubeUrl);
+                            } else {
+                                Alert.alert('Invalid Link', 'This link does not appear to be a valid YouTube URL.');
+                            }
                         }
                     }} 
                     activeOpacity={0.7} 
@@ -196,7 +186,7 @@ export default function IssueDetailScreen({ route, navigation }) {
                 )}
                 
                 {/* YouTube Link */}
-                {currentIssue.youtubeUrl ? (
+                {currentIssue.youtubeUrl && isValidYouTubeUrl(currentIssue.youtubeUrl) ? (
                     <TouchableOpacity 
                         onPress={() => Linking.openURL(currentIssue.youtubeUrl).catch(err => console.error("Couldn't load page", err))}
                         activeOpacity={0.8}

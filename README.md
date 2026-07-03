@@ -78,6 +78,18 @@ A separate Vite + React web app in `/admin-dashboard` for triaging issues, viewi
 - **Firebase Auth** with email verification required before app access
 - **Admin role** managed via Firebase custom claims
 - **Sensitive config** (Sentry DSN) loaded from environment variables
+- **YouTube URL validation** — only `youtube.com` and `youtu.be` links are opened; arbitrary URLs are blocked
+
+### ⚠️ Google Maps API Key Restriction (Required)
+
+The Google Maps API key in `app.json` must be restricted in the [Google Cloud Console](https://console.cloud.google.com/apis/credentials) to prevent unauthorized usage:
+
+1. Go to **APIs & Services → Credentials**
+2. Click on the Maps API key
+3. Under **Application restrictions**, select:
+   - **Android apps** → Add package name `com.civic.app` + your SHA-1 fingerprint
+   - **iOS apps** → Add bundle ID `com.civic.app`
+4. Under **API restrictions**, select **Restrict key** and enable only **Maps SDK for Android** and **Maps SDK for iOS**
 
 ## 🎬 Getting Started
 

@@ -5,6 +5,8 @@ import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { useTranslation } from 'react-i18next';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
 import IssueCard from '../components/IssueCard';
 import FilterPills from '../components/ui/FilterPills';
 import GradientButton from '../components/ui/GradientButton';
@@ -54,19 +56,23 @@ export default function HomeScreen() {
 
   useFocusEffect(
     useCallback(() => {
+      let isMounted = true;
       let activeWatchAreas = [];
 
       // Fetch user's watch areas
-      if (user?.uid) {
-        import('firebase/firestore').then(({ collection, query, where, getDocs }) => {
-          import('../config/firebaseConfig').then(({ db }) => {
-            const q = query(collection(db, 'watchAreas'), where('userId', '==', user.uid), where('active', '==', true));
-            getDocs(q).then(snapshot => {
-              activeWatchAreas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-            }).catch(console.error);
-          });
-        });
-      }
+      const loadWatchAreas = async () => {
+        if (!user?.uid) return;
+        try {
+          const q = query(collection(db, 'watchAreas'), where('userId', '==', user.uid), where('active', '==', true));
+          const snapshot = await getDocs(q);
+          if (isMounted) {
+            activeWatchAreas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+          }
+        } catch (e) {
+          console.error('[HomeScreen] Failed to load watch areas:', e);
+        }
+      };
+      loadWatchAreas();
 
       // Helper for distance (Haversine formula) in meters
       const getDistance = (lat1, lon1, lat2, lon2) => {
@@ -82,6 +88,7 @@ export default function HomeScreen() {
 
       // Subscribe to real-time new issues
       const unsubscribe = IssueService.subscribeToNewIssues(async (newIssue) => {
+        if (!isMounted) return;
         // Only count issues not authored by current user
         if (newIssue.authorId !== user?.uid) {
           setNewIssueCount(prev => prev + 1);
@@ -108,7 +115,10 @@ export default function HomeScreen() {
           }
         }
       });
-      return () => unsubscribe();
+      return () => {
+        isMounted = false;
+        unsubscribe();
+      };
     }, [user])
   );
 

@@ -78,6 +78,27 @@ export const IssueService = {
     },
 
     /**
+     * Fetch a single issue by ID directly from Firestore.
+     * Much more efficient than getAllIssues().find() for detail screens.
+     */
+    getIssueById: async (issueId) => {
+        if (!issueId) return null;
+        try {
+            const docRef = doc(db, ISSUES_COLLECTION, issueId);
+            const docSnap = await getDoc(docRef);
+            if (docSnap.exists()) {
+                return { id: docSnap.id, ...docSnap.data() };
+            }
+            return null;
+        } catch (error) {
+            console.error("Error fetching issue by ID:", error);
+            // Fallback: check cache
+            const cached = _issueCache.find(i => i.id === issueId);
+            return cached || null;
+        }
+    },
+
+    /**
      * Fetch issues with pagination and optional category filtering.
      * Reduces data transfer by limiting document count per request.
      */
