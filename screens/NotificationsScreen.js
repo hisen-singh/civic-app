@@ -1,6 +1,6 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useRef } from 'react';
 import { View, ScrollView, TouchableOpacity, StyleSheet, Animated } from 'react-native';
-import { Text, IconButton, Card, ActivityIndicator } from 'react-native-paper';
+import { Text, IconButton, ActivityIndicator } from 'react-native-paper';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
 import { NotificationService } from '../services/NotificationService';
 import { useAuth } from '../contexts/AuthContext';
@@ -35,7 +35,7 @@ export default function NotificationsScreen() {
     const navigation = useNavigation();
     const [notifications, setNotifications] = useState([]);
     const [loading, setLoading] = useState(true);
-    const fadeAnim = useState(new Animated.Value(0))[0];
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useFocusEffect(
         useCallback(() => {

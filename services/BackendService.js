@@ -2,6 +2,7 @@ import { getFunctions, httpsCallable } from 'firebase/functions';
 import { app } from '../config/firebaseConfig';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const functionsInstance = getFunctions(app);
 
@@ -32,7 +33,9 @@ export const BackendService = {
             }
 
             // Get the Expo push token (wraps FCM/APNs under the hood)
-            const tokenData = await Notifications.getExpoPushTokenAsync();
+            const tokenData = await Notifications.getExpoPushTokenAsync({
+                projectId: Constants.expoConfig?.extra?.eas?.projectId,
+            });
             const token = tokenData.data;
 
             // Send the token to the backend Cloud Function to store it

@@ -10,9 +10,14 @@ import {
     increment,
     query,
     orderBy,
-    serverTimestamp
+    limit,
+    startAfter,
+    where,
+    serverTimestamp,
+    onSnapshot
 } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { db, storage } from '../config/firebaseConfig';
 
 const ISSUES_COLLECTION = 'issues';
 
@@ -37,8 +42,8 @@ export const IssueService = {
             return _issueCache;
         }
 
-        // If there's already a request in flight, wait for it instead of making a new one
-        if (_pendingRequest) {
+        // If there's already a request in flight, wait for it unless force refresh is requested
+        if (_pendingRequest && !forceRefresh) {
             return _pendingRequest;
         }
 
@@ -73,28 +78,90 @@ export const IssueService = {
     },
 
     /**
+     * Fetch issues with pagination and optional category filtering.
+     * Reduces data transfer by limiting document count per request.
+     */
+    getIssuesPaginated: async (pageSize = 10, lastDocSnap = null, category = 'All', userId = null) => {
+        try {
+            let constraints = [];
+            
+            if (category === 'Solved') {
+                constraints.push(where('status', '==', 'Solved'));
+            } else if (category === 'My Reports' && userId) {
+                constraints.push(where('authorId', '==', userId));
+            } else if (category === 'Urgent') {
+                constraints.push(where('urgency', 'in', ['critical', 'high']));
+            }
+            
+            // "Nearby" requires Geo-queries, so we skip adding a 'where' clause here 
+            // and rely on client-side filtering if they select Nearby, or we just fetch 'All'.
+            
+            constraints.push(orderBy('createdAt', 'desc'));
+            
+            if (lastDocSnap) {
+                constraints.push(startAfter(lastDocSnap));
+            }
+            
+            constraints.push(limit(pageSize));
+
+            const q = query(collection(db, ISSUES_COLLECTION), ...constraints);
+            const snapshot = await getDocs(q);
+            
+            const issues = snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            
+            return {
+                data: issues,
+                lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null
+            };
+        } catch (error) {
+            console.error("Error fetching paginated issues. You may need to create a Firestore index. Check console for the link:", error.message);
+            throw error;
+        }
+    },
+
+    /**
+     * Upload image to Firebase Storage and return the download URL.
+     */
+    uploadImage: async (uri) => {
+        try {
+            const response = await fetch(uri);
+            const blob = await response.blob();
+            const filename = `issues/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+            const storageRef = ref(storage, filename);
+            await uploadBytes(storageRef, blob);
+            return await getDownloadURL(storageRef);
+        } catch (error) {
+            console.error("Error uploading image:", error);
+            throw new Error("Failed to upload image.");
+        }
+    },
+
+    /**
      * Add new issue to Firestore.
-     * Validates photo size to prevent exceeding Firestore's 1MB document limit.
      */
     addIssue: async (issueData) => {
-        // Guard: reject base64 photos larger than ~700KB to stay under Firestore 1MB doc limit
-        if (issueData.photo && issueData.photo.length > 700000) {
-            throw new Error("Photo is too large. Please use a lower quality or smaller image.");
-        }
+        // We now use Firebase Storage, so issueData.photo will be a URL instead of base64.
 
         try {
-            const docRef = await addDoc(collection(db, ISSUES_COLLECTION), {
+            const newIssue = {
                 ...issueData,
                 votes: 0,
                 voters: [],
                 solvers: [],
-                comments: [],
-                createdAt: new Date().toISOString(),
+                commentsCount: 0,
+                createdAt: new Date().toISOString()
+            };
+            
+            const docRef = await addDoc(collection(db, ISSUES_COLLECTION), {
+                ...newIssue,
                 timestamp: serverTimestamp()
             });
 
             IssueService.invalidateCache();
-            return { id: docRef.id, ...issueData };
+            return { id: docRef.id, ...newIssue };
         } catch (error) {
             console.error("Error adding issue to Firestore:", error);
             throw new Error("Failed to save issue. Please try again.");
@@ -139,7 +206,8 @@ export const IssueService = {
             const issueRef = doc(db, ISSUES_COLLECTION, id);
             await updateDoc(issueRef, {
                 solvers: arrayUnion(userId),
-                status: 'In Progress'
+                status: 'In Progress',
+                statusUpdatedAt: new Date().toISOString()
             });
             IssueService.invalidateCache();
             return { success: true };
@@ -156,7 +224,8 @@ export const IssueService = {
         try {
             const issueRef = doc(db, ISSUES_COLLECTION, id);
             await updateDoc(issueRef, {
-                status: newStatus
+                status: newStatus,
+                statusUpdatedAt: new Date().toISOString()
             });
             IssueService.invalidateCache();
             return { success: true };
@@ -167,21 +236,43 @@ export const IssueService = {
     },
 
     /**
-     * Add a comment to an issue.
+     * Fetch comments from subcollection.
+     */
+    getComments: async (id) => {
+        try {
+            const commentsRef = collection(db, ISSUES_COLLECTION, id, 'comments');
+            const q = query(commentsRef, orderBy('createdAt', 'asc'));
+            const snapshot = await getDocs(q);
+            return snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+        } catch (error) {
+            console.error("Error fetching comments:", error);
+            return [];
+        }
+    },
+
+    /**
+     * Add a comment to an issue's subcollection.
      */
     addComment: async (id, commentData) => {
         try {
             const newComment = {
-                id: 'comment_' + Date.now().toString(),
                 createdAt: new Date().toISOString(),
-                ...commentData
+                ...commentData,
+                timestamp: serverTimestamp()
             };
+            const commentsRef = collection(db, ISSUES_COLLECTION, id, 'comments');
+            const docRef = await addDoc(commentsRef, newComment);
+            
             const issueRef = doc(db, ISSUES_COLLECTION, id);
             await updateDoc(issueRef, {
-                comments: arrayUnion(newComment)
+                commentsCount: increment(1)
             });
+            
             IssueService.invalidateCache();
-            return newComment;
+            return { id: docRef.id, ...newComment };
         } catch (error) {
             console.error("Error adding comment:", error);
             throw error;
@@ -190,7 +281,6 @@ export const IssueService = {
 
     /**
      * Delete an issue.
-     * deleteDoc is now properly imported at the top of the file.
      */
     deleteIssue: async (id) => {
         try {
@@ -202,5 +292,80 @@ export const IssueService = {
             console.error("Error deleting issue:", error);
             throw error;
         }
-    }
+    },
+
+    /**
+     * Subscribe to the full issues feed in real-time.
+     * Updates the internal cache reactively and calls the callback with the latest data.
+     * Returns an unsubscribe function.
+     */
+    subscribeToIssues: (onUpdate, onError) => {
+        const q = query(
+            collection(db, ISSUES_COLLECTION),
+            orderBy('createdAt', 'desc'),
+            limit(50)
+        );
+        return onSnapshot(q, (snapshot) => {
+            const issues = snapshot.docs.map(d => ({
+                id: d.id,
+                ...d.data()
+            }));
+            // Update the internal cache
+            _issueCache = issues;
+            _lastFetchTime = Date.now();
+            onUpdate(issues, snapshot.docChanges());
+        }, (error) => {
+            console.error('[IssueService] Real-time feed error:', error);
+            if (onError) onError(error);
+        });
+    },
+
+    /**
+     * Subscribe to new issues only (lightweight — for "new issues" pill).
+     * Returns an unsubscribe function.
+     */
+    subscribeToNewIssues: (onNewIssue) => {
+        const q = query(
+            collection(db, ISSUES_COLLECTION),
+            orderBy('createdAt', 'desc'),
+            limit(1)
+        );
+        let isFirstSnapshot = true;
+        return onSnapshot(q, (snapshot) => {
+            // Skip the initial snapshot (it's existing data)
+            if (isFirstSnapshot) {
+                isFirstSnapshot = false;
+                return;
+            }
+            snapshot.docChanges().forEach(change => {
+                if (change.type === 'added') {
+                    const issue = { id: change.doc.id, ...change.doc.data() };
+                    onNewIssue(issue);
+                }
+            });
+        }, (error) => {
+            console.error('[IssueService] Real-time listener error:', error);
+        });
+    },
+
+    /**
+     * Upload and attach an "after" photo to a solved issue.
+     */
+    addAfterPhoto: async (issueId, photoUri) => {
+        try {
+            const response = await fetch(photoUri);
+            const blob = await response.blob();
+            const filename = `issues/after_${issueId}_${Date.now()}.jpg`;
+            const storageRef = ref(storage, filename);
+            await uploadBytes(storageRef, blob);
+            const url = await getDownloadURL(storageRef);
+            const issueRef = doc(db, ISSUES_COLLECTION, issueId);
+            await updateDoc(issueRef, { afterPhoto: url });
+            IssueService.invalidateCache();
+            return url;
+        } catch (error) {
+            console.error('Error adding after photo:', error);
+            throw error;
+        }
+    },
 };

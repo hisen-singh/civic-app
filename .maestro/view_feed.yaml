@@ -1,0 +1,26 @@
+appId: com.civic.app
+---
+# View Feed Flow — E2E Test
+- launchApp
+
+# Verify home screen loaded with feed
+- assertVisible: "COMMUNITY PULSE"
+
+# Test filter pills
+- tapOn: "Critical"
+- waitForAnimationToEnd
+
+- tapOn: "Resolved"
+- waitForAnimationToEnd
+
+- tapOn: "Feed"
+- waitForAnimationToEnd
+
+# Pull to refresh
+- swipe:
+    direction: DOWN
+    duration: 500
+- waitForAnimationToEnd
+
+# Verify content loaded
+- assertVisible: "COMMUNITY PULSE"

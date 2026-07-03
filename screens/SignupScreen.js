@@ -4,6 +4,7 @@ import { Text, TextInput, ActivityIndicator } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthService } from '../services/AuthService';
+import GradientButton from '../components/ui/GradientButton';
 import { Colors, Gradients, Radius, Spacing } from '../theme';
 
 export default function SignupScreen({ navigation }) {
@@ -180,18 +181,12 @@ export default function SignupScreen({ navigation }) {
                         ) : null}
 
                         {/* Signup Button */}
-                        <TouchableOpacity
+                        <GradientButton
+                            label="Create Account"
                             onPress={handleSignup}
-                            disabled={loading}
-                            activeOpacity={0.85}
-                            style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="#FFF" size={20} />
-                            ) : (
-                                <Text style={styles.primaryBtnText}>Create Account</Text>
-                            )}
-                        </TouchableOpacity>
+                            loading={loading}
+                            colors={[Colors.accentDark, Colors.success]}
+                        />
                     </Animated.View>
 
                     {/* Login Link */}

@@ -9,6 +9,9 @@ service cloud.firestore {
     function isOwner(userId) {
       return isSignedIn() && request.auth.uid == userId;
     }
+    function isAdmin() {
+      return isSignedIn() && request.auth.token.admin == true;
+    }
 
     // ─── ISSUES ─────────────────────────────────────────────────────────────
     match /issues/{issueId} {
@@ -25,13 +28,47 @@ service cloud.firestore {
       // Only signed-in users can update – restrict which fields they can touch
       allow update: if isSignedIn()
         && (
-          // Anyone can upvote or join as solver
-          request.resource.data.diff(resource.data).affectedKeys()
-            .hasOnly(['votes', 'voters', 'solvers', 'status', 'comments'])
+          isAdmin() ||
+          (
+            request.auth.uid == resource.data.authorId && 
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['status', 'statusUpdatedAt', 'commentsCount', 'afterPhoto', 'votes', 'voters', 'solvers'])
+          ) ||
+          (
+            request.resource.data.diff(resource.data).affectedKeys()
+              .hasOnly(['votes', 'voters', 'solvers', 'status', 'statusUpdatedAt', 'commentsCount'])
+            &&
+            // Validate Votes Increment
+            (
+              !('votes' in request.resource.data.diff(resource.data).affectedKeys()) ||
+              (
+                request.resource.data.votes == resource.data.votes + 1 &&
+                request.resource.data.voters.hasAll(resource.data.voters) &&
+                request.resource.data.voters.size() == resource.data.voters.size() + 1 &&
+                request.resource.data.voters.hasAny([request.auth.uid])
+              )
+            )
+            &&
+            // Validate Solvers Increment
+            (
+              !('solvers' in request.resource.data.diff(resource.data).affectedKeys()) ||
+              (
+                request.resource.data.solvers.hasAll(resource.data.solvers) &&
+                request.resource.data.solvers.size() == resource.data.solvers.size() + 1 &&
+                request.resource.data.solvers.hasAny([request.auth.uid])
+              )
+            )
+            &&
+            // Validate Status Change
+            (
+              request.resource.data.status == resource.data.status ||
+              (request.resource.data.status == 'In Progress' && 'solvers' in request.resource.data.diff(resource.data).affectedKeys())
+            )
+          )
         );
 
-      // Only the author can delete their own issue
-      allow delete: if isOwner(resource.data.authorId);
+      // Only the author or an admin can delete an issue
+      allow delete: if isOwner(resource.data.authorId) || isAdmin();
     }
 
     // ─── ARCHIVED ISSUES (read-only) ────────────────────────────────────────

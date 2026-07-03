@@ -1,0 +1,23 @@
+appId: com.civic.app
+---
+# Login Flow — E2E Test
+- launchApp
+
+# Wait for the login screen to appear
+- assertVisible: "Sign In"
+
+# Enter email
+- tapOn:
+    id: "email-input"
+- inputText: "test@civichero.app"
+
+# Enter password
+- tapOn:
+    id: "password-input"
+- inputText: "Test123456"
+
+# Tap sign in
+- tapOn: "Sign In"
+
+# Verify we reach the home screen
+- assertVisible: "COMMUNITY PULSE"

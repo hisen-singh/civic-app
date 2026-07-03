@@ -48,10 +48,18 @@ export default function MapScreen({ navigation }) {
                     
                     const mapIssues = allIssues.map((issue) => {
                         if (!issue.latitude || !issue.longitude) {
+                            // Stable pseudo-random offset based on issue ID
+                            let hash = 0;
+                            for (let i = 0; i < issue.id.length; i++) {
+                                hash = issue.id.charCodeAt(i) + ((hash << 5) - hash);
+                            }
+                            const pseudoRandom1 = (Math.abs(hash) % 100) / 100;
+                            const pseudoRandom2 = (Math.abs(hash >> 8) % 100) / 100;
+                            
                             return {
                                 ...issue,
-                                latitude: baseLat + (Math.random() - 0.5) * 0.04,
-                                longitude: baseLng + (Math.random() - 0.5) * 0.04,
+                                latitude: baseLat + (pseudoRandom1 - 0.5) * 0.04,
+                                longitude: baseLng + (pseudoRandom2 - 0.5) * 0.04,
                             };
                         }
                         return issue;
@@ -63,7 +71,7 @@ export default function MapScreen({ navigation }) {
                 }
             };
             fetchIssues();
-        }, [locationLoaded]) // Only re-fetch when location finishes loading, not on every coordinate change
+        }, [locationLoaded, location]) // Added location to dependencies
     );
 
     useEffect(() => {
@@ -179,6 +187,7 @@ export default function MapScreen({ navigation }) {
                         key={issue.id}
                         coordinate={{ latitude: Number(issue.latitude), longitude: Number(issue.longitude) }}
                         onPress={() => navigation.navigate('IssueDetail', { issueId: issue.id })}
+                        tracksViewChanges={false}
                     >
                         <View style={styles.markerContainer}>
                             <View style={[

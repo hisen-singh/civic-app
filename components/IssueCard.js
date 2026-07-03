@@ -1,11 +1,15 @@
 import React, { useState, useRef } from 'react';
-import { View, TouchableOpacity, Image, Share, Alert, Linking, Animated } from 'react-native';
-import { Card, Text, Button, ProgressBar, Avatar, Menu } from 'react-native-paper';
+import { View, TouchableOpacity, Image, Alert, Linking, Animated } from 'react-native';
+import { Card, Text } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
 import { IssueService } from '../services/IssueService';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
+import ShareModal from './ShareModal';
+import CommentBottomSheet from './CommentBottomSheet';
+import AnimatedPressable from './ui/AnimatedPressable';
 
 const getYouTubeID = (url) => {
     if (!url) return null;
@@ -71,6 +75,10 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
     const [localStatus, setLocalStatus] = useState(issue.status || 'Open');
     const [isDeleted, setIsDeleted] = useState(false);
     const [menuVisible, setMenuVisible] = useState(false);
+    const [shareVisible, setShareVisible] = useState(false);
+    const [commentSheetVisible, setCommentSheetVisible] = useState(false);
+    const initialCommentCount = issue.commentsCount ?? (issue.comments || []).length;
+    const [localCommentCount, setLocalCommentCount] = useState(initialCommentCount);
     
     // Animation refs
     const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -157,23 +165,16 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
         if (onCommentPress) {
             onCommentPress();
         } else if (!disablePress) {
-            navigation.navigate('IssueDetail', { issueId: issue.id });
+            setCommentSheetVisible(true);
         }
     };
 
-    const handleShare = async () => {
-        try {
-            await Share.share({
-                message: `📌 ${issue.title}\n📍 ${issue.location || 'Unknown'}\n📝 ${issue.description || ''}\n\nHelp solve this issue — reported on Civic.`,
-            });
-        } catch (e) {
-            console.error('Share error:', e);
-        }
+    const handleShare = () => {
+        setShareVisible(true);
     };
 
     const authorName = issue.authorName || 'Citizen';
     const initials = authorName.substring(0, 2).toUpperCase();
-    const commentCount = (issue.comments || []).length;
     
     const ytId = getYouTubeID(issue.youtubeUrl);
     const hasMedia = issue.photo || ytId;
@@ -204,57 +205,28 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
 
     if (isDeleted) return null;
 
+    const urgencyColor = {
+        critical: Colors.critical,
+        high: Colors.high,
+        medium: Colors.medium,
+        low: Colors.low,
+    }[issue.urgency] || Colors.medium;
+
     return (
         <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
             <Card style={styles.card}>
-                {/* Header */}
-                <View style={styles.header}>
-                    <Avatar.Text 
-                        size={36} 
-                        label={initials} 
-                        style={{ backgroundColor: Colors.accent, marginRight: 12 }} 
-                        labelStyle={{ fontSize: 13, fontWeight: '700' }} 
-                    />
-                    <View style={{ flex: 1 }}>
-                        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-                            <Text style={styles.authorName}>{authorName}</Text>
-                            <Text style={styles.timestamp}>· {timeAgo(issue.createdAt)}</Text>
-                        </View>
-                        <View style={{ flexDirection: 'row', alignItems: 'center', marginTop: 2 }}>
-                            <MaterialCommunityIcons name="map-marker" size={12} color={Colors.textTertiary} />
-                            <Text style={styles.location}> {issue.location || 'Location not set'}</Text>
-                        </View>
-                    </View>
-                    <StatusBadge status={localStatus} />
-                    {isAuthor && (
-                        <Menu
-                            visible={menuVisible}
-                            onDismiss={closeMenu}
-                            anchor={
-                                <TouchableOpacity onPress={openMenu} style={{ marginLeft: 8, padding: 4 }}>
-                                    <MaterialCommunityIcons name="dots-vertical" size={20} color={Colors.textTertiary} />
-                                </TouchableOpacity>
-                            }
-                            contentStyle={{ backgroundColor: Colors.surfaceElevated, borderRadius: Radius.md }}
-                        >
-                            <Menu.Item 
-                                onPress={handleDelete} 
-                                title="Delete Report" 
-                                titleStyle={{ color: Colors.error, fontSize: 14 }} 
-                                leadingIcon={() => <MaterialCommunityIcons name="trash-can-outline" size={18} color={Colors.error} />}
-                            />
-                        </Menu>
-                    )}
-                </View>
-
-                {/* Media Section */}
-                <TouchableOpacity activeOpacity={disablePress ? 1 : 0.9} onPress={handleCardPress}>
+                {/* Media Section (Top) */}
+                <TouchableOpacity activeOpacity={disablePress ? 1 : 0.92} onPress={handleCardPress}>
                     {hasMedia ? (
                         <View>
                             <Image
                                 source={{ uri: issue.photo || `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` }}
                                 style={styles.media}
                                 resizeMode="cover"
+                            />
+                            <LinearGradient
+                                colors={['transparent', 'rgba(10, 14, 26, 0.85)']}
+                                style={styles.mediaGradient}
                             />
                             {ytId && (
                                 <View style={styles.playOverlay}>
@@ -263,132 +235,125 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
                                     </View>
                                 </View>
                             )}
-                            {/* Category chip on media */}
-                            <View style={styles.categoryChip}>
-                                <Text style={styles.categoryChipText}>{issue.category || 'Issue'}</Text>
+                            <View style={styles.topBadges}>
+                                <View style={styles.categoryChip}>
+                                    <View style={[styles.urgencyDot, { backgroundColor: urgencyColor }]} />
+                                    <Text style={styles.categoryChipText}>{issue.category || 'Issue'}</Text>
+                                </View>
+                                <StatusBadge status={localStatus} />
                             </View>
                         </View>
                     ) : (
-                        /* Text-only card: show category + title prominently */
-                        <View style={styles.textOnlySection}>
+                        <View style={styles.textOnlyMedia}>
                             <View style={styles.categoryChipInline}>
-                                <Text style={styles.categoryChipText}>{issue.category || 'Issue'}</Text>
+                                <View style={[styles.urgencyDot, { backgroundColor: urgencyColor }]} />
+                                <Text style={[styles.categoryChipText, { color: Colors.textPrimary }]}>
+                                    {issue.category || 'Issue'}
+                                </Text>
                             </View>
+                            <StatusBadge status={localStatus} />
                         </View>
                     )}
                 </TouchableOpacity>
 
-                {/* Actions Bar */}
-                <View style={styles.actionsBar}>
-                    <TouchableOpacity onPress={handleUpvote} style={styles.actionBtn} activeOpacity={0.7}>
-                        <Animated.View style={{ transform: [{ scale: voteAnim }] }}>
-                            <MaterialCommunityIcons 
-                                name={hasVoted ? 'arrow-up-bold' : 'arrow-up-bold-outline'} 
-                                size={26} 
-                                color={hasVoted ? Colors.success : Colors.textPrimary} 
-                            />
-                        </Animated.View>
-                        <Text style={[styles.actionCount, hasVoted && { color: Colors.success }]}>{localVotes}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={handleComment} style={styles.actionBtn} activeOpacity={0.7}>
-                        <MaterialCommunityIcons name="comment-outline" size={22} color={Colors.textPrimary} style={{ transform: [{ scaleX: -1 }] }} />
-                        {commentCount > 0 && <Text style={styles.actionCount}>{commentCount}</Text>}
-                    </TouchableOpacity>
-
-                    <TouchableOpacity onPress={handleShare} style={styles.actionBtn} activeOpacity={0.7}>
-                        <MaterialCommunityIcons name="share-outline" size={22} color={Colors.textPrimary} />
-                    </TouchableOpacity>
-
-                    <View style={{ flex: 1 }} />
-                    <ImpactBadge impact={issue.urgency || issue.impact || 'medium'} />
-                </View>
-
-                {/* Title & Description */}
+                {/* Content & Actions */}
                 <View style={styles.contentSection}>
-                    <Text style={styles.titleText}>
+                    <View style={styles.authorRow}>
+                        <View style={styles.authorAvatar}>
+                            <Text style={styles.authorInitials}>{initials}</Text>
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.authorName}>{authorName}</Text>
+                            <Text style={styles.authorMeta}>{timeAgo(issue.createdAt)}</Text>
+                        </View>
+                        <ImpactBadge impact={issue.urgency || 'medium'} />
+                    </View>
+
+                    <Text style={styles.titleText} numberOfLines={2}>
                         {issue.title}
                     </Text>
                     
-                    {issue.description && (
-                        <Text style={styles.descText} numberOfLines={3}>
-                            {issue.description}
-                        </Text>
-                    )}
-
-                    {commentCount > 0 && (
-                        <TouchableOpacity onPress={handleComment} activeOpacity={0.7} style={{ marginTop: 8 }}>
-                            <Text style={styles.viewComments}>
-                                View all {commentCount} comments
-                            </Text>
-                        </TouchableOpacity>
-                    )}
-
-                    {/* Urgency bar */}
-                    <View style={styles.urgencyRow}>
-                        <Text style={styles.urgencyLabel}>Urgency</Text>
-                        <View style={{ flex: 1 }}>
-                            <ProgressBar
-                                progress={({ critical: 1, high: 0.75, medium: 0.5, low: 0.25 })[issue.urgency] || 0.5}
-                                color={({ critical: Colors.critical, high: Colors.high, medium: Colors.medium, low: Colors.low })[issue.urgency] || Colors.medium}
-                                style={styles.urgencyBar}
-                            />
-                        </View>
+                    <View style={styles.metaRow}>
+                        <MaterialCommunityIcons name="map-marker-outline" size={14} color={Colors.accentLight} />
+                        <Text style={styles.metaText} numberOfLines={1}>{issue.location || 'Location not set'}</Text>
                     </View>
 
-                    {/* Solve Actions */}
-                    {showActions && localStatus !== 'Solved' && localStatus !== 'Failed' && !isAuthor && (
-                        <TouchableOpacity
-                            onPress={handleSolve}
-                            disabled={isSolving}
-                            activeOpacity={0.8}
-                            style={[styles.solveBtn, isSolving && styles.solveBtnActive]}
-                        >
-                            <MaterialCommunityIcons 
-                                name={isSolving ? "check-circle" : "hand-heart"} 
-                                size={18} 
-                                color={isSolving ? Colors.success : '#FFF'} 
-                                style={{ marginRight: 8 }} 
-                            />
-                            <Text style={[styles.solveBtnText, isSolving && { color: Colors.success }]}>
-                                {isSolving ? "You're helping" : "Help Solve"}
-                            </Text>
-                        </TouchableOpacity>
-                    )}
+                    <View style={styles.actionsRow}>
+                        <View style={styles.socialActions}>
+                            <AnimatedPressable onPress={handleUpvote} activeScale={0.92}>
+                                <View style={[styles.actionBtn, hasVoted && styles.actionBtnActive]}>
+                                    <Animated.View style={{ transform: [{ scale: voteAnim }] }}>
+                                        <MaterialCommunityIcons 
+                                            name={hasVoted ? 'arrow-up-bold' : 'arrow-up-bold-outline'} 
+                                            size={20} 
+                                            color={hasVoted ? Colors.accentLight : Colors.textSecondary} 
+                                        />
+                                    </Animated.View>
+                                    <Text style={[styles.actionCount, hasVoted && styles.actionCountActive]}>{localVotes}</Text>
+                                </View>
+                            </AnimatedPressable>
 
-                    {showActions && isAuthor && localStatus !== 'Solved' && localStatus !== 'Failed' && (
-                        <View style={{ marginTop: 16 }}>
-                            <Text style={styles.authorPrompt}>You reported this. Is it resolved?</Text>
-                            <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-                                <TouchableOpacity 
-                                    onPress={() => handleUpdateStatus('Solved')} 
-                                    activeOpacity={0.8}
-                                    style={[styles.statusBtn, { backgroundColor: Colors.successSurface, borderColor: Colors.success }]}
-                                >
-                                    <MaterialCommunityIcons name="check" size={16} color={Colors.success} style={{ marginRight: 6 }} />
-                                    <Text style={[styles.statusBtnText, { color: Colors.success }]}>Resolved</Text>
-                                </TouchableOpacity>
-                                <TouchableOpacity 
-                                    onPress={() => handleUpdateStatus('Failed')} 
-                                    activeOpacity={0.8}
-                                    style={[styles.statusBtn, { backgroundColor: Colors.errorSurface, borderColor: Colors.error }]}
-                                >
-                                    <MaterialCommunityIcons name="close" size={16} color={Colors.error} style={{ marginRight: 6 }} />
-                                    <Text style={[styles.statusBtnText, { color: Colors.error }]}>Not Fixed</Text>
-                                </TouchableOpacity>
-                            </View>
+                            <AnimatedPressable onPress={handleComment} activeScale={0.92}>
+                                <View style={styles.actionBtn}>
+                                    <MaterialCommunityIcons name="comment-text-outline" size={19} color={Colors.textSecondary} />
+                                    <Text style={styles.actionCount}>{localCommentCount}</Text>
+                                </View>
+                            </AnimatedPressable>
+
+                            <AnimatedPressable onPress={handleShare} activeScale={0.92}>
+                                <View style={styles.actionBtn}>
+                                    <MaterialCommunityIcons name="share-variant-outline" size={19} color={Colors.textSecondary} />
+                                </View>
+                            </AnimatedPressable>
                         </View>
-                    )}
+
+                        {showActions && localStatus !== 'Solved' && localStatus !== 'Failed' && !isAuthor && (
+                            <AnimatedPressable onPress={handleSolve} disabled={isSolving} activeScale={0.95}>
+                                {isSolving ? (
+                                    <View style={[styles.primaryActionBtn, styles.primaryActionBtnActive]}>
+                                        <MaterialCommunityIcons name="hand-heart" size={14} color={Colors.success} style={{ marginRight: 4 }} />
+                                        <Text style={[styles.primaryActionText, { color: Colors.success }]}>Helping</Text>
+                                    </View>
+                                ) : (
+                                    <LinearGradient
+                                        colors={[Colors.accentDark, Colors.accent]}
+                                        start={{ x: 0, y: 0 }}
+                                        end={{ x: 1, y: 0 }}
+                                        style={styles.primaryActionBtn}
+                                    >
+                                        <Text style={styles.primaryActionText}>Help Solve</Text>
+                                    </LinearGradient>
+                                )}
+                            </AnimatedPressable>
+                        )}
+
+                        {showActions && isAuthor && localStatus !== 'Solved' && localStatus !== 'Failed' && (
+                            <AnimatedPressable onPress={() => handleUpdateStatus('Solved')} activeScale={0.95}>
+                                <View style={[styles.primaryActionBtn, styles.markFixedBtn]}>
+                                    <MaterialCommunityIcons name="check-circle-outline" size={14} color={Colors.success} style={{ marginRight: 4 }} />
+                                    <Text style={[styles.primaryActionText, { color: Colors.success }]}>Mark Fixed</Text>
+                                </View>
+                            </AnimatedPressable>
+                        )}
+                    </View>
                 </View>
             </Card>
+            <ShareModal visible={shareVisible} onClose={() => setShareVisible(false)} issue={issue} />
+            <CommentBottomSheet 
+                visible={commentSheetVisible} 
+                onClose={() => setCommentSheetVisible(false)} 
+                issueId={issue.id} 
+                initialComments={issue.comments || []}
+                onCommentAdded={() => setLocalCommentCount(prev => prev + 1)}
+            />
         </Animated.View>
     );
 }
 
 const styles = {
     card: {
+        marginBottom: Spacing.lg,
         marginHorizontal: Spacing.lg,
-        marginVertical: Spacing.sm,
         backgroundColor: Colors.surface,
         borderRadius: Radius.lg,
         borderWidth: 1,
@@ -396,30 +361,185 @@ const styles = {
         overflow: 'hidden',
         ...Shadows.card,
     },
-    header: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        padding: Spacing.lg,
-        paddingBottom: Spacing.md,
-    },
-    authorName: {
-        fontWeight: '700',
-        fontSize: 14,
-        color: Colors.textPrimary,
-    },
-    timestamp: {
-        fontSize: 12,
-        color: Colors.textTertiary,
-        marginLeft: 6,
-    },
-    location: {
-        fontSize: 11,
-        color: Colors.textTertiary,
-    },
     media: {
         width: '100%',
-        height: 280,
+        height: 200,
         backgroundColor: Colors.surfaceElevated,
+    },
+    mediaGradient: {
+        position: 'absolute',
+        left: 0,
+        right: 0,
+        bottom: 0,
+        height: 80,
+    },
+    topBadges: {
+        position: 'absolute',
+        top: 12,
+        left: 12,
+        right: 12,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    categoryChip: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: Radius.pill,
+        borderWidth: 1,
+        borderColor: 'rgba(255,255,255,0.1)',
+    },
+    categoryChipInline: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.surfaceElevated,
+        paddingHorizontal: 10,
+        paddingVertical: 5,
+        borderRadius: Radius.pill,
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    urgencyDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        marginRight: 6,
+    },
+    categoryChipText: {
+        color: '#FFF',
+        fontSize: 11,
+        fontWeight: '700',
+        letterSpacing: 0.3,
+    },
+    textOnlyMedia: {
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.md,
+        paddingBottom: Spacing.xs,
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+    },
+    contentSection: {
+        paddingHorizontal: Spacing.lg,
+        paddingTop: Spacing.md,
+        paddingBottom: Spacing.lg,
+    },
+    authorRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: Spacing.sm,
+    },
+    authorAvatar: {
+        width: 32,
+        height: 32,
+        borderRadius: 10,
+        backgroundColor: Colors.accentSurface,
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: Spacing.sm,
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    authorInitials: {
+        fontSize: 11,
+        fontWeight: '800',
+        color: Colors.accentLight,
+    },
+    authorName: {
+        fontSize: 13,
+        fontWeight: '700',
+        color: Colors.textPrimary,
+    },
+    authorMeta: {
+        fontSize: 11,
+        color: Colors.textTertiary,
+        marginTop: 1,
+    },
+    titleText: {
+        fontSize: 16,
+        fontWeight: '700',
+        color: Colors.textPrimary,
+        lineHeight: 22,
+        marginBottom: Spacing.sm,
+        letterSpacing: -0.2,
+    },
+    metaRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        marginBottom: Spacing.lg,
+        backgroundColor: Colors.surfaceElevated,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
+        borderRadius: Radius.sm,
+        alignSelf: 'flex-start',
+    },
+    metaText: {
+        fontSize: 12,
+        color: Colors.textSecondary,
+        marginLeft: 4,
+        flexShrink: 1,
+        fontWeight: '500',
+    },
+    actionsRow: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        paddingTop: Spacing.sm,
+        borderTopWidth: 1,
+        borderTopColor: Colors.borderSubtle,
+    },
+    socialActions: {
+        flexDirection: 'row',
+        alignItems: 'center',
+    },
+    actionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: Colors.surfaceElevated,
+        paddingHorizontal: 10,
+        paddingVertical: 7,
+        borderRadius: Radius.pill,
+        marginRight: 6,
+        borderWidth: 1,
+        borderColor: Colors.borderSubtle,
+    },
+    actionBtnActive: {
+        backgroundColor: Colors.accentSurface,
+        borderColor: 'rgba(99, 102, 241, 0.3)',
+    },
+    actionCount: {
+        color: Colors.textSecondary,
+        fontSize: 12,
+        fontWeight: '700',
+        marginLeft: 4,
+    },
+    actionCountActive: {
+        color: Colors.accentLight,
+    },
+    primaryActionBtn: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 14,
+        paddingVertical: 9,
+        borderRadius: Radius.pill,
+    },
+    primaryActionBtnActive: {
+        backgroundColor: Colors.successSurface,
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.25)',
+    },
+    markFixedBtn: {
+        backgroundColor: Colors.successSurface,
+        borderWidth: 1,
+        borderColor: 'rgba(16, 185, 129, 0.25)',
+    },
+    primaryActionText: {
+        color: '#FFF',
+        fontSize: 12,
+        fontWeight: '700',
     },
     playOverlay: {
         position: 'absolute',
@@ -429,137 +549,16 @@ const styles = {
         bottom: 0,
         justifyContent: 'center',
         alignItems: 'center',
-        backgroundColor: 'rgba(0,0,0,0.3)',
+        backgroundColor: 'rgba(0,0,0,0.25)',
     },
     playButton: {
-        width: 64,
-        height: 64,
-        borderRadius: 32,
-        backgroundColor: 'rgba(0,0,0,0.6)',
+        width: 56,
+        height: 56,
+        borderRadius: 28,
+        backgroundColor: 'rgba(0,0,0,0.7)',
         justifyContent: 'center',
         alignItems: 'center',
-        paddingLeft: 4,
-    },
-    categoryChip: {
-        position: 'absolute',
-        bottom: 12,
-        left: 12,
-        backgroundColor: 'rgba(10, 14, 26, 0.75)',
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: Radius.sm,
-    },
-    categoryChipInline: {
-        alignSelf: 'flex-start',
-        backgroundColor: Colors.accentSurface,
-        paddingHorizontal: 10,
-        paddingVertical: 4,
-        borderRadius: Radius.sm,
-    },
-    categoryChipText: {
-        color: Colors.textPrimary,
-        fontSize: 11,
-        fontWeight: '700',
-        letterSpacing: 0.3,
-    },
-    textOnlySection: {
-        paddingHorizontal: Spacing.lg,
-        paddingTop: 4,
-        paddingBottom: 8,
-    },
-    actionsBar: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingHorizontal: Spacing.lg,
-        paddingTop: Spacing.md,
-        paddingBottom: Spacing.sm,
-    },
-    actionBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        marginRight: Spacing.xl,
-    },
-    actionCount: {
-        color: Colors.textPrimary,
-        fontSize: 13,
-        fontWeight: '700',
-        marginLeft: 4,
-    },
-    contentSection: {
-        paddingHorizontal: Spacing.lg,
-        paddingBottom: Spacing.lg,
-    },
-    titleText: {
-        fontSize: 15,
-        fontWeight: '700',
-        color: Colors.textPrimary,
-        lineHeight: 21,
-        marginBottom: 4,
-    },
-    descText: {
-        fontSize: 14,
-        color: Colors.textSecondary,
-        lineHeight: 20,
-    },
-    viewComments: {
-        color: Colors.textTertiary,
-        fontSize: 13,
-    },
-    urgencyRow: {
-        marginTop: Spacing.lg,
-        flexDirection: 'row',
-        alignItems: 'center',
-    },
-    urgencyLabel: {
-        fontSize: 11,
-        color: Colors.textTertiary,
-        fontWeight: '700',
-        marginRight: 12,
-        textTransform: 'uppercase',
-        width: 55,
-    },
-    urgencyBar: {
-        height: 4,
-        borderRadius: 2,
-        backgroundColor: Colors.surfaceElevated,
-    },
-    solveBtn: {
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginTop: Spacing.lg,
-        paddingVertical: 12,
-        borderRadius: Radius.sm,
-        backgroundColor: Colors.accent,
-    },
-    solveBtnActive: {
-        backgroundColor: Colors.successSurface,
-        borderWidth: 1,
-        borderColor: Colors.success,
-    },
-    solveBtnText: {
-        color: '#FFF',
-        fontSize: 14,
-        fontWeight: '700',
-    },
-    authorPrompt: {
-        color: Colors.textTertiary,
-        fontSize: 12,
-        marginBottom: 10,
-        textAlign: 'center',
-    },
-    statusBtn: {
-        flex: 1,
-        flexDirection: 'row',
-        alignItems: 'center',
-        justifyContent: 'center',
-        paddingVertical: 10,
-        borderRadius: Radius.sm,
-        borderWidth: 1,
-        marginHorizontal: 4,
-    },
-    statusBtnText: {
-        fontSize: 13,
-        fontWeight: '700',
+        paddingLeft: 3,
     },
 };
+

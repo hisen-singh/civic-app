@@ -39,3 +39,13 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Firebase
+.firebase/
+
+# Build artifacts
+dist_check/
+admin-dashboard/dist/
+
+# Test outputs
+test_output*.txt

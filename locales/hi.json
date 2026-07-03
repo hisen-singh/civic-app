@@ -1,0 +1,31 @@
+{
+  "home": {
+    "pulse": "सामुदायिक स्पंदन",
+    "greeting": "नमस्ते",
+    "search_placeholder": "समस्याएं खोजें...",
+    "new_issues": "नई समस्याएं!",
+    "no_issues": "कोई समस्या नहीं मिली",
+    "tab_feed": "फ़ीड",
+    "tab_critical": "गंभीर",
+    "tab_resolved": "हल हो गई",
+    "tab_mine": "मेरी रिपोर्ट"
+  },
+  "profile": {
+    "title": "प्रोफ़ाइल",
+    "trust_score": "विश्वास स्कोर",
+    "rank": "रैंक",
+    "reported": "रिपोर्ट की गई",
+    "solved": "हल की गई",
+    "edit_profile": "प्रोफ़ाइल संपादित करें",
+    "settings": "सेटिंग्स",
+    "language": "भाषा",
+    "notifications": "सूचनाएं",
+    "sign_out": "साइन आउट"
+  },
+  "report": {
+    "title": "नई रिपोर्ट",
+    "submit": "रिपोर्ट सबमिट करें",
+    "what_issue": "समस्या क्या है?",
+    "description": "समस्या का वर्णन करें"
+  }
+}

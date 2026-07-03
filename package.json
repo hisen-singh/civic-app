@@ -12,7 +12,11 @@
     "test": "jest",
     "prebuild-check": "node scripts/pre-build-check.js",
     "build:preview": "npm run prebuild-check && eas build -p android --profile preview",
-    "build:production": "npm run prebuild-check && eas build -p android --profile production"
+    "build:production": "npm run prebuild-check && eas build -p android --profile production",
+    "test:e2e": "maestro test .maestro/",
+    "admin:dev": "cd admin-dashboard && npm run dev",
+    "admin:build": "cd admin-dashboard && npm run build",
+    "admin:deploy": "npm run admin:build && firebase deploy --only hosting"
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -24,12 +28,15 @@
     "expo": "~54.0.34",
     "expo-image-picker": "~17.0.11",
     "expo-linear-gradient": "~15.0.8",
+    "expo-localization": "^56.0.6",
     "expo-location": "~19.0.8",
     "expo-notifications": "~0.32.17",
     "expo-status-bar": "~3.0.9",
     "firebase": "^12.6.0",
+    "i18next": "^26.3.4",
     "react": "19.1.0",
     "react-dom": "19.1.0",
+    "react-i18next": "^17.0.8",
     "react-native": "0.81.5",
     "react-native-animatable": "^1.4.0",
     "react-native-gesture-handler": "~2.28.0",
@@ -50,15 +57,19 @@
   "type": "commonjs",
   "devDependencies": {
     "@testing-library/react-native": "^14.0.0",
+    "@types/react": "^19.2.17",
+    "@types/react-native": "^0.72.8",
     "babel-preset-expo": "^54.0.6",
     "jest": "^29.7.0",
     "jest-expo": "^56.0.4",
-    "react-test-renderer": "^19.1.0"
+    "react-refresh": "^0.18.0",
+    "react-test-renderer": "^19.1.0",
+    "typescript": "^6.0.3"
   },
   "jest": {
     "preset": "jest-expo",
     "transformIgnorePatterns": [
-      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg)"
+      "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|@sentry/react-native|native-base|react-native-svg|firebase|@firebase)"
     ],
     "moduleNameMapper": {
       "^test-renderer$": "react-test-renderer"

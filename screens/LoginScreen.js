@@ -1,11 +1,10 @@
 import React, { useState, useRef } from 'react';
 import { View, TouchableOpacity, Animated, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
-import { Text, TextInput, Button, ActivityIndicator } from 'react-native-paper';
+import { Text, TextInput, ActivityIndicator } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthService } from '../services/AuthService';
-import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '../config/firebaseConfig';
+import GradientButton from '../components/ui/GradientButton';
 import { Colors, Gradients, Radius, Spacing } from '../theme';
 
 export default function LoginScreen({ navigation }) {
@@ -68,10 +67,12 @@ export default function LoginScreen({ navigation }) {
         setResetLoading(true);
         setErrorMsg('');
         try {
-            await sendPasswordResetEmail(auth, email.trim());
+            await AuthService.resetPassword(email.trim());
             setResetSent(true);
         } catch (error) {
+            console.error('[LoginScreen] Password reset error:', error.code, error.message);
             const msg = error.code === 'auth/user-not-found' ? 'No account found with this email.' :
+                        error.code === 'auth/too-many-requests' ? 'Too many attempts. Please wait a few minutes.' :
                         error.message || 'Failed to send reset email.';
             setErrorMsg(msg);
             shake();
@@ -82,6 +83,8 @@ export default function LoginScreen({ navigation }) {
 
     return (
         <LinearGradient colors={Gradients.authBg} style={{ flex: 1 }}>
+            <View style={styles.bgOrbTop} />
+            <View style={styles.bgOrbBottom} />
             <KeyboardAvoidingView 
                 style={{ flex: 1 }} 
                 behavior={Platform.OS === 'ios' ? 'padding' : undefined}
@@ -91,12 +94,22 @@ export default function LoginScreen({ navigation }) {
                     keyboardShouldPersistTaps="handled"
                 >
                     {/* Branding */}
-                    <View style={{ alignItems: 'center', marginBottom: 48 }}>
-                        <View style={styles.logoContainer}>
-                            <MaterialCommunityIcons name="shield-check" size={32} color={Colors.accent} />
-                        </View>
+                    <View style={{ alignItems: 'center', marginBottom: 40 }}>
+                        <LinearGradient
+                            colors={[Colors.accentSurface, 'rgba(19, 25, 37, 0.8)']}
+                            style={styles.logoContainer}
+                        >
+                            <MaterialCommunityIcons name="shield-check" size={32} color={Colors.accentLight} />
+                        </LinearGradient>
                         <Text style={styles.logoText}>Civic</Text>
                         <Text style={styles.subtitle}>Sign in to your community</Text>
+                        <View style={styles.featureRow}>
+                            {['Report', 'Solve', 'Impact'].map((tag) => (
+                                <View key={tag} style={styles.featureTag}>
+                                    <Text style={styles.featureTagText}>{tag}</Text>
+                                </View>
+                            ))}
+                        </View>
                     </View>
 
                     {/* Form Card */}
@@ -161,18 +174,12 @@ export default function LoginScreen({ navigation }) {
 
 
                         {/* Login Button */}
-                        <TouchableOpacity
+                        <GradientButton
+                            label="Sign In"
                             onPress={handleLogin}
-                            disabled={loading}
-                            activeOpacity={0.85}
-                            style={[styles.primaryBtn, loading && { opacity: 0.7 }]}
-                        >
-                            {loading ? (
-                                <ActivityIndicator color="#FFF" size={20} />
-                            ) : (
-                                <Text style={styles.primaryBtnText}>Sign In</Text>
-                            )}
-                        </TouchableOpacity>
+                            loading={loading}
+                            style={{ marginTop: 4 }}
+                        />
                     </Animated.View>
 
                     {/* Sign Up Link */}
@@ -189,14 +196,33 @@ export default function LoginScreen({ navigation }) {
 }
 
 const styles = {
+    bgOrbTop: {
+        position: 'absolute',
+        top: -80,
+        right: -60,
+        width: 200,
+        height: 200,
+        borderRadius: 100,
+        backgroundColor: 'rgba(99, 102, 241, 0.12)',
+    },
+    bgOrbBottom: {
+        position: 'absolute',
+        bottom: 60,
+        left: -40,
+        width: 160,
+        height: 160,
+        borderRadius: 80,
+        backgroundColor: 'rgba(16, 185, 129, 0.08)',
+    },
     logoContainer: {
-        width: 64,
-        height: 64,
-        borderRadius: 20,
-        backgroundColor: Colors.accentSurface,
+        width: 72,
+        height: 72,
+        borderRadius: 22,
         justifyContent: 'center',
         alignItems: 'center',
         marginBottom: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(99, 102, 241, 0.25)',
     },
     logoText: {
         fontSize: 36,
@@ -208,6 +234,25 @@ const styles = {
     subtitle: {
         fontSize: 15,
         color: Colors.textSecondary,
+        marginBottom: 16,
+    },
+    featureRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    featureTag: {
+        backgroundColor: Colors.surface,
+        paddingHorizontal: 12,
+        paddingVertical: 6,
+        borderRadius: Radius.pill,
+        borderWidth: 1,
+        borderColor: Colors.border,
+    },
+    featureTagText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: Colors.textSecondary,
+        letterSpacing: 0.3,
     },
     formCard: {
         backgroundColor: Colors.surface,
@@ -246,17 +291,5 @@ const styles = {
         fontSize: 13,
         fontWeight: '600',
         flex: 1,
-    },
-    primaryBtn: {
-        backgroundColor: Colors.accent,
-        borderRadius: Radius.md,
-        paddingVertical: 16,
-        alignItems: 'center',
-        justifyContent: 'center',
-    },
-    primaryBtnText: {
-        color: '#FFF',
-        fontSize: 16,
-        fontWeight: '700',
     },
 };

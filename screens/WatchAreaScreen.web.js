@@ -6,6 +6,7 @@ import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } 
 import { db } from '../config/firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Colors, Radius, Spacing } from '../theme';
 
 export default function WatchAreaScreen() {
     const { user } = useAuth();
@@ -93,7 +94,7 @@ export default function WatchAreaScreen() {
     if (loading && !isCreating) {
         return (
             <View style={[styles.container, { justifyContent: 'center', alignItems: 'center' }]}>
-                <ActivityIndicator size="large" color="#3B82F6" />
+                <ActivityIndicator size="large" color={Colors.accent} />
             </View>
         );
     }
@@ -102,7 +103,7 @@ export default function WatchAreaScreen() {
         return (
             <View style={styles.container}>
                 <View style={styles.header}>
-                    <IconButton icon="arrow-left" iconColor="#F8FAFC" size={24} onPress={() => setIsCreating(false)} />
+                    <IconButton icon="arrow-left" iconColor={Colors.textPrimary} size={24} onPress={() => setIsCreating(false)} />
                     <Text style={styles.headerTitle}>Set Watch Area</Text>
                     <View style={{ width: 48 }} />
                 </View>
@@ -110,9 +111,9 @@ export default function WatchAreaScreen() {
                 <Text style={styles.helperText}>Map selection not supported on web mockup.</Text>
 
                 <View style={styles.mapContainer}>
-                    <View style={{ flex: 1, backgroundColor: '#1E293B', justifyContent: 'center', alignItems: 'center' }}>
-                        <Text style={{ color: '#94A3B8' }}>Interactive Map requires Native App.</Text>
-                        <Text style={{ color: '#94A3B8', marginTop: 8 }}>Will save to default location.</Text>
+                    <View style={{ flex: 1, backgroundColor: Colors.surfaceElevated, justifyContent: 'center', alignItems: 'center' }}>
+                        <Text style={{ color: Colors.textSecondary }}>Interactive Map requires Native App.</Text>
+                        <Text style={{ color: Colors.textSecondary, marginTop: 8 }}>Will save to default location.</Text>
                     </View>
                 </View>
 
@@ -124,8 +125,8 @@ export default function WatchAreaScreen() {
                                 key={r}
                                 mode={radius === r ? "contained" : "outlined"}
                                 onPress={() => setRadius(r)}
-                                buttonColor={radius === r ? "#3B82F6" : undefined}
-                                textColor={radius === r ? "#FFF" : "#94A3B8"}
+                                buttonColor={radius === r ? Colors.accent : undefined}
+                                textColor={radius === r ? "#FFF" : Colors.textSecondary}
                                 style={styles.radiusBtn}
                             >
                                 {r/1000}km
@@ -136,7 +137,7 @@ export default function WatchAreaScreen() {
                     <Button 
                         mode="contained" 
                         onPress={handleSaveArea}
-                        buttonColor="#10B981"
+                        buttonColor={Colors.success}
                         style={styles.saveBtn}
                         labelStyle={{ fontSize: 16, fontWeight: '700' }}
                     >
@@ -150,8 +151,8 @@ export default function WatchAreaScreen() {
     return (
         <View style={styles.container}>
             <View style={styles.header}>
-                <IconButton icon="arrow-left" iconColor="#F8FAFC" size={24} onPress={() => navigation.goBack()} />
-                <Text style={styles.headerTitle}>My Watch Areas</Text>
+                <IconButton icon="arrow-left" iconColor={Colors.textPrimary} size={24} onPress={() => navigation.goBack()} />
+                <Text style={styles.headerTitle}>Watch Areas</Text>
                 <View style={{ width: 48 }} />
             </View>
 
@@ -162,7 +163,7 @@ export default function WatchAreaScreen() {
 
                 {watchAreas.length === 0 ? (
                     <View style={styles.emptyState}>
-                        <Text style={{ fontSize: 48, marginBottom: 16 }}>📍</Text>
+                        <Text style={{ fontSize: 48, marginBottom: Spacing.lg }}>📍</Text>
                         <Text style={styles.emptyTitle}>No Watch Areas</Text>
                         <Text style={styles.emptyDesc}>Set up areas like "Home" or "Office" to stay informed about local issues.</Text>
                     </View>
@@ -172,7 +173,7 @@ export default function WatchAreaScreen() {
                             <Card.Content style={styles.areaContent}>
                                 <View style={styles.areaInfo}>
                                     <View style={{ flexDirection: 'row', alignItems: 'center', marginBottom: 4 }}>
-                                        <MaterialCommunityIcons name="map-marker-radius" size={20} color="#818CF8" />
+                                        <MaterialCommunityIcons name="map-marker-radius" size={20} color={Colors.accentLight} />
                                         <Text style={styles.areaTitle}> Tracked Area</Text>
                                     </View>
                                     <Text style={styles.areaSub}>Radius: {(area.radius / 1000).toFixed(1)} km</Text>
@@ -182,11 +183,11 @@ export default function WatchAreaScreen() {
                                     <Switch 
                                         value={area.active} 
                                         onValueChange={() => toggleAreaStatus(area.id, area.active)} 
-                                        color="#10B981"
+                                        color={Colors.success}
                                     />
                                     <IconButton 
                                         icon="trash-can-outline" 
-                                        iconColor="#EF4444" 
+                                        iconColor={Colors.error} 
                                         size={20} 
                                         onPress={() => handleDeleteArea(area.id)} 
                                     />
@@ -200,7 +201,7 @@ export default function WatchAreaScreen() {
                     mode="contained" 
                     icon="plus" 
                     onPress={() => setIsCreating(true)}
-                    buttonColor="#3B82F6"
+                    buttonColor={Colors.accent}
                     style={styles.addBtn}
                 >
                     Add Watch Area
@@ -210,9 +211,9 @@ export default function WatchAreaScreen() {
                 visible={snackbarVisible}
                 onDismiss={() => setSnackbarVisible(false)}
                 duration={3000}
-                style={{ backgroundColor: '#1E293B' }}
+                style={{ backgroundColor: Colors.surfaceElevated, borderRadius: Radius.md }}
             >
-                {snackbarMsg}
+                <Text style={{ color: Colors.textPrimary }}>{snackbarMsg}</Text>
             </Snackbar>
         </View>
     );
@@ -221,67 +222,67 @@ export default function WatchAreaScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0F172A',
+        backgroundColor: Colors.background,
     },
     header: {
         flexDirection: 'row',
         alignItems: 'center',
         justifyContent: 'space-between',
-        paddingTop: 50,
-        paddingBottom: 16,
-        paddingHorizontal: 8,
-        backgroundColor: '#1E293B',
+        paddingTop: Spacing.headerTop,
+        paddingBottom: Spacing.lg,
+        paddingHorizontal: Spacing.sm,
+        backgroundColor: Colors.surface,
         borderBottomWidth: 1,
-        borderBottomColor: 'rgba(255,255,255,0.05)'
+        borderBottomColor: Colors.border,
     },
     headerTitle: {
         fontSize: 20,
         fontWeight: '700',
-        color: '#F8FAFC',
+        color: Colors.textPrimary,
     },
     listContainer: {
         flex: 1,
-        padding: 16,
+        padding: Spacing.lg,
     },
     description: {
-        color: '#94A3B8',
+        color: Colors.textSecondary,
         fontSize: 14,
-        marginBottom: 24,
+        marginBottom: Spacing.xxl,
         lineHeight: 20,
     },
     emptyState: {
         alignItems: 'center',
         justifyContent: 'center',
         paddingVertical: 48,
-        backgroundColor: '#1E293B',
-        borderRadius: 16,
-        marginBottom: 24,
+        backgroundColor: Colors.surface,
+        borderRadius: Radius.lg,
+        marginBottom: Spacing.xxl,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.05)',
+        borderColor: Colors.border,
     },
     emptyTitle: {
         fontSize: 18,
         fontWeight: '700',
-        color: '#F8FAFC',
-        marginBottom: 8,
+        color: Colors.textPrimary,
+        marginBottom: Spacing.sm,
     },
     emptyDesc: {
         fontSize: 14,
-        color: '#94A3B8',
+        color: Colors.textSecondary,
         textAlign: 'center',
         paddingHorizontal: 32,
     },
     addBtn: {
-        borderRadius: 12,
+        borderRadius: Radius.md,
         paddingVertical: 6,
-        marginTop: 8,
+        marginTop: Spacing.sm,
     },
     areaCard: {
-        backgroundColor: '#1E293B',
-        marginBottom: 16,
-        borderRadius: 16,
+        backgroundColor: Colors.surface,
+        marginBottom: Spacing.lg,
+        borderRadius: Radius.lg,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.05)',
+        borderColor: Colors.border,
     },
     areaContent: {
         flexDirection: 'row',
@@ -294,11 +295,11 @@ const styles = StyleSheet.create({
     areaTitle: {
         fontSize: 16,
         fontWeight: '700',
-        color: '#F8FAFC',
+        color: Colors.textPrimary,
     },
     areaSub: {
         fontSize: 13,
-        color: '#94A3B8',
+        color: Colors.textSecondary,
         marginTop: 2,
     },
     areaActions: {
@@ -308,41 +309,41 @@ const styles = StyleSheet.create({
     mapContainer: {
         flex: 1,
         position: 'relative',
-        borderRadius: 16,
+        borderRadius: Radius.lg,
         overflow: 'hidden',
-        marginHorizontal: 16,
-        marginBottom: 16,
+        marginHorizontal: Spacing.lg,
+        marginBottom: Spacing.lg,
         borderWidth: 1,
-        borderColor: 'rgba(255,255,255,0.1)'
+        borderColor: Colors.border,
     },
     helperText: {
-        color: '#94A3B8',
+        color: Colors.textSecondary,
         fontSize: 14,
         textAlign: 'center',
-        padding: 16,
+        padding: Spacing.lg,
     },
     controlsContainer: {
-        padding: 24,
-        backgroundColor: '#1E293B',
-        borderTopLeftRadius: 24,
-        borderTopRightRadius: 24,
+        padding: Spacing.xxl,
+        backgroundColor: Colors.surface,
+        borderTopLeftRadius: Radius.xl,
+        borderTopRightRadius: Radius.xl,
     },
     label: {
-        color: '#F8FAFC',
+        color: Colors.textPrimary,
         fontSize: 16,
         fontWeight: '600',
-        marginBottom: 12,
+        marginBottom: Spacing.md,
     },
     radiusButtons: {
         flexDirection: 'row',
         justifyContent: 'space-between',
-        marginBottom: 24,
+        marginBottom: Spacing.xxl,
     },
     radiusBtn: {
-        borderRadius: 20,
+        borderRadius: Radius.xl,
     },
     saveBtn: {
-        borderRadius: 12,
+        borderRadius: Radius.md,
         paddingVertical: 8,
-    }
+    },
 });

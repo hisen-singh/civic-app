@@ -17,8 +17,15 @@ jest.mock('firebase/firestore', () => ({
   serverTimestamp: jest.fn(),
 }));
 
+jest.mock('firebase/storage', () => ({
+  ref: jest.fn(),
+  uploadBytes: jest.fn(),
+  getDownloadURL: jest.fn(),
+}));
+
 jest.mock('../config/firebaseConfig', () => ({
-  db: {}
+  db: {},
+  storage: {}
 }));
 
 describe('IssueService cache and validation', () => {
@@ -62,10 +69,17 @@ describe('IssueService cache and validation', () => {
     expect(call2).toEqual(call3);
   });
 
-  test('addIssue rejects photos larger than 700KB to stay under Firestore limit', async () => {
-    const largePhoto = 'a'.repeat(700001); // Simulate a string > 700KB
-    await expect(IssueService.addIssue({ title: 'Giant Photo Issue', photo: largePhoto }))
-      .rejects.toThrow('Photo is too large');
+  test('addIssue returns object with default properties (votes, voters, solvers)', async () => {
+    addDoc.mockResolvedValueOnce({ id: 'new-1' });
+
+    const result = await IssueService.addIssue({ title: 'Test Issue', authorId: 'u1' });
+    
+    expect(result.id).toBe('new-1');
+    expect(result.votes).toBe(0);
+    expect(result.voters).toEqual([]);
+    expect(result.solvers).toEqual([]);
+    expect(result.commentsCount).toBe(0);
+    expect(result.createdAt).toBeDefined();
   });
 
   test('addIssue invalidates cache so new issues show up immediately', async () => {

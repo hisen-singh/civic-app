@@ -1,10 +1,18 @@
 import 'react-native-gesture-handler';
+import './config/i18n';
 import React, { useCallback, useRef, useEffect, useState } from 'react';
 import * as Sentry from '@sentry/react-native';
+import * as Notifications from 'expo-notifications';
 
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: false,
+  }),
+});
 Sentry.init({
-  dsn: 'https://d5b01a64380af12501ef47bdc7b3df95@o4511522407383040.ingest.us.sentry.io/4511522411511808', // Get from sentry.io (free tier)
-  enableInExpoDevelopment: false,
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '', 
   debug: false,
 });
 import { View, Text, Animated } from 'react-native';
@@ -12,10 +20,11 @@ import { NavigationContainer } from '@react-navigation/native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createStackNavigator } from '@react-navigation/stack';
 import { Provider as PaperProvider, DefaultTheme, ActivityIndicator } from 'react-native-paper';
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
 import * as Font from 'expo-font';
-import { Colors, Radius } from './theme';
+import { Colors, Radius, Shadows } from './theme';
 
 // Screens
 import HomeScreen from './screens/HomeScreen';
@@ -26,8 +35,11 @@ import LoginScreen from './screens/LoginScreen';
 import SignupScreen from './screens/SignupScreen';
 import ReportIssueScreen from './screens/ReportIssueScreen';
 import IssueDetailScreen from './screens/IssueDetailScreen';
+import SolveScreen from './screens/SolveScreen';
 import WatchAreaScreen from './screens/WatchAreaScreen';
 import NotificationsScreen from './screens/NotificationsScreen';
+import EditProfileScreen from './screens/EditProfileScreen';
+import AnalyticsScreen from './screens/AnalyticsScreen';
 
 // Auth
 import { AuthProvider, useAuth } from './contexts/AuthContext';
@@ -50,51 +62,28 @@ const theme = {
   },
 };
 
-// ─── Error Boundary ──────────────────────────────────────────────────────────
-// Catches render-time JS crashes so the whole app doesn't die
-class ErrorBoundary extends React.Component {
-  state = { hasError: false, error: null };
-
-  static getDerivedStateFromError(error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error, info) {
-    console.error('[ErrorBoundary]', error, info);
-  }
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: Colors.background, padding: 32 }}>
-          <MaterialCommunityIcons name="alert-circle-outline" size={56} color={Colors.error} style={{ marginBottom: 20 }} />
-          <Text style={{ fontSize: 20, fontWeight: '700', color: Colors.textPrimary, textAlign: 'center', marginBottom: 12 }}>
-            Something went wrong
-          </Text>
-          <Text style={{ fontSize: 14, color: Colors.textSecondary, textAlign: 'center', lineHeight: 20, marginBottom: 24 }}>
-            The app encountered an unexpected error. Please restart.
-          </Text>
-          <Text style={{ fontSize: 11, color: Colors.textTertiary, textAlign: 'center', fontFamily: 'monospace' }}>
-            {this.state.error?.message?.substring(0, 120)}
-          </Text>
-        </View>
-      );
-    }
-    return this.props.children;
-  }
-}
+import ErrorBoundary from './components/ErrorBoundary';
 
 // ─── Custom Tab Bar Icon with Active Indicator ────────────────────────────────
 function TabIcon({ name, color, focused }) {
   return (
-    <View style={{ alignItems: 'center', justifyContent: 'center' }}>
-      <MaterialCommunityIcons name={name} color={color} size={26} />
+    <View style={{ alignItems: 'center', justifyContent: 'center', minWidth: 48 }}>
+      <View style={{
+        width: focused ? 40 : 36,
+        height: focused ? 40 : 36,
+        borderRadius: focused ? 14 : 12,
+        backgroundColor: focused ? Colors.accentSurface : 'transparent',
+        alignItems: 'center',
+        justifyContent: 'center',
+      }}>
+        <MaterialCommunityIcons name={name} color={focused ? Colors.accentLight : color} size={focused ? 24 : 22} />
+      </View>
       {focused && (
         <View style={{
-          width: 5,
-          height: 5,
-          borderRadius: 2.5,
-          backgroundColor: Colors.accent,
+          width: 4,
+          height: 4,
+          borderRadius: 2,
+          backgroundColor: Colors.accentLight,
           marginTop: 4,
         }} />
       )}
@@ -106,6 +95,8 @@ import { useNavigation } from '@react-navigation/native';
 
 function MainTabs() {
   const navigation = useNavigation();
+  const insets = useSafeAreaInsets();
+  const tabBarHeight = 64 + Math.max(insets.bottom, 8);
 
   return (
     <View style={{ flex: 1, backgroundColor: Colors.background }}>
@@ -113,20 +104,23 @@ function MainTabs() {
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: Colors.background,
+            backgroundColor: Colors.surface,
             borderTopWidth: 1,
             borderTopColor: Colors.border,
             elevation: 0,
-            height: 68,
-            paddingBottom: 12,
+            height: tabBarHeight,
+            paddingBottom: Math.max(insets.bottom, 8),
             paddingTop: 8,
+            paddingHorizontal: 8,
+            ...Shadows.subtle,
           },
-          tabBarActiveTintColor: Colors.textPrimary,
+          tabBarActiveTintColor: Colors.accentLight,
           tabBarInactiveTintColor: Colors.tabInactive,
           tabBarLabelStyle: {
-            fontSize: 11,
-            fontWeight: '600',
-            marginTop: 0,
+            fontSize: 10,
+            fontWeight: '700',
+            marginTop: 2,
+            letterSpacing: 0.2,
           },
           tabBarHideOnKeyboard: true,
         }}
@@ -150,13 +144,53 @@ function MainTabs() {
             ),
           }}
         />
+        
+        <Tab.Screen
+          name="Add"
+          component={HomeScreen} // Dummy component
+          listeners={({ navigation }) => ({
+            tabPress: e => {
+              e.preventDefault();
+              navigation.navigate('ReportIssue');
+            },
+          })}
+          options={{
+            tabBarLabel: '',
+            tabBarIcon: () => (
+              <View style={{
+                width: 52,
+                height: 52,
+                borderRadius: 26,
+                marginTop: -8,
+                overflow: 'hidden',
+                ...Shadows.fab,
+              }}>
+                <LinearGradient
+                  colors={[Colors.accentDark, Colors.accent, Colors.accentLight]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={{
+                    flex: 1,
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                    borderWidth: 3,
+                    borderColor: Colors.surface,
+                    borderRadius: 26,
+                  }}
+                >
+                  <MaterialCommunityIcons name="plus" color="#FFF" size={28} />
+                </LinearGradient>
+              </View>
+            ),
+          }}
+        />
 
         <Tab.Screen
-          name="Impact"
-          component={LeaderboardScreen}
+          name="Solve"
+          component={SolveScreen}
           options={{
             tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="chart-timeline-variant-shimmer" color={color} focused={focused} />
+              <TabIcon name="hand-heart-outline" color={color} focused={focused} />
             ),
           }}
         />
@@ -191,6 +225,9 @@ function AppStack() {
       <Stack.Screen name="IssueDetail" component={IssueDetailScreen} />
       <Stack.Screen name="WatchArea" component={WatchAreaScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
+      <Stack.Screen name="EditProfile" component={EditProfileScreen} />
+      <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
+      <Stack.Screen name="Analytics" component={AnalyticsScreen} />
     </Stack.Navigator>
   );
 }
@@ -223,6 +260,8 @@ function SplashScreen() {
   );
 }
 
+import VerifyEmailScreen from './screens/VerifyEmailScreen';
+
 function AppContent() {
   const { user, loading } = useAuth();
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -245,6 +284,15 @@ function AppContent() {
 
   if (loading || !showApp) {
     return <SplashScreen />;
+  }
+
+  // Auth Guard: Enforce email verification
+  if (user && !user.emailVerified) {
+    return (
+      <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+        <VerifyEmailScreen />
+      </Animated.View>
+    );
   }
 
   return (

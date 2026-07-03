@@ -1,12 +1,14 @@
 import React, { useState, useRef } from 'react';
 import { View, ScrollView, Alert, TouchableOpacity, Image, KeyboardAvoidingView, Platform, Animated } from 'react-native';
-import { Text, TextInput, IconButton, ActivityIndicator } from 'react-native-paper';
+import { Text, TextInput, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IssueService } from '../services/IssueService';
 import { useAuth } from '../contexts/AuthContext';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
+import { CATEGORIES, CATEGORY_GROUPS, getCategoriesByGroup } from '../data/categories';
 import { Colors, Gradients, Radius, Spacing, Shadows } from '../theme';
+import { detectUrgency, URGENCY_LEVELS } from '../utils/urgencyDetector';
 
 export default function ReportIssueScreen({ navigation }) {
     const { user } = useAuth();
@@ -20,8 +22,24 @@ export default function ReportIssueScreen({ navigation }) {
     const [isFetchingLocation, setIsFetchingLocation] = useState(false);
     const [coords, setCoords] = useState(null);
     const [photo, setPhoto] = useState(null);
+    const [urgency, setUrgency] = useState('medium');
+    const [autoDetected, setAutoDetected] = useState(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const submitScale = useRef(new Animated.Value(1)).current;
+    const [expandedGroup, setExpandedGroup] = useState('infrastructure');
+
+    // Auto-detect urgency from title + description
+    React.useEffect(() => {
+        if (title.length >= 3 || description.length >= 5) {
+            const result = detectUrgency(title, description);
+            setAutoDetected(result);
+            if (result.confidence !== 'low') {
+                setUrgency(result.urgency);
+            }
+        } else {
+            setAutoDetected(null);
+        }
+    }, [title, description]);
 
     React.useEffect(() => {
         Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();
@@ -32,8 +50,7 @@ export default function ReportIssueScreen({ navigation }) {
             mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [4, 3],
-            quality: 0.25,
-            base64: true,
+            quality: 0.5,
         });
         if (!result.canceled) {
             setPhoto(result.assets[0]);
@@ -49,8 +66,7 @@ export default function ReportIssueScreen({ navigation }) {
         const result = await ImagePicker.launchCameraAsync({
             allowsEditing: true,
             aspect: [4, 3],
-            quality: 0.25,
-            base64: true,
+            quality: 0.5,
         });
         if (!result.canceled) {
             setPhoto(result.assets[0]);
@@ -140,18 +156,7 @@ export default function ReportIssueScreen({ navigation }) {
         }
     };
 
-    const categories = [
-        { name: 'Pothole', icon: 'road-variant' },
-        { name: 'Graffiti', icon: 'spray' },
-        { name: 'Litter', icon: 'trash-can-outline' },
-        { name: 'Lighting', icon: 'lightbulb-outline' },
-        { name: 'Sanitation', icon: 'broom' },
-        { name: 'Water Supply', icon: 'water-outline' },
-        { name: 'Sewage', icon: 'pipe-leak' },
-        { name: 'Women Safety', icon: 'shield-alert-outline' },
-        { name: 'Environment', icon: 'tree-outline' },
-        { name: 'Other', icon: 'dots-horizontal-circle-outline' },
-    ];
+    const categories = CATEGORIES;
 
     // Progress calculation
     const getProgress = () => {
@@ -194,19 +199,24 @@ export default function ReportIssueScreen({ navigation }) {
         setErrorMsg('');
 
         try {
+            let photoUrl = null;
+            if (photo && photo.uri) {
+                photoUrl = await IssueService.uploadImage(photo.uri);
+            }
+
             await IssueService.addIssue({
                 title: title.trim(),
                 description: description.trim(),
                 category,
                 status: 'Open',
-                urgency: 'medium',
+                urgency: urgency,
                 location: locationStr,
                 latitude: coords ? coords.latitude : null,
                 longitude: coords ? coords.longitude : null,
                 authorId: user?.uid || 'anonymous',
                 authorName: user?.displayName || 'Citizen',
                 youtubeUrl: youtubeUrl.trim(),
-                photo: photo?.base64 ? `data:image/jpeg;base64,${photo.base64}` : null,
+                photo: photoUrl,
             });
             navigation.goBack();
         } catch (error) {
@@ -316,6 +326,54 @@ export default function ReportIssueScreen({ navigation }) {
                     <View style={styles.charCount}>
                         <Text style={styles.charCountText}>{description.length} characters</Text>
                     </View>
+                </View>
+
+                {/* Section: Urgency */}
+                <View style={styles.section}>
+                    <View style={styles.sectionHeader}>
+                        <View style={[styles.sectionDot, urgency !== 'low' && styles.sectionDotActive]} />
+                        <Text style={styles.sectionLabel}>Urgency Level</Text>
+                        {autoDetected && autoDetected.confidence !== 'low' && (
+                            <View style={styles.autoDetectBadge}>
+                                <MaterialCommunityIcons name="lightning-bolt" size={10} color={Colors.warning} style={{ marginRight: 3 }} />
+                                <Text style={styles.autoDetectText}>AUTO-DETECTED</Text>
+                            </View>
+                        )}
+                    </View>
+                    <View style={{ marginBottom: Spacing.sm }}>
+                        {URGENCY_LEVELS.map((level) => {
+                            const isActive = urgency === level.id;
+                            return (
+                                <TouchableOpacity
+                                    key={level.id}
+                                    onPress={() => setUrgency(level.id)}
+                                    activeOpacity={0.7}
+                                    style={[styles.urgencyRow, isActive && { backgroundColor: level.bg, borderColor: level.color + '40' }]}
+                                >
+                                    <View style={[styles.urgencyIconWrap, { backgroundColor: isActive ? level.bg : Colors.surfaceElevated }]}>
+                                        <MaterialCommunityIcons name={level.icon} size={18} color={isActive ? level.color : Colors.textTertiary} />
+                                    </View>
+                                    <View style={{ flex: 1 }}>
+                                        <Text style={[styles.urgencyLabel, isActive && { color: level.color }]}>{level.label}</Text>
+                                        <Text style={styles.urgencyDesc}>{level.desc}</Text>
+                                    </View>
+                                    {isActive && (
+                                        <View style={[styles.urgencyCheck, { backgroundColor: level.color }]}>
+                                            <MaterialCommunityIcons name="check" size={12} color="#FFF" />
+                                        </View>
+                                    )}
+                                </TouchableOpacity>
+                            );
+                        })}
+                    </View>
+                    {autoDetected && autoDetected.matchedKeyword && (
+                        <View style={styles.detectedHint}>
+                            <MaterialCommunityIcons name="information-outline" size={14} color={Colors.textTertiary} style={{ marginRight: 6 }} />
+                            <Text style={styles.detectedHintText}>
+                                Detected keyword: "{autoDetected.matchedKeyword}"
+                            </Text>
+                        </View>
+                    )}
                 </View>
 
                 {/* Section: Location */}
@@ -720,4 +778,29 @@ const styles = {
         marginTop: Spacing.md,
         lineHeight: 16,
     },
+    urgencyRow: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: Colors.surface, padding: 14, borderRadius: Radius.sm,
+        marginBottom: 8, borderWidth: 1, borderColor: Colors.border,
+    },
+    urgencyIconWrap: {
+        width: 32, height: 32, borderRadius: 10,
+        justifyContent: 'center', alignItems: 'center', marginRight: 12,
+    },
+    urgencyLabel: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 1 },
+    urgencyDesc: { fontSize: 11, color: Colors.textTertiary },
+    urgencyCheck: {
+        width: 22, height: 22, borderRadius: 7,
+        justifyContent: 'center', alignItems: 'center',
+    },
+    autoDetectBadge: {
+        flexDirection: 'row', alignItems: 'center', marginLeft: 'auto',
+        backgroundColor: Colors.warningSurface, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
+    },
+    autoDetectText: { fontSize: 9, fontWeight: '800', color: Colors.warning, letterSpacing: 0.5 },
+    detectedHint: {
+        flexDirection: 'row', alignItems: 'center',
+        backgroundColor: Colors.surfaceElevated, padding: 10, borderRadius: Radius.sm,
+    },
+    detectedHintText: { fontSize: 12, color: Colors.textTertiary, fontStyle: 'italic' },
 };

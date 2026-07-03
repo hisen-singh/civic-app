@@ -1,0 +1,31 @@
+{
+  "home": {
+    "pulse": "COMMUNITY PULSE",
+    "greeting": "Hi",
+    "search_placeholder": "Search issues...",
+    "new_issues": "New issues!",
+    "no_issues": "No issues found",
+    "tab_feed": "Feed",
+    "tab_critical": "Critical",
+    "tab_resolved": "Resolved",
+    "tab_mine": "My Reports"
+  },
+  "profile": {
+    "title": "Profile",
+    "trust_score": "Trust Score",
+    "rank": "Rank",
+    "reported": "Reported",
+    "solved": "Solved",
+    "edit_profile": "Edit Profile",
+    "settings": "Settings",
+    "language": "Language",
+    "notifications": "Notifications",
+    "sign_out": "Sign Out"
+  },
+  "report": {
+    "title": "New Report",
+    "submit": "Submit Report",
+    "what_issue": "What's the issue?",
+    "description": "Describe the issue"
+  }
+}

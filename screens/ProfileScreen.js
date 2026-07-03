@@ -1,14 +1,18 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, ScrollView, TouchableOpacity, Animated, RefreshControl } from 'react-native';
+import { View, ScrollView, TouchableOpacity, Animated, RefreshControl, Image } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
 import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
 import { AuthService } from '../services/AuthService';
 import { useAuth } from '../contexts/AuthContext';
 import { IssueService } from '../services/IssueService';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { Colors, Radius, Spacing, Shadows } from '../theme';
+import AnimatedPressable from '../components/ui/AnimatedPressable';
+import { Colors, Radius, Spacing, Shadows, Gradients } from '../theme';
 
 export default function ProfileScreen() {
+    const { t, i18n } = useTranslation();
     const { user } = useAuth();
     const navigation = useNavigation();
     const [stats, setStats] = useState({ 
@@ -134,11 +138,27 @@ export default function ProfileScreen() {
 
     const settingsItems = [
         { 
+            title: 'Community Impact', 
+            desc: 'Leaderboard, rankings & trending issues', 
+            icon: 'chart-timeline-variant-shimmer', 
+            iconBg: Colors.successSurface, 
+            iconColor: Colors.success,
+            onPress: () => navigation.navigate('Analytics'),
+        },
+        { 
+            title: 'Edit Profile', 
+            desc: 'Photo, name & account settings', 
+            icon: 'account-edit-outline', 
+            iconBg: Colors.accentSurface, 
+            iconColor: Colors.accent,
+            onPress: () => navigation.navigate('EditProfile'),
+        },
+        { 
             title: 'Watch Areas', 
             desc: 'Neighborhood alerts & tracking', 
             icon: 'map-marker-radius', 
-            iconBg: Colors.accentSurface, 
-            iconColor: Colors.accent,
+            iconBg: 'rgba(59, 130, 246, 0.12)', 
+            iconColor: Colors.info,
             onPress: () => navigation.navigate('WatchArea'),
         },
         { 
@@ -148,6 +168,14 @@ export default function ProfileScreen() {
             iconBg: Colors.warningSurface, 
             iconColor: Colors.warning,
             onPress: () => navigation.navigate('Notifications'),
+        },
+        { 
+            title: t('profile.language', 'Language'), 
+            desc: i18n.language === 'en' ? 'English (Switch to Hindi)' : 'हिन्दी (Switch to English)', 
+            icon: 'translate', 
+            iconBg: Colors.surfaceElevated, 
+            iconColor: Colors.textSecondary,
+            onPress: () => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en'),
         },
     ];
 
@@ -164,24 +192,41 @@ export default function ProfileScreen() {
                 />
             }
             showsVerticalScrollIndicator={false}
+            contentContainerStyle={{ paddingBottom: 120, maxWidth: 800, alignSelf: 'center', width: '100%' }}
         >
             {/* Profile Header */}
-            <View style={styles.headerSection}>
+            <LinearGradient colors={Gradients.heroCard} style={styles.headerSection}>
                 <View style={styles.avatarRow}>
-                    <View style={styles.avatar}>
-                        <Text style={styles.avatarText}>{initials}</Text>
-                    </View>
+                    <AnimatedPressable onPress={() => navigation.navigate('EditProfile')} activeScale={0.95}>
+                        <View style={styles.avatarRing}>
+                            {user?.photoURL ? (
+                                <Image source={{ uri: user.photoURL }} style={styles.avatar} />
+                            ) : (
+                                <LinearGradient
+                                    colors={[Colors.accentDark, Colors.accentLight]}
+                                    style={styles.avatar}
+                                >
+                                    <Text style={styles.avatarText}>{initials}</Text>
+                                </LinearGradient>
+                            )}
+                        </View>
+                    </AnimatedPressable>
                     <View style={{ flex: 1, marginLeft: Spacing.lg }}>
                         <Text style={styles.displayName}>{displayName}</Text>
                         <Text style={styles.email}>{user?.email || ''}</Text>
                         {joinDate ? <Text style={styles.joinDate}>Member since {joinDate}</Text> : null}
                     </View>
+                    <AnimatedPressable onPress={() => navigation.navigate('EditProfile')} activeScale={0.92}>
+                        <View style={styles.editBtn}>
+                            <MaterialCommunityIcons name="pencil-outline" size={18} color={Colors.accentLight} />
+                        </View>
+                    </AnimatedPressable>
                 </View>
 
                 {/* Stats Row */}
                 <View style={styles.statsRow}>
                     <View style={styles.statItem}>
-                        <Text style={[styles.statValue, { color: Colors.accent }]}>{trustScore}</Text>
+                        <Text style={[styles.statValue, { color: Colors.accentLight }]}>{trustScore}</Text>
                         <Text style={styles.statLabel}>Trust Score</Text>
                     </View>
                     <View style={styles.statDivider} />
@@ -200,7 +245,7 @@ export default function ProfileScreen() {
                         <Text style={styles.statLabel}>Solved</Text>
                     </View>
                 </View>
-            </View>
+            </LinearGradient>
 
             <View style={{ paddingHorizontal: Spacing.xl, paddingVertical: Spacing.xxl }}>
                 {/* Activity Cards */}
@@ -259,21 +304,23 @@ export default function ProfileScreen() {
                 {/* Settings */}
                 <Text style={styles.sectionTitle}>Settings</Text>
                 {settingsItems.map((item, index) => (
-                    <TouchableOpacity 
+                    <AnimatedPressable
                         key={item.title}
-                        style={[styles.settingsRow, index < settingsItems.length - 1 && { marginBottom: Spacing.sm }]}
                         onPress={item.onPress}
-                        activeOpacity={0.7}
+                        activeScale={0.98}
+                        style={{ marginBottom: index < settingsItems.length - 1 ? Spacing.sm : Spacing.xxxl }}
                     >
-                        <View style={[styles.settingsIcon, { backgroundColor: item.iconBg }]}>
-                            <MaterialCommunityIcons name={item.icon} size={20} color={item.iconColor} />
+                        <View style={styles.settingsRow}>
+                            <View style={[styles.settingsIcon, { backgroundColor: item.iconBg }]}>
+                                <MaterialCommunityIcons name={item.icon} size={20} color={item.iconColor} />
+                            </View>
+                            <View style={{ flex: 1 }}>
+                                <Text style={styles.settingsTitle}>{item.title}</Text>
+                                <Text style={styles.settingsDesc}>{item.desc}</Text>
+                            </View>
+                            <MaterialCommunityIcons name="chevron-right" size={20} color={Colors.textTertiary} />
                         </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={styles.settingsTitle}>{item.title}</Text>
-                            <Text style={styles.settingsDesc}>{item.desc}</Text>
-                        </View>
-                        <MaterialCommunityIcons name="chevron-right" size={20} color={Colors.textTertiary} />
-                    </TouchableOpacity>
+                    </AnimatedPressable>
                 ))}
 
                 {/* Logout */}
@@ -283,7 +330,7 @@ export default function ProfileScreen() {
                     style={styles.logoutBtn}
                 >
                     <MaterialCommunityIcons name="logout" size={18} color={Colors.error} style={{ marginRight: 8 }} />
-                    <Text style={styles.logoutText}>Sign Out</Text>
+                    <Text style={styles.logoutText}>{t('profile.sign_out', 'Sign Out')}</Text>
                 </TouchableOpacity>
 
                 <Text style={styles.versionText}>Civic v1.0</Text>
@@ -295,7 +342,6 @@ export default function ProfileScreen() {
 
 const styles = {
     headerSection: {
-        backgroundColor: Colors.surface,
         paddingHorizontal: Spacing.xl,
         paddingTop: Spacing.headerTop + 16,
         paddingBottom: Spacing.xxl,
@@ -306,6 +352,12 @@ const styles = {
         flexDirection: 'row',
         alignItems: 'center',
         marginBottom: Spacing.xxl,
+    },
+    avatarRing: {
+        padding: 3,
+        borderRadius: 26,
+        borderWidth: 2,
+        borderColor: 'rgba(99, 102, 241, 0.4)',
     },
     avatar: {
         width: 68,
@@ -336,10 +388,15 @@ const styles = {
         fontSize: 11,
         color: Colors.textTertiary,
     },
+    editBtn: {
+        width: 36, height: 36, borderRadius: 12,
+        backgroundColor: Colors.accentSurface,
+        justifyContent: 'center', alignItems: 'center',
+    },
     statsRow: {
         width: '100%',
         flexDirection: 'row',
-        backgroundColor: Colors.background,
+        backgroundColor: 'rgba(10, 14, 26, 0.6)',
         borderRadius: Radius.lg,
         padding: Spacing.lg,
         borderWidth: 1,
@@ -448,7 +505,6 @@ const styles = {
         borderRadius: Radius.lg,
         borderWidth: 1,
         borderColor: Colors.border,
-        marginBottom: Spacing.xxxl,
     },
     settingsIcon: {
         width: 40,

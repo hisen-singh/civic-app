@@ -46,20 +46,32 @@ async function createNotification({ userId, title, body, type, issueId }) {
         createdAt: new Date().toISOString(),
     });
 
-    // 2. Send push notification if user has FCM token
-    const fcmToken = await getFcmToken(userId);
-    if (fcmToken) {
-        await messaging
-            .send({
-                token: fcmToken,
-                notification: { title, body },
-                data: { type, issueId: issueId || "" },
-                android: { priority: "high" },
-                apns: { payload: { aps: { sound: "default" } } },
-            })
-            .catch((err) =>
-                console.warn(`FCM send failed for user ${userId}:`, err.message)
-            );
+    // 2. Send push notification if user has Expo Push token (stored in fcmToken field)
+    const expoPushToken = await getFcmToken(userId);
+    if (expoPushToken) {
+        try {
+            const response = await fetch('https://exp.host/--/api/v2/push/send', {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Accept-encoding': 'gzip, deflate',
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    to: expoPushToken,
+                    sound: 'default',
+                    title: title,
+                    body: body,
+                    data: { type, issueId: issueId || "" },
+                })
+            });
+            const receipt = await response.json();
+            if (receipt.errors) {
+                console.warn(`Expo push failed for user ${userId}:`, receipt.errors);
+            }
+        } catch (err) {
+            console.warn(`Expo push fetch failed for user ${userId}:`, err.message);
+        }
     }
 }
 
@@ -250,19 +262,28 @@ exports.recalculateTrustScores = functions.pubsub
 
         // Sort and add rank
         const sorted = Object.entries(userScores).sort(([, a], [, b]) => b.score - a.score);
-        const batch = db.batch();
-        sorted.forEach(([uid, data], index) => {
-            const ref = db.collection("users").doc(uid);
-            batch.set(ref, {
-                trustScore: data.score,
-                reported: data.reported,
-                solved: data.solved,
-                rank: index + 1,
-                updatedAt: new Date().toISOString(),
-            }, { merge: true });
-        });
+        
+        // Firestore batches can hold up to 500 operations
+        const chunks = [];
+        for (let i = 0; i < sorted.length; i += 500) {
+            chunks.push(sorted.slice(i, i + 500));
+        }
 
-        await batch.commit();
+        for (const chunk of chunks) {
+            const batch = db.batch();
+            chunk.forEach(([uid, data]) => {
+                const index = sorted.findIndex(([id]) => id === uid);
+                const ref = db.collection("users").doc(uid);
+                batch.set(ref, {
+                    trustScore: data.score,
+                    reported: data.reported,
+                    solved: data.solved,
+                    rank: index + 1,
+                    updatedAt: new Date().toISOString(),
+                }, { merge: true });
+            });
+            await batch.commit();
+        }
         console.log(`[recalculateTrustScores] Updated ${sorted.length} users.`);
         return null;
     });
@@ -284,7 +305,7 @@ exports.archiveOldIssues = functions.pubsub
         const snap = await db
             .collection("issues")
             .where("status", "==", "Solved")
-            .where("createdAt", "<", cutoff)
+            .where("statusUpdatedAt", "<", cutoff)
             .get();
 
         const batch = db.batch();
@@ -370,4 +391,72 @@ exports.getLeaderboard = functions.https.onCall(async (data, context) => {
     }));
 
     return { leaderboard };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 9. CHECK ADMIN STATUS (HTTPS callable)
+//    • Returns whether the calling user has admin custom claim
+// ─────────────────────────────────────────────────────────────────────────────
+exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    return { isAdmin: context.auth.token.admin === true };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 10. SET ADMIN ROLE (HTTPS callable)
+//     • Only existing admins can grant admin role to other users
+//     • Pass { targetUid: "user-id-here" } to grant admin
+// ─────────────────────────────────────────────────────────────────────────────
+exports.setAdminRole = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    if (context.auth.token.admin !== true) {
+        throw new functions.https.HttpsError("permission-denied", "Only admins can grant admin role.");
+    }
+
+    const { targetUid } = data;
+    if (!targetUid || typeof targetUid !== "string") {
+        throw new functions.https.HttpsError("invalid-argument", "A valid targetUid is required.");
+    }
+
+    await admin.auth().setCustomUserClaims(targetUid, { admin: true });
+    
+    // Also mark in Firestore for easy querying
+    await db.collection("users").doc(targetUid).set(
+        { isAdmin: true, adminGrantedAt: new Date().toISOString() },
+        { merge: true }
+    );
+
+    console.log(`[setAdminRole] Admin role granted to ${targetUid} by ${context.auth.uid}`);
+    return { success: true };
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 11. UPDATE ISSUE STATUS (Admin-only HTTPS callable)
+//     • Allows admins to change any issue's status
+// ─────────────────────────────────────────────────────────────────────────────
+exports.adminUpdateIssueStatus = functions.https.onCall(async (data, context) => {
+    if (!context.auth) {
+        throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+    }
+    if (context.auth.token.admin !== true) {
+        throw new functions.https.HttpsError("permission-denied", "Only admins can update issue status.");
+    }
+
+    const { issueId, newStatus } = data;
+    if (!issueId || !newStatus) {
+        throw new functions.https.HttpsError("invalid-argument", "issueId and newStatus are required.");
+    }
+
+    const validStatuses = ["Open", "In Progress", "Solved", "Failed"];
+    if (!validStatuses.includes(newStatus)) {
+        throw new functions.https.HttpsError("invalid-argument", `Status must be one of: ${validStatuses.join(", ")}`);
+    }
+
+    await db.collection("issues").doc(issueId).update({ status: newStatus });
+    console.log(`[adminUpdateIssueStatus] Issue ${issueId} → ${newStatus} by admin ${context.auth.uid}`);
+    return { success: true };
 });

@@ -1,0 +1,31 @@
+appId: com.civic.app
+---
+# Report Issue Flow — E2E Test
+- launchApp
+
+# Navigate to report screen via the + tab
+- tapOn: "Report an Issue"
+
+# Verify report screen loaded
+- assertVisible: "New Report"
+
+# Select a category
+- tapOn: "Pothole"
+
+# Enter title
+- tapOn: "What's the issue?"
+- inputText: "Deep pothole on Main Street near the bus stop"
+
+# Enter description
+- tapOn: "Describe the issue"
+- inputText: "There is a large pothole approximately 2 feet wide and 6 inches deep on Main Street near the central bus stop. Multiple vehicles have been damaged."
+
+# Use GPS location
+- tapOn: "Use Current Location"
+- waitForAnimationToEnd
+
+# Submit
+- tapOn: "Submit Report"
+
+# Verify we return to the feed
+- assertVisible: "COMMUNITY PULSE"

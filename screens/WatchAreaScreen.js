@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { View, StyleSheet, ScrollView, TouchableOpacity, Alert, Platform, Animated } from 'react-native';
 import { Text, Card, Button, IconButton, Switch, ActivityIndicator, Snackbar } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -26,7 +26,7 @@ export default function WatchAreaScreen() {
     const [radius, setRadius] = useState(2000); // 2km default
     const [snackbarVisible, setSnackbarVisible] = useState(false);
     const [snackbarMsg, setSnackbarMsg] = useState('');
-    const fadeAnim = useState(new Animated.Value(0))[0];
+    const fadeAnim = useRef(new Animated.Value(0)).current;
 
     useEffect(() => {
         Animated.timing(fadeAnim, { toValue: 1, duration: 400, useNativeDriver: true }).start();

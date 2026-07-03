@@ -1,12 +1,14 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
 import { View, ScrollView, KeyboardAvoidingView, Platform, TouchableOpacity, Keyboard, Linking, Animated } from 'react-native';
-import { Text, TextInput, IconButton, Avatar, ActivityIndicator } from 'react-native-paper';
+import { Text, TextInput, Avatar, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useFocusEffect } from '@react-navigation/native';
 import { IssueService } from '../services/IssueService';
 import { useAuth } from '../contexts/AuthContext';
 import IssueCard from '../components/IssueCard';
+import BeforeAfterCard from '../components/BeforeAfterCard';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
+import * as ImagePicker from 'expo-image-picker';
 
 export default function IssueDetailScreen({ route, navigation }) {
     const { issue: passedIssue, issueId: passedId } = route.params;
@@ -15,8 +17,10 @@ export default function IssueDetailScreen({ route, navigation }) {
     const resolvedId = passedId || passedIssue?.id;
     const [currentIssue, setCurrentIssue] = useState(passedIssue || null);
     const [loading, setLoading] = useState(!passedIssue);
+    const [comments, setComments] = useState(passedIssue?.comments || []);
     const [commentText, setCommentText] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [uploadingAfter, setUploadingAfter] = useState(false);
     const scrollRef = useRef(null);
     const inputRef = useRef(null);
     const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -33,8 +37,14 @@ export default function IssueDetailScreen({ route, navigation }) {
                     const allIssues = await IssueService.getAllIssues(true);
                     const updated = allIssues.find(i => i.id === resolvedId);
                     if (updated) setCurrentIssue(updated);
+                    
+                    const fetchedComments = await IssueService.getComments(resolvedId);
+                    const docComments = updated?.comments || passedIssue?.comments || [];
+                    const combined = [...docComments, ...fetchedComments];
+                    const uniqueComments = combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
+                    setComments(uniqueComments);
                 } catch (e) {
-                    console.error('Error fetching issue:', e);
+                    console.error('Error fetching issue/comments:', e);
                 } finally {
                     setLoading(false);
                 }
@@ -56,9 +66,10 @@ export default function IssueDetailScreen({ route, navigation }) {
                 text: commentText.trim()
             });
             
+            setComments(prev => [...prev, newComment]);
             setCurrentIssue(prev => ({
                 ...prev,
-                comments: [...(prev.comments || []), newComment]
+                commentsCount: (prev.commentsCount || 0) + 1
             }));
             setCommentText('');
             Keyboard.dismiss();
@@ -69,8 +80,6 @@ export default function IssueDetailScreen({ route, navigation }) {
             setSubmitting(false);
         }
     };
-
-    const comments = currentIssue?.comments || [];
 
     // Time-ago formatter
     const timeAgo = (dateStr) => {
@@ -136,6 +145,55 @@ export default function IssueDetailScreen({ route, navigation }) {
                 <View style={{ marginTop: 4 }}>
                     <IssueCard issue={currentIssue} showActions={true} disablePress={true} onCommentPress={() => inputRef.current?.focus()} />
                 </View>
+                
+                {/* Before/After Card */}
+                {currentIssue.photo && currentIssue.afterPhoto && (
+                    <BeforeAfterCard
+                        beforePhoto={currentIssue.photo}
+                        afterPhoto={currentIssue.afterPhoto}
+                        title={currentIssue.title}
+                    />
+                )}
+
+                {/* Add After Photo (for solvers of solved issues) */}
+                {currentIssue.status === 'Solved' && !currentIssue.afterPhoto && 
+                 currentIssue.photo && user && 
+                 ((currentIssue.solvers || []).includes(user.uid) || currentIssue.authorId === user.uid) && (
+                    <TouchableOpacity
+                        onPress={async () => {
+                            const result = await ImagePicker.launchImageLibraryAsync({
+                                mediaTypes: ['images'], allowsEditing: true, aspect: [4, 3], quality: 0.5,
+                            });
+                            if (!result.canceled) {
+                                setUploadingAfter(true);
+                                try {
+                                    const url = await IssueService.addAfterPhoto(currentIssue.id, result.assets[0].uri);
+                                    setCurrentIssue(prev => ({ ...prev, afterPhoto: url }));
+                                } catch (e) {
+                                    console.error('After photo upload failed:', e);
+                                } finally { setUploadingAfter(false); }
+                            }
+                        }}
+                        disabled={uploadingAfter}
+                        activeOpacity={0.8}
+                        style={styles.afterPhotoBtn}
+                    >
+                        <View style={styles.afterPhotoIconWrap}>
+                            {uploadingAfter ? (
+                                <ActivityIndicator size={18} color={Colors.success} />
+                            ) : (
+                                <MaterialCommunityIcons name="camera-plus-outline" size={20} color={Colors.success} />
+                            )}
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.afterPhotoBtnTitle}>
+                                {uploadingAfter ? 'Uploading...' : 'Add "After" Photo'}
+                            </Text>
+                            <Text style={styles.afterPhotoBtnSub}>Show the community what you fixed</Text>
+                        </View>
+                        <MaterialCommunityIcons name="chevron-right" size={20} color={Colors.textTertiary} />
+                    </TouchableOpacity>
+                )}
                 
                 {/* YouTube Link */}
                 {currentIssue.youtubeUrl ? (
@@ -550,4 +608,18 @@ const styles = {
         alignItems: 'center',
         marginLeft: 10,
     },
+    afterPhotoBtn: {
+        flexDirection: 'row', alignItems: 'center',
+        marginHorizontal: Spacing.lg, marginTop: Spacing.md,
+        padding: Spacing.lg, backgroundColor: Colors.surface,
+        borderRadius: Radius.lg, borderWidth: 1.5,
+        borderColor: Colors.success + '30', borderStyle: 'dashed',
+    },
+    afterPhotoIconWrap: {
+        width: 40, height: 40, borderRadius: 12,
+        backgroundColor: Colors.successSurface,
+        justifyContent: 'center', alignItems: 'center', marginRight: 14,
+    },
+    afterPhotoBtnTitle: { fontSize: 14, fontWeight: '700', color: Colors.textPrimary, marginBottom: 2 },
+    afterPhotoBtnSub: { fontSize: 11, color: Colors.textTertiary },
 };

@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, StyleSheet } from 'react-native';
 import { Text } from 'react-native-paper';
+import { Colors } from '../theme';
 
 export default function MapScreen() {
     return (
@@ -18,6 +19,6 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
     container: {
         flex: 1,
-        backgroundColor: '#0B1120',
+        backgroundColor: Colors.background,
     }
 });
