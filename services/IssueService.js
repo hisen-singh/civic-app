@@ -162,13 +162,48 @@ export const IssueService = {
 
     /**
      * Add new issue to Firestore.
+     * Validates input before writing to prevent malformed data.
      */
     addIssue: async (issueData) => {
-        // We now use Firebase Storage, so issueData.photo will be a URL instead of base64.
+        // Input validation
+        if (!issueData || typeof issueData !== 'object') {
+            throw new Error('Invalid issue data.');
+        }
+        if (!issueData.title || typeof issueData.title !== 'string' || issueData.title.trim().length < 5) {
+            throw new Error('Title must be at least 5 characters.');
+        }
+        if (!issueData.description || typeof issueData.description !== 'string' || issueData.description.trim().length < 10) {
+            throw new Error('Description must be at least 10 characters.');
+        }
+        if (issueData.title.length > 200) {
+            throw new Error('Title must not exceed 200 characters.');
+        }
+        if (issueData.description.length > 5000) {
+            throw new Error('Description must not exceed 5000 characters.');
+        }
+        const validStatuses = ['Open', 'In Progress', 'Solved', 'Failed'];
+        if (issueData.status && !validStatuses.includes(issueData.status)) {
+            throw new Error('Invalid status value.');
+        }
+        const validUrgencies = ['low', 'medium', 'high', 'critical'];
+        if (issueData.urgency && !validUrgencies.includes(issueData.urgency)) {
+            throw new Error('Invalid urgency level.');
+        }
 
         try {
             const newIssue = {
-                ...issueData,
+                title: issueData.title.trim(),
+                description: issueData.description.trim(),
+                category: issueData.category || 'Other',
+                status: issueData.status || 'Open',
+                urgency: issueData.urgency || 'medium',
+                location: issueData.location || '',
+                latitude: issueData.latitude || null,
+                longitude: issueData.longitude || null,
+                authorId: issueData.authorId || 'anonymous',
+                authorName: issueData.authorName || 'Citizen',
+                youtubeUrl: issueData.youtubeUrl || '',
+                photo: issueData.photo || null,
                 votes: 0,
                 voters: [],
                 solvers: [],
@@ -257,20 +292,35 @@ export const IssueService = {
     },
 
     /**
-     * Fetch comments from subcollection.
+     * Fetch comments from subcollection with pagination.
+     * @param {string} id - Issue ID
+     * @param {number} pageSize - Number of comments per page (default 50)
+     * @param {object|null} lastDoc - Last document snapshot for pagination
+     * @returns {{ comments: Array, lastDoc: object|null, hasMore: boolean }}
      */
-    getComments: async (id) => {
+    getComments: async (id, pageSize = 50, lastDocSnap = null) => {
         try {
             const commentsRef = collection(db, ISSUES_COLLECTION, id, 'comments');
-            const q = query(commentsRef, orderBy('createdAt', 'asc'));
+            let q;
+            if (lastDocSnap) {
+                q = query(commentsRef, orderBy('createdAt', 'asc'), startAfter(lastDocSnap), limit(pageSize));
+            } else {
+                q = query(commentsRef, orderBy('createdAt', 'asc'), limit(pageSize));
+            }
             const snapshot = await getDocs(q);
-            return snapshot.docs.map(d => ({
+            const comments = snapshot.docs.map(d => ({
                 id: d.id,
                 ...d.data()
             }));
+            const newLastDoc = snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null;
+            return {
+                comments,
+                lastDoc: newLastDoc,
+                hasMore: snapshot.docs.length === pageSize
+            };
         } catch (error) {
             console.error("Error fetching comments:", error);
-            return [];
+            return { comments: [], lastDoc: null, hasMore: false };
         }
     },
 

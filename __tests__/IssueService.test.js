@@ -72,7 +72,7 @@ describe('IssueService cache and validation', () => {
   test('addIssue returns object with default properties (votes, voters, solvers)', async () => {
     addDoc.mockResolvedValueOnce({ id: 'new-1' });
 
-    const result = await IssueService.addIssue({ title: 'Test Issue', authorId: 'u1' });
+    const result = await IssueService.addIssue({ title: 'Test Issue Title', description: 'A detailed description of the test issue', authorId: 'u1' });
     
     expect(result.id).toBe('new-1');
     expect(result.votes).toBe(0);
@@ -90,7 +90,7 @@ describe('IssueService cache and validation', () => {
     await IssueService.getAllIssues();
     
     // Add a new issue (should invalidate cache)
-    await IssueService.addIssue({ title: 'New Issue' });
+    await IssueService.addIssue({ title: 'New Issue Title', description: 'A detailed description for the new issue' });
     
     // Second fetch should hit Firestore again because cache was invalidated
     getDocs.mockResolvedValueOnce({ docs: [{ id: '3', data: () => ({ title: 'New Issue' }) }] });

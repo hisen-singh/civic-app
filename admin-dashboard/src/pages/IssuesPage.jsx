@@ -1,25 +1,14 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
+import React, { useState, useMemo } from 'react';
 import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../firebase';
+import { functions } from '../firebase';
+import { useIssues } from '../contexts/IssuesContext';
 
 export default function IssuesPage() {
-  const [issues, setIssues] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { issues, loading } = useIssues();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('All');
   const [urgencyFilter, setUrgencyFilter] = useState('All');
   const [updatingId, setUpdatingId] = useState(null);
-
-  useEffect(() => {
-    const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setIssues(data);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
 
   const filteredIssues = useMemo(() => {
     return issues.filter(issue => {

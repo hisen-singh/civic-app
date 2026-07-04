@@ -38,7 +38,7 @@ export default function IssueDetailScreen({ route, navigation }) {
                     const updated = await IssueService.getIssueById(resolvedId);
                     if (updated) setCurrentIssue(updated);
                     
-                    const fetchedComments = await IssueService.getComments(resolvedId);
+                    const { comments: fetchedComments } = await IssueService.getComments(resolvedId);
                     const docComments = updated?.comments || passedIssue?.comments || [];
                     const combined = [...docComments, ...fetchedComments];
                     const uniqueComments = combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);

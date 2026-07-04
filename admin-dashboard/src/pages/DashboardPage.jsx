@@ -1,20 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { collection, query, orderBy, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import React from 'react';
+import { useIssues } from '../contexts/IssuesContext';
 
 export default function DashboardPage() {
-  const [issues, setIssues] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setIssues(data);
-      setLoading(false);
-    });
-    return () => unsubscribe();
-  }, []);
+  const { issues, loading } = useIssues();
 
   const totalIssues = issues.length;
   const openCount = issues.filter(i => i.status === 'Open').length;
