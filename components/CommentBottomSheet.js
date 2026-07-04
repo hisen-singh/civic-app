@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, Animated, TextInput, Keyboard, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, Modal, TouchableOpacity, KeyboardAvoidingView, Platform, Animated, TextInput, Keyboard, ActivityIndicator, FlatList } from 'react-native';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Avatar } from 'react-native-paper';
 import { IssueService } from '../services/IssueService';
 import { useAuth } from '../contexts/AuthContext';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
+import ErrorBoundary from './ErrorBoundary';
 
 export default function CommentBottomSheet({ visible, onClose, issueId, initialComments = [], onCommentAdded }) {
     const { user } = useAuth();
@@ -12,6 +13,9 @@ export default function CommentBottomSheet({ visible, onClose, issueId, initialC
     const [loading, setLoading] = useState(false);
     const [commentText, setCommentText] = useState('');
     const [submitting, setSubmitting] = useState(false);
+    const [lastDoc, setLastDoc] = useState(null);
+    const [hasMore, setHasMore] = useState(true);
+    const [loadingMore, setLoadingMore] = useState(false);
     const slideAnim = useRef(new Animated.Value(500)).current;
     const fadeAnim = useRef(new Animated.Value(0)).current;
     const scrollRef = useRef(null);
@@ -22,6 +26,9 @@ export default function CommentBottomSheet({ visible, onClose, issueId, initialC
                 Animated.timing(slideAnim, { toValue: 0, duration: 300, useNativeDriver: true }),
                 Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true })
             ]).start();
+            setComments([]);
+            setLastDoc(null);
+            setHasMore(true);
             fetchComments();
         } else {
             Animated.parallel([
@@ -34,17 +41,33 @@ export default function CommentBottomSheet({ visible, onClose, issueId, initialC
     const fetchComments = async () => {
         setLoading(true);
         try {
-            const fetchedComments = await IssueService.getComments(issueId);
-            // Merge initial comments with fetched
-            const combined = [...initialComments, ...fetchedComments];
-            const uniqueComments = combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
-            setComments(uniqueComments);
-            // Auto scroll to bottom
+            const { comments: fetchedComments, lastDoc: newLastDoc, hasMore: newHasMore } = await IssueService.getComments(issueId, 50, null);
+            setComments(fetchedComments);
+            setLastDoc(newLastDoc);
+            setHasMore(newHasMore);
             setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 100);
         } catch (e) {
             console.error('Error fetching comments:', e);
         } finally {
             setLoading(false);
+        }
+    };
+
+    const loadMoreComments = async () => {
+        if (!hasMore || loadingMore || loading) return;
+        setLoadingMore(true);
+        try {
+            const { comments: newComments, lastDoc: newLastDoc, hasMore: newHasMore } = await IssueService.getComments(issueId, 50, lastDoc);
+            setComments(prev => {
+                const combined = [...newComments, ...prev]; // Prepend older comments
+                return combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
+            });
+            setLastDoc(newLastDoc);
+            setHasMore(newHasMore);
+        } catch (e) {
+            console.error('Error loading more comments:', e);
+        } finally {
+            setLoadingMore(false);
         }
     };
 
@@ -123,12 +146,7 @@ export default function CommentBottomSheet({ visible, onClose, issueId, initialC
                     </View>
 
                     {/* Comments List */}
-                    <ScrollView 
-                        ref={scrollRef}
-                        style={styles.commentsList}
-                        contentContainerStyle={styles.commentsContent}
-                        showsVerticalScrollIndicator={false}
-                    >
+                    <ErrorBoundary>
                         {loading && comments.length === 0 ? (
                             <ActivityIndicator size="small" color={Colors.accent} style={{ marginTop: 20 }} />
                         ) : comments.length === 0 ? (
@@ -137,25 +155,38 @@ export default function CommentBottomSheet({ visible, onClose, issueId, initialC
                                 <Text style={styles.emptyDesc}>Be the first to start the conversation.</Text>
                             </View>
                         ) : (
-                            comments.map((comment, index) => (
-                                <View key={comment.id || index} style={styles.commentItem}>
-                                    <Avatar.Text 
-                                        size={36} 
-                                        label={(comment.authorName || 'U').substring(0, 2).toUpperCase()} 
-                                        style={{ backgroundColor: index % 2 === 0 ? Colors.accent : Colors.accentDark, marginRight: 12 }} 
-                                        labelStyle={{ fontSize: 12, fontWeight: '700' }}
-                                    />
-                                    <View style={styles.commentBody}>
-                                        <View style={styles.commentMeta}>
-                                            <Text style={styles.commentAuthor}>{comment.authorName || 'Anonymous'}</Text>
-                                            <Text style={styles.commentTime}>  {timeAgo(comment.createdAt)}</Text>
+                            <FlatList
+                                ref={scrollRef}
+                                data={comments}
+                                keyExtractor={(item, index) => item.id || String(index)}
+                                style={styles.commentsList}
+                                contentContainerStyle={styles.commentsContent}
+                                showsVerticalScrollIndicator={false}
+                                onEndReached={loadMoreComments}
+                                onEndReachedThreshold={0.5}
+                                ListHeaderComponent={() => (
+                                    loadingMore ? <ActivityIndicator size="small" color={Colors.accent} style={{ marginVertical: 10 }} /> : null
+                                )}
+                                renderItem={({ item: comment, index }) => (
+                                    <View style={styles.commentItem}>
+                                        <Avatar.Text 
+                                            size={36} 
+                                            label={(comment.authorName || 'U').substring(0, 2).toUpperCase()} 
+                                            style={{ backgroundColor: index % 2 === 0 ? Colors.accent : Colors.accentDark, marginRight: 12 }} 
+                                            labelStyle={{ fontSize: 12, fontWeight: '700' }}
+                                        />
+                                        <View style={styles.commentBody}>
+                                            <View style={styles.commentMeta}>
+                                                <Text style={styles.commentAuthor}>{comment.authorName || 'Anonymous'}</Text>
+                                                <Text style={styles.commentTime}>  {timeAgo(comment.createdAt)}</Text>
+                                            </View>
+                                            <Text style={styles.commentText}>{comment.text}</Text>
                                         </View>
-                                        <Text style={styles.commentText}>{comment.text}</Text>
                                     </View>
-                                </View>
-                            ))
+                                )}
+                            />
                         )}
-                    </ScrollView>
+                    </ErrorBoundary>
 
                     {/* Input Area */}
                     <View style={styles.inputArea}>

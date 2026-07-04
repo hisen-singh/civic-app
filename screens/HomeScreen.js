@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity, StatusBar, RefreshControl, Animated } from 'react-native';
+import { View, FlatList, TouchableOpacity, StatusBar, RefreshControl, Animated, Alert } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -15,6 +15,7 @@ import { IssueService } from '../services/IssueService';
 import { useAuth } from '../contexts/AuthContext';
 import { Colors, Spacing, Radius, Shadows, Gradients } from '../theme';
 import * as Location from 'expo-location';
+import * as Notifications from 'expo-notifications';
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -102,7 +103,6 @@ export default function HomeScreen() {
             });
 
             if (isInside) {
-              const Notifications = await import('expo-notifications');
               await Notifications.scheduleNotificationAsync({
                 content: {
                   title: `📍 New Issue in Watch Area`,
@@ -156,8 +156,13 @@ export default function HomeScreen() {
       setHasMore(data.length === 10);
     } catch (error) {
       console.error(error);
+      
       // Fallback if missing index: try fetching 'All' and rely on client-filter
       if (error.message && error.message.includes('index')) {
+        Alert.alert(
+          'Index Building',
+          'Database indexes are currently building. Some filters may be limited temporarily.'
+        );
         try {
             const { data, lastDoc: newLastDoc } = await IssueService.getIssuesPaginated(10, isRefresh ? null : lastDoc, 'All', null);
             if (isRefresh) {
@@ -167,7 +172,12 @@ export default function HomeScreen() {
             }
             setLastDoc(newLastDoc);
             setHasMore(data.length === 10);
-        } catch (e) { console.error(e); }
+        } catch (e) {
+            console.error(e);
+            Alert.alert('Network Error', 'Failed to load issues. Please check your connection.');
+        }
+      } else {
+        Alert.alert('Network Error', 'Failed to load issues. Please check your connection.');
       }
     } finally {
       setLoading(false);

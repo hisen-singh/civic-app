@@ -38,11 +38,8 @@ export default function IssueDetailScreen({ route, navigation }) {
                     const updated = await IssueService.getIssueById(resolvedId);
                     if (updated) setCurrentIssue(updated);
                     
-                    const { comments: fetchedComments } = await IssueService.getComments(resolvedId);
-                    const docComments = updated?.comments || passedIssue?.comments || [];
-                    const combined = [...docComments, ...fetchedComments];
-                    const uniqueComments = combined.filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i);
-                    setComments(uniqueComments);
+                    const { comments: fetchedComments } = await IssueService.getComments(resolvedId, 50, null);
+                    setComments(fetchedComments);
                 } catch (e) {
                     console.error('Error fetching issue/comments:', e);
                 } finally {
@@ -76,6 +73,7 @@ export default function IssueDetailScreen({ route, navigation }) {
             setTimeout(() => scrollRef.current?.scrollToEnd({ animated: true }), 300);
         } catch (error) {
             console.error("Failed to add comment:", error);
+            Alert.alert("Error", "Failed to submit comment. Please try again.");
         } finally {
             setSubmitting(false);
         }

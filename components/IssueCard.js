@@ -7,6 +7,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { IssueService } from '../services/IssueService';
 import { useNavigation } from '@react-navigation/native';
 import { Colors, Radius, Spacing, Shadows } from '../theme';
+import { timeAgo, isValidYouTubeUrl } from '../utils/timeAgo';
 import ShareModal from './ShareModal';
 import CommentBottomSheet from './CommentBottomSheet';
 import AnimatedPressable from './ui/AnimatedPressable';
@@ -48,21 +49,7 @@ const StatusBadge = ({ status }) => {
     );
 };
 
-// Time-ago formatter
-const timeAgo = (dateStr) => {
-    if (!dateStr) return '';
-    const now = new Date();
-    const date = new Date(dateStr);
-    const seconds = Math.floor((now - date) / 1000);
-    if (seconds < 60) return 'just now';
-    const minutes = Math.floor(seconds / 60);
-    if (minutes < 60) return `${minutes}m ago`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 24) return `${hours}h ago`;
-    const days = Math.floor(hours / 24);
-    if (days < 7) return `${days}d ago`;
-    return date.toLocaleDateString();
-};
+// timeAgo is imported from ../utils/timeAgo
 
 export default function IssueCard({ issue, showActions = true, disablePress = false, onCommentPress }) {
     const { user } = useAuth();
@@ -153,7 +140,11 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
     const handleCardPress = () => {
         animatePress();
         if (issue.youtubeUrl) {
-            Linking.openURL(issue.youtubeUrl).catch(err => console.error("Couldn't load page", err));
+            if (isValidYouTubeUrl(issue.youtubeUrl)) {
+                Linking.openURL(issue.youtubeUrl).catch(err => console.error("Couldn't load page", err));
+            } else {
+                Alert.alert('Invalid Link', 'This link does not appear to be a valid YouTube URL.');
+            }
             return;
         }
         if (!disablePress) {

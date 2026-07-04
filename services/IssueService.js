@@ -24,6 +24,7 @@ const ISSUES_COLLECTION = 'issues';
 // In-memory cache to reduce redundant Firestore reads
 let _issueCache = [];
 let _lastFetchTime = 0;
+let _cacheGeneration = 0;
 const CACHE_TTL = 30000; // 30 seconds (was 10s — too aggressive)
 
 // Request deduplication — prevents multiple simultaneous Firestore fetches
@@ -48,12 +49,20 @@ export const IssueService = {
         }
 
         _pendingRequest = (async () => {
+            const currentGen = _cacheGeneration;
             try {
                 const q = query(
                     collection(db, ISSUES_COLLECTION),
                     orderBy('createdAt', 'desc')
                 );
                 const snapshot = await getDocs(q);
+                
+                // If cache was invalidated while fetching, discard this fetch's result 
+                // to avoid overwriting cache with stale data.
+                if (currentGen !== _cacheGeneration) {
+                    return _issueCache.length > 0 ? _issueCache : snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+                }
+
                 _issueCache = snapshot.docs.map(d => ({
                     id: d.id,
                     ...d.data()
@@ -75,6 +84,7 @@ export const IssueService = {
     /** Invalidate cache (call after mutations) */
     invalidateCache: () => {
         _lastFetchTime = 0;
+        _cacheGeneration += 1;
     },
 
     /**
@@ -328,10 +338,20 @@ export const IssueService = {
      * Add a comment to an issue's subcollection.
      */
     addComment: async (id, commentData) => {
+        if (!commentData || typeof commentData.text !== 'string') {
+            throw new Error('Comment text is required.');
+        }
+        const text = commentData.text.trim();
+        if (text.length < 1 || text.length > 1000) {
+            throw new Error('Comment must be between 1 and 1000 characters.');
+        }
+
         try {
             const newComment = {
+                text,
+                authorId: commentData.authorId || 'anonymous',
+                authorName: commentData.authorName || 'Citizen',
                 createdAt: new Date().toISOString(),
-                ...commentData,
                 timestamp: serverTimestamp()
             };
             const commentsRef = collection(db, ISSUES_COLLECTION, id, 'comments');
