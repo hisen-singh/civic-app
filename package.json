@@ -76,5 +76,14 @@
     "moduleNameMapper": {
       "^test-renderer$": "react-test-renderer"
     }
+  },
+  "lint-staged": {
+    "*.{js,jsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,md,css}": [
+      "prettier --write"
+    ]
   }
 }
