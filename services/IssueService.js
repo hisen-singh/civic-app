@@ -18,6 +18,7 @@ import {
 } from 'firebase/firestore';
 import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebaseConfig';
+import * as ImageManipulator from 'expo-image-manipulator';
 
 const ISSUES_COLLECTION = 'issues';
 
@@ -158,7 +159,14 @@ export const IssueService = {
      */
     uploadImage: async (uri) => {
         try {
-            const response = await fetch(uri);
+            // Compress the image before uploading
+            const manipResult = await ImageManipulator.manipulateAsync(
+                uri,
+                [{ resize: { width: 1080 } }], // Resize width to 1080px (maintaining aspect ratio)
+                { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+            );
+
+            const response = await fetch(manipResult.uri);
             const blob = await response.blob();
             const filename = `issues/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
             const storageRef = ref(storage, filename);

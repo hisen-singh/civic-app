@@ -63,6 +63,7 @@ const theme = {
 };
 
 import ErrorBoundary from './components/ErrorBoundary';
+import NetworkBanner from './components/NetworkBanner';
 
 // ─── Custom Tab Bar Icon with Active Indicator ────────────────────────────────
 function TabIcon({ name, color, focused }) {
@@ -318,6 +319,7 @@ export default function App() {
     <ErrorBoundary>
       <SafeAreaProvider>
         <PaperProvider theme={theme}>
+          <NetworkBanner />
           <AuthProvider>
             <AppContent />
           </AuthProvider>

@@ -32,7 +32,8 @@ service cloud.firestore {
           (
             request.auth.uid == resource.data.authorId && 
             request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['status', 'statusUpdatedAt', 'commentsCount', 'afterPhoto', 'votes', 'voters', 'solvers'])
+              .hasOnly(['status', 'statusUpdatedAt', 'commentsCount', 'afterPhoto', 'votes', 'voters', 'solvers']) &&
+            (!('afterPhoto' in request.resource.data) || (request.resource.data.afterPhoto is string && request.resource.data.afterPhoto.size() < 2000))
           ) ||
           (
             request.resource.data.diff(resource.data).affectedKeys()
