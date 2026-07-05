@@ -1,0 +1,45 @@
+#!/bin/sh
+. "$(dirname "$0")/_/husky.sh"
+
+echo "🔍 Running pre-commit checks..."
+
+# Get staged files
+STAGED_FILES=$(git diff --cached --name-only --diff-filter=ACM | grep -E "\.(js|jsx|ts|tsx)$")
+
+if [ -z "$STAGED_FILES" ]; then
+  echo "✅ No JavaScript files to lint"
+  exit 0
+fi
+
+echo "📋 Files to check: $(echo $STAGED_FILES | wc -w)"
+
+# 1. Format with Prettier
+echo "🎨 Formatting with Prettier..."
+npx prettier --write $STAGED_FILES 2>&1 | grep -E "(error|warning)" || echo "✅ Prettier passed"
+
+# 2. Lint with ESLint
+echo "🔎 Linting with ESLint..."
+npx eslint $STAGED_FILES --fix 2>&1 | tee /tmp/eslint.log
+ESLINT_EXIT_CODE=$?
+
+if [ $ESLINT_EXIT_CODE -ne 0 ]; then
+  echo "❌ ESLint found issues:"
+  cat /tmp/eslint.log
+  echo ""
+  echo "💡 TIP: Run 'npm run lint:fix' to auto-fix issues"
+  exit 1
+fi
+
+# 3. Check for console.log in production code
+echo "🚨 Checking for debug code..."
+if echo "$STAGED_FILES" | xargs grep -l "console\.log\|debugger" | grep -v "__tests__\|\.test\|\.spec"; then
+  echo "⚠️  Found console.log or debugger - please remove for production code"
+  exit 1
+fi
+
+# 4. Stage the formatted changes
+echo "📦 Re-staging formatted files..."
+git add $STAGED_FILES
+
+echo "✅ Pre-commit checks passed!"
+exit 0
