@@ -28,9 +28,7 @@ export default function HomeScreen() {
   const [lastDoc, setLastDoc] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
-  const [newIssueCount, setNewIssueCount] = useState(0);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const pillAnim = useRef(new Animated.Value(-50)).current;
   const [locationName, setLocationName] = useState('Your Area');
 
   // Fetch real location on mount
@@ -58,66 +56,8 @@ export default function HomeScreen() {
   useFocusEffect(
     useCallback(() => {
       let isMounted = true;
-      let activeWatchAreas = [];
-
-      // Fetch user's watch areas
-      const loadWatchAreas = async () => {
-        if (!user?.uid) return;
-        try {
-          const q = query(collection(db, 'watchAreas'), where('userId', '==', user.uid), where('active', '==', true));
-          const snapshot = await getDocs(q);
-          if (isMounted) {
-            activeWatchAreas = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
-          }
-        } catch (e) {
-          console.error('[HomeScreen] Failed to load watch areas:', e);
-        }
-      };
-      loadWatchAreas();
-
-      // Helper for distance (Haversine formula) in meters
-      const getDistance = (lat1, lon1, lat2, lon2) => {
-        const R = 6371e3; // metres
-        const p1 = lat1 * Math.PI/180;
-        const p2 = lat2 * Math.PI/180;
-        const dp = (lat2-lat1) * Math.PI/180;
-        const dl = (lon2-lon1) * Math.PI/180;
-        const a = Math.sin(dp/2) * Math.sin(dp/2) + Math.cos(p1) * Math.cos(p2) * Math.sin(dl/2) * Math.sin(dl/2);
-        const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
-        return R * c;
-      };
-
-      // Subscribe to real-time new issues
-      const unsubscribe = IssueService.subscribeToNewIssues(async (newIssue) => {
-        if (!isMounted) return;
-        // Only count issues not authored by current user
-        if (newIssue.authorId !== user?.uid) {
-          setNewIssueCount(prev => prev + 1);
-          Animated.spring(pillAnim, { toValue: 0, friction: 6, useNativeDriver: true }).start();
-
-          // Foreground Geofencing: Check if issue is within any active watch area
-          if (newIssue.latitude && newIssue.longitude) {
-            const isInside = activeWatchAreas.some(area => {
-              const dist = getDistance(area.latitude, area.longitude, newIssue.latitude, newIssue.longitude);
-              return dist <= area.radius;
-            });
-
-            if (isInside) {
-              await Notifications.scheduleNotificationAsync({
-                content: {
-                  title: `📍 New Issue in Watch Area`,
-                  body: `${newIssue.title} was just reported nearby.`,
-                  sound: true,
-                },
-                trigger: null, // trigger immediately
-              });
-            }
-          }
-        }
-      });
       return () => {
         isMounted = false;
-        unsubscribe();
       };
     }, [user])
   );
@@ -341,22 +281,6 @@ export default function HomeScreen() {
           </View>
         </AnimatedPressable>
       </LinearGradient>
-
-      {/* New Issues Pill */}
-      {newIssueCount > 0 && (
-        <Animated.View style={[styles.newIssuePill, { transform: [{ translateY: pillAnim }] }]}>
-          <TouchableOpacity
-            onPress={onRefresh}
-            activeOpacity={0.8}
-            style={styles.newIssuePillInner}
-          >
-            <MaterialCommunityIcons name="arrow-up" size={14} color="#FFF" style={{ marginRight: 6 }} />
-            <Text style={styles.newIssuePillText}>
-              {newIssueCount} new {newIssueCount === 1 ? 'issue' : 'issues'}
-            </Text>
-          </TouchableOpacity>
-        </Animated.View>
-      )}
 
       {/* Main Feed using High-Performance FlatList */}
       <FlatList

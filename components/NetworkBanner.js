@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, Platform } from 'react-native';
 import NetInfo from '@react-native-community/netinfo';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { Colors, Spacing } from '../theme';
+import { SyncService } from '../services/SyncService';
 
 export default function NetworkBanner() {
     const [isConnected, setIsConnected] = useState(true);
@@ -10,6 +11,9 @@ export default function NetworkBanner() {
     useEffect(() => {
         const unsubscribe = NetInfo.addEventListener(state => {
             setIsConnected(state.isConnected ?? true);
+            if (state.isConnected) {
+                SyncService.processQueue();
+            }
         });
         return unsubscribe;
     }, []);

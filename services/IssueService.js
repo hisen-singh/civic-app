@@ -420,39 +420,18 @@ export const IssueService = {
     },
 
     /**
-     * Subscribe to new issues only (lightweight — for "new issues" pill).
-     * Returns an unsubscribe function.
-     */
-    subscribeToNewIssues: (onNewIssue) => {
-        const q = query(
-            collection(db, ISSUES_COLLECTION),
-            orderBy('createdAt', 'desc'),
-            limit(1)
-        );
-        let isFirstSnapshot = true;
-        return onSnapshot(q, (snapshot) => {
-            // Skip the initial snapshot (it's existing data)
-            if (isFirstSnapshot) {
-                isFirstSnapshot = false;
-                return;
-            }
-            snapshot.docChanges().forEach(change => {
-                if (change.type === 'added') {
-                    const issue = { id: change.doc.id, ...change.doc.data() };
-                    onNewIssue(issue);
-                }
-            });
-        }, (error) => {
-            console.error('[IssueService] Real-time listener error:', error);
-        });
-    },
-
-    /**
      * Upload and attach an "after" photo to a solved issue.
      */
     addAfterPhoto: async (issueId, photoUri) => {
         try {
-            const response = await fetch(photoUri);
+            // Compress the image before uploading
+            const manipResult = await ImageManipulator.manipulateAsync(
+                photoUri,
+                [{ resize: { width: 1080 } }],
+                { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
+            );
+
+            const response = await fetch(manipResult.uri);
             const blob = await response.blob();
             const filename = `issues/after_${issueId}_${Date.now()}.jpg`;
             const storageRef = ref(storage, filename);

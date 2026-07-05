@@ -3,9 +3,11 @@ import { View, ScrollView, Alert, TouchableOpacity, Image, KeyboardAvoidingView,
 import { Text, TextInput, ActivityIndicator } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { IssueService } from '../services/IssueService';
+import { SyncService } from '../services/SyncService';
 import { useAuth } from '../contexts/AuthContext';
 import * as Location from 'expo-location';
 import * as ImagePicker from 'expo-image-picker';
+import NetInfo from '@react-native-community/netinfo';
 import { CATEGORIES, CATEGORY_GROUPS, getCategoriesByGroup } from '../data/categories';
 import { Colors, Gradients, Radius, Spacing, Shadows } from '../theme';
 import { detectUrgency, URGENCY_LEVELS } from '../utils/urgencyDetector';
@@ -199,12 +201,10 @@ export default function ReportIssueScreen({ navigation }) {
         setErrorMsg('');
 
         try {
-            let photoUrl = null;
-            if (photo && photo.uri) {
-                photoUrl = await IssueService.uploadImage(photo.uri);
-            }
+            const netState = await NetInfo.fetch();
+            const isOffline = !netState.isConnected;
 
-            await IssueService.addIssue({
+            const issueData = {
                 title: title.trim(),
                 description: description.trim(),
                 category,
@@ -216,8 +216,28 @@ export default function ReportIssueScreen({ navigation }) {
                 authorId: user?.uid || 'anonymous',
                 authorName: user?.displayName || 'Citizen',
                 youtubeUrl: youtubeUrl.trim(),
-                photo: photoUrl,
-            });
+                photo: photo ? photo.uri : null,
+            };
+
+            if (isOffline) {
+                await SyncService.enqueueIssue(issueData);
+                Alert.alert("Saved Offline", "You appear to be offline. Your issue has been saved and will sync automatically when you reconnect.");
+                navigation.goBack();
+                return;
+            }
+
+            try {
+                if (photo && photo.uri && !photo.uri.startsWith('http')) {
+                    issueData.photo = await IssueService.uploadImage(photo.uri);
+                }
+                await IssueService.addIssue(issueData);
+            } catch (networkError) {
+                console.log("Upload failed, queueing offline:", networkError);
+                issueData.photo = photo ? photo.uri : null;
+                await SyncService.enqueueIssue(issueData);
+                Alert.alert("Saved Offline", "We couldn't reach the server right now. Your issue has been saved and will sync automatically when you reconnect.");
+            }
+
             navigation.goBack();
         } catch (error) {
             setErrorMsg(error.message || 'Failed to submit. Please try again.');
