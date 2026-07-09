@@ -1,13 +1,23 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, lazy, Suspense } from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { onAuthStateChanged } from 'firebase/auth';
 import { auth } from './firebase';
 import { IssuesProvider } from './contexts/IssuesContext';
 import ErrorBoundary from './components/ErrorBoundary';
+import { ToastProvider } from './components/Toast';
 import LoginPage from './pages/LoginPage';
-import DashboardPage from './pages/DashboardPage';
-import IssuesPage from './pages/IssuesPage';
 import Sidebar from './components/Sidebar';
+
+const DashboardPage = lazy(() => import('./pages/DashboardPage'));
+const IssuesPage = lazy(() => import('./pages/IssuesPage'));
+
+function PageLoader() {
+  return (
+    <div className="loading-screen" style={{ minHeight: '50vh' }}>
+      <div className="spinner" />
+    </div>
+  );
+}
 
 export default function App() {
   const [user, setUser] = useState(null);
@@ -54,18 +64,22 @@ export default function App() {
   return (
     <BrowserRouter>
       <IssuesProvider>
-        <ErrorBoundary>
-          <div className="app-layout">
-            <Sidebar user={user} />
-            <main className="main-content">
-              <Routes>
-                <Route path="/" element={<DashboardPage />} />
-                <Route path="/issues" element={<IssuesPage />} />
-                <Route path="*" element={<Navigate to="/" replace />} />
-              </Routes>
-            </main>
-          </div>
-        </ErrorBoundary>
+        <ToastProvider>
+          <ErrorBoundary>
+            <div className="app-layout">
+              <Sidebar user={user} />
+              <main className="main-content">
+                <Suspense fallback={<PageLoader />}>
+                  <Routes>
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/issues" element={<IssuesPage />} />
+                    <Route path="*" element={<Navigate to="/" replace />} />
+                  </Routes>
+                </Suspense>
+              </main>
+            </div>
+          </ErrorBoundary>
+        </ToastProvider>
       </IssuesProvider>
     </BrowserRouter>
   );

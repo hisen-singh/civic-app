@@ -1,5 +1,5 @@
 import React, { useState, useCallback, useRef, useEffect } from 'react';
-import { View, FlatList, TouchableOpacity, StatusBar, RefreshControl, Animated, Alert } from 'react-native';
+import { View, FlatList, TouchableOpacity, StatusBar, RefreshControl, Animated } from 'react-native';
 import { Text, ActivityIndicator } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import { useTranslation } from 'react-i18next';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import IssueCard from '../components/IssueCard';
+import SkeletonCard from '../components/ui/SkeletonCard';
 import FilterPills from '../components/ui/FilterPills';
 import GradientButton from '../components/ui/GradientButton';
 import AnimatedPressable from '../components/ui/AnimatedPressable';
@@ -28,6 +29,7 @@ export default function HomeScreen() {
   const [lastDoc, setLastDoc] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [loadError, setLoadError] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [locationName, setLocationName] = useState('Your Area');
 
@@ -78,6 +80,7 @@ export default function HomeScreen() {
       setLoading(true);
     }
 
+    setLoadError(false);
     try {
       const fetchCategory = activeCategory === 'Nearby' ? 'All' : activeCategory;
       const { data, lastDoc: newLastDoc } = await IssueService.getIssuesPaginated(10, isRefresh ? null : lastDoc, fetchCategory, user?.uid);
@@ -99,10 +102,6 @@ export default function HomeScreen() {
       
       // Fallback if missing index: try fetching 'All' and rely on client-filter
       if (error.message && error.message.includes('index')) {
-        Alert.alert(
-          'Index Building',
-          'Database indexes are currently building. Some filters may be limited temporarily.'
-        );
         try {
             const { data, lastDoc: newLastDoc } = await IssueService.getIssuesPaginated(10, isRefresh ? null : lastDoc, 'All', null);
             if (isRefresh) {
@@ -114,10 +113,10 @@ export default function HomeScreen() {
             setHasMore(data.length === 10);
         } catch (e) {
             console.error(e);
-            Alert.alert('Network Error', 'Failed to load issues. Please check your connection.');
+            setLoadError(true);
         }
       } else {
-        Alert.alert('Network Error', 'Failed to load issues. Please check your connection.');
+        setLoadError(true);
       }
     } finally {
       setLoading(false);
@@ -133,8 +132,6 @@ export default function HomeScreen() {
 
   const onRefresh = useCallback(() => {
     setRefreshing(true);
-    setNewIssueCount(0);
-    Animated.timing(pillAnim, { toValue: -50, duration: 200, useNativeDriver: true }).start();
     fadeAnim.setValue(0);
     loadIssues(true, selectedCategory);
   }, [selectedCategory]);
@@ -222,13 +219,37 @@ export default function HomeScreen() {
   const renderEmptyState = () => {
     if (loading) {
       return (
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator animating={true} color={Colors.accent} size="large" />
-          <Text style={styles.loadingText}>Loading feed...</Text>
+        <View>
+          <SkeletonCard />
+          <SkeletonCard />
+          <SkeletonCard />
         </View>
       );
     }
-    
+
+    if (loadError) {
+      return (
+        <View style={styles.emptyState}>
+          <View style={[styles.emptyIconCircle, { backgroundColor: Colors.errorSurface }]}>
+            <MaterialCommunityIcons name="wifi-off" size={32} color={Colors.error} />
+          </View>
+          <Text style={styles.emptyTitle}>Couldn&apos;t load the feed</Text>
+          <Text style={styles.emptyDesc}>Check your connection and try again.</Text>
+          <TouchableOpacity
+            onPress={() => {
+              setLoading(true);
+              loadIssues(true, selectedCategory);
+            }}
+            activeOpacity={0.8}
+            style={styles.emptyAction}
+          >
+            <MaterialCommunityIcons name="refresh" size={16} color="#FFF" style={{ marginRight: 6 }} />
+            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>Retry</Text>
+          </TouchableOpacity>
+        </View>
+      );
+    }
+
     return (
       <View style={styles.emptyState}>
         <View style={styles.emptyIconCircle}>

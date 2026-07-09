@@ -3,6 +3,7 @@ import { View, TouchableOpacity, Image, Alert, Linking, Animated } from 'react-n
 import { Card, Text } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
 import { useAuth } from '../contexts/AuthContext';
 import { IssueService } from '../services/IssueService';
 import { useNavigation } from '@react-navigation/native';
@@ -93,9 +94,14 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
         ]).start();
     };
 
+    const triggerHaptic = (style = Haptics.ImpactFeedbackStyle.Light) => {
+        Haptics.impactAsync(style).catch(() => {});
+    };
+
     const handleUpvote = async () => {
         if (hasVoted || !user) return;
-        
+
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
         animateVote();
         setLocalVotes(prev => prev + 1);
         setHasVoted(true);
@@ -115,7 +121,8 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
 
     const handleSolve = async () => {
         if (isSolving || !user || localStatus === 'Solved' || localStatus === 'Failed') return;
-        
+
+        triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
         setIsSolving(true);
         setLocalStatus('In Progress');
         try {

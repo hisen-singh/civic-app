@@ -1,36 +1,59 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { httpsCallable } from 'firebase/functions';
 import { functions } from '../firebase';
 import { useIssues } from '../contexts/IssuesContext';
+import { useToast } from '../components/Toast';
+
+const URGENCY_RANK = { critical: 0, high: 1, medium: 2, low: 3 };
 
 export default function IssuesPage() {
   const { issues, loading } = useIssues();
+  const showToast = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearch = useDeferredValue(searchTerm);
   const [statusFilter, setStatusFilter] = useState('All');
   const [urgencyFilter, setUrgencyFilter] = useState('All');
+  const [sortBy, setSortBy] = useState('newest');
   const [updatingId, setUpdatingId] = useState(null);
 
   const filteredIssues = useMemo(() => {
-    return issues.filter(issue => {
-      const matchesSearch = !searchTerm ||
-        issue.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        issue.category?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        issue.location?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        issue.authorName?.toLowerCase().includes(searchTerm.toLowerCase());
+    const term = deferredSearch.toLowerCase();
+    const filtered = issues.filter(issue => {
+      const matchesSearch = !term ||
+        issue.title?.toLowerCase().includes(term) ||
+        issue.category?.toLowerCase().includes(term) ||
+        issue.location?.toLowerCase().includes(term) ||
+        issue.authorName?.toLowerCase().includes(term);
       const matchesStatus = statusFilter === 'All' || issue.status === statusFilter;
       const matchesUrgency = urgencyFilter === 'All' || issue.urgency === urgencyFilter;
       return matchesSearch && matchesStatus && matchesUrgency;
     });
-  }, [issues, searchTerm, statusFilter, urgencyFilter]);
+    return filtered.toSorted((a, b) => {
+      if (sortBy === 'votes') return (b.votes || 0) - (a.votes || 0);
+      if (sortBy === 'urgency') {
+        return (URGENCY_RANK[a.urgency] ?? 2) - (URGENCY_RANK[b.urgency] ?? 2);
+      }
+      return new Date(b.createdAt || 0) - new Date(a.createdAt || 0);
+    });
+  }, [issues, deferredSearch, statusFilter, urgencyFilter, sortBy]);
+
+  const hasActiveFilters = searchTerm || statusFilter !== 'All' || urgencyFilter !== 'All';
+
+  const clearFilters = () => {
+    setSearchTerm('');
+    setStatusFilter('All');
+    setUrgencyFilter('All');
+  };
 
   const handleStatusChange = async (issueId, newStatus) => {
     setUpdatingId(issueId);
     try {
       const adminUpdateIssueStatus = httpsCallable(functions, 'adminUpdateIssueStatus');
       await adminUpdateIssueStatus({ issueId, newStatus });
+      showToast(`Issue marked as ${newStatus}`, 'success');
     } catch (error) {
       console.error('Failed to update status:', error);
-      alert('Failed to update status: ' + error.message);
+      showToast('Failed to update status: ' + error.message, 'error');
     } finally {
       setUpdatingId(null);
     }
@@ -101,6 +124,15 @@ export default function IssuesPage() {
           <option value="high">High</option>
           <option value="medium">Medium</option>
           <option value="low">Low</option>
+        </select>
+        <select
+          className="filter-select"
+          value={sortBy}
+          onChange={e => setSortBy(e.target.value)}
+        >
+          <option value="newest">Newest first</option>
+          <option value="votes">Most votes</option>
+          <option value="urgency">Most urgent</option>
         </select>
       </div>
 
@@ -183,6 +215,15 @@ export default function IssuesPage() {
                   <div className="empty-state">
                     <h3>No issues found</h3>
                     <p>Try adjusting your search or filters.</p>
+                    {hasActiveFilters && (
+                      <button
+                        className="btn-status"
+                        style={{ marginTop: 12 }}
+                        onClick={clearFilters}
+                      >
+                        Clear filters
+                      </button>
+                    )}
                   </div>
                 </td>
               </tr>
