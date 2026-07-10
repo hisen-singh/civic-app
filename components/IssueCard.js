@@ -152,16 +152,16 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
         }
     };
 
+    const handlePlayVideo = () => {
+        if (issue.youtubeUrl && isValidYouTubeUrl(issue.youtubeUrl)) {
+            Linking.openURL(issue.youtubeUrl).catch(err => console.error("Couldn't load page", err));
+        } else {
+            Alert.alert('Invalid Link', 'This link does not appear to be a valid YouTube URL.');
+        }
+    };
+
     const handleCardPress = () => {
         animatePress();
-        if (issue.youtubeUrl) {
-            if (isValidYouTubeUrl(issue.youtubeUrl)) {
-                Linking.openURL(issue.youtubeUrl).catch(err => console.error("Couldn't load page", err));
-            } else {
-                Alert.alert('Invalid Link', 'This link does not appear to be a valid YouTube URL.');
-            }
-            return;
-        }
         if (!disablePress) {
             navigation.navigate('IssueDetail', { issueId: issue.id });
         }
@@ -235,11 +235,11 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
                                 style={styles.mediaGradient}
                             />
                             {ytId && (
-                                <View style={styles.playOverlay}>
+                                <TouchableOpacity style={styles.playOverlay} onPress={handlePlayVideo}>
                                     <View style={styles.playButton}>
                                         <MaterialCommunityIcons name="play" size={32} color="#FFF" />
                                     </View>
-                                </View>
+                                </TouchableOpacity>
                             )}
                             <View style={styles.topBadges}>
                                 <View style={styles.categoryChip}>

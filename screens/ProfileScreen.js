@@ -8,6 +8,8 @@ import { AuthService } from '../services/AuthService';
 import { useAuth } from '../contexts/AuthContext';
 import { IssueService } from '../services/IssueService';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
 import AnimatedPressable from '../components/ui/AnimatedPressable';
 import { Colors, Radius, Spacing, Shadows, Gradients } from '../theme';
 
@@ -42,21 +44,20 @@ export default function ProfileScreen() {
             setLoading(true);
         }
         try {
-            const allIssues = await IssueService.getAllIssues(isRefresh);
             const uid = user?.uid;
-            const name = user?.displayName;
-
-            const myReported = allIssues.filter(i => i.authorId === uid || i.authorName === name);
-            const reported = myReported.length;
-
-            const mySupported = allIssues.filter(i => (i.solvers || []).includes(uid));
-            const supported = mySupported.length;
-
-            const mySolved = mySupported.filter(i => i.status === 'Solved');
-            const solved = mySolved.length;
-
-            const roadsSolved = mySolved.filter(i => i.category === 'Roads' || i.category === 'Pothole').length;
-            const ecoSolved = mySolved.filter(i => i.category === 'Environment' || i.category === 'Litter').length;
+            
+            // Get user stats directly from server count aggregates
+            const userStats = await IssueService.getUserStats(uid);
+            const { reported, supported, solved, roadsSolved, ecoSolved } = userStats;
+            
+            // Get rank from user profile (updated via cron)
+            let rank = '-';
+            try {
+                const userDocSnap = await getDoc(doc(db, 'users', uid));
+                if (userDocSnap.exists()) {
+                    rank = userDocSnap.data().rank || '-';
+                }
+            } catch(e) { console.warn("Failed to fetch rank", e); }
 
             const unlockedBadges = [
                 { id: 'first_report', name: 'Verified Reporter', icon: 'bullhorn-outline', unlocked: reported >= 1, desc: 'Filed your first report' },
@@ -69,27 +70,6 @@ export default function ProfileScreen() {
             const badges = unlockedBadges
                 .sort((a, b) => b.unlocked - a.unlocked)
                 .slice(0, 4);
-
-            // Calculate rank from all users
-            const userScores = {};
-            allIssues.forEach(issue => {
-                const rid = issue.authorId;
-                if (rid && rid !== 'anonymous') {
-                    if (!userScores[rid]) userScores[rid] = 0;
-                    userScores[rid] += 50;
-                }
-                (issue.solvers || []).forEach(sid => {
-                    if (!userScores[sid]) userScores[sid] = 0;
-                    userScores[sid] += 30;
-                    if (issue.status === 'Solved') userScores[sid] += 100;
-                });
-            });
-
-            const sortedScores = Object.entries(userScores)
-                .sort(([, a], [, b]) => b - a);
-            
-            const myRankIndex = sortedScores.findIndex(([id]) => id === uid);
-            const rank = myRankIndex >= 0 ? myRankIndex + 1 : sortedScores.length + 1;
 
             setStats({ reported, supported, solved, rank, badges });
         } catch (e) {

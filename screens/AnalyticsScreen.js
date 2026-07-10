@@ -27,24 +27,9 @@ export default function AnalyticsScreen() {
     const loadData = async () => {
         setLoading(true);
         try {
-            // Fetch all issues to aggregate. In production with a huge dataset, 
-            // you'd use a Cloud Function that computes stats periodically.
-            const issues = await IssueService.getAllIssues(true);
+            const appStats = await IssueService.getAppStats();
             
-            const total = issues.length;
-            const solved = issues.filter(i => i.status === 'Solved').length;
-            const inProgress = issues.filter(i => i.status === 'In Progress').length;
-            const critical = issues.filter(i => ['critical', 'high'].includes(i.urgency)).length;
-
-            const categoryMap = {};
-            issues.forEach(i => {
-                const cat = i.category || 'Other';
-                categoryMap[cat] = (categoryMap[cat] || 0) + 1;
-            });
-
-            const categories = Object.entries(categoryMap)
-                .sort(([, a], [, b]) => b - a)
-                .slice(0, 6); // Top 6
+            const { total, solved, inProgress, critical, categories } = appStats;
 
             setStats({ total, solved, inProgress, critical, categories });
         } catch (e) {

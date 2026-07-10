@@ -4,6 +4,7 @@ import { Text, ActivityIndicator } from 'react-native-paper';
 import { LinearGradient } from 'expo-linear-gradient';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { AuthService } from '../services/AuthService';
+import { auth } from '../config/firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
 import GradientButton from '../components/ui/GradientButton';
 import { Colors, Gradients, Radius, Spacing } from '../theme';
@@ -20,7 +21,7 @@ export default function VerifyEmailScreen() {
         setErrorMsg('');
         try {
             await reloadUser();
-            if (!user.emailVerified) {
+            if (!auth.currentUser?.emailVerified) {
                 setErrorMsg('Your email is not yet verified. Please check your inbox.');
             }
             // If verified, AuthContext's onAuthStateChanged or a re-render will catch the updated user state

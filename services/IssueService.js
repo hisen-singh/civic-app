@@ -14,11 +14,13 @@ import {
     startAfter,
     where,
     serverTimestamp,
-    onSnapshot
+    onSnapshot,
+    getCountFromServer
 } from 'firebase/firestore';
-import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import { ref, uploadBytes, uploadString, getDownloadURL } from 'firebase/storage';
 import { db, storage } from '../config/firebaseConfig';
 import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
 
 const ISSUES_COLLECTION = 'issues';
 
@@ -80,6 +82,53 @@ export const IssueService = {
         })();
 
         return _pendingRequest;
+    },
+
+    getAppStats: async () => {
+        try {
+            const totalSnap = await getCountFromServer(collection(db, ISSUES_COLLECTION));
+            const solvedSnap = await getCountFromServer(query(collection(db, ISSUES_COLLECTION), where('status', '==', 'Solved')));
+            const inProgressSnap = await getCountFromServer(query(collection(db, ISSUES_COLLECTION), where('status', '==', 'In Progress')));
+            const criticalSnap = await getCountFromServer(query(collection(db, ISSUES_COLLECTION), where('urgency', 'in', ['critical', 'high'])));
+            
+            return {
+                total: totalSnap.data().count,
+                solved: solvedSnap.data().count,
+                inProgress: inProgressSnap.data().count,
+                critical: criticalSnap.data().count,
+                categories: [] // Categories require full scan or cloud function, leaving empty for now
+            };
+        } catch (e) {
+            console.error("Error fetching app stats:", e);
+            return { total: 0, solved: 0, inProgress: 0, critical: 0, categories: [] };
+        }
+    },
+
+    getUserStats: async (uid) => {
+        if (!uid) return { reported: 0, supported: 0, solved: 0, roadsSolved: 0, ecoSolved: 0 };
+        try {
+            const reportedSnap = await getCountFromServer(query(collection(db, ISSUES_COLLECTION), where('authorId', '==', uid)));
+            const supportedSnap = await getCountFromServer(query(collection(db, ISSUES_COLLECTION), where('solvers', 'array-contains', uid)));
+            
+            // Note: These require composite indexes (solvers Array + status ASC, etc.)
+            // If the indexes are not yet deployed, this might fail, so we wrap in try-catch.
+            let solved = 0, roadsSolved = 0, ecoSolved = 0;
+            try {
+                const solvedSnap = await getCountFromServer(query(collection(db, ISSUES_COLLECTION), where('solvers', 'array-contains', uid), where('status', '==', 'Solved')));
+                solved = solvedSnap.data().count;
+            } catch (err) { console.warn("Missing index for solved stats", err.message); }
+
+            return {
+                reported: reportedSnap.data().count,
+                supported: supportedSnap.data().count,
+                solved,
+                roadsSolved,
+                ecoSolved
+            };
+        } catch (e) {
+            console.error("Error fetching user stats:", e);
+            return { reported: 0, supported: 0, solved: 0, roadsSolved: 0, ecoSolved: 0 };
+        }
     },
 
     /** Invalidate cache (call after mutations) */
@@ -166,11 +215,10 @@ export const IssueService = {
                 { compress: 0.7, format: ImageManipulator.SaveFormat.JPEG }
             );
 
-            const response = await fetch(manipResult.uri);
-            const blob = await response.blob();
+            const base64 = await FileSystem.readAsStringAsync(manipResult.uri, { encoding: FileSystem.EncodingType.Base64 });
             const filename = `issues/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
             const storageRef = ref(storage, filename);
-            await uploadBytes(storageRef, blob);
+            await uploadString(storageRef, base64, 'base64', { contentType: 'image/jpeg' });
             return await getDownloadURL(storageRef);
         } catch (error) {
             console.error("Error uploading image:", error);

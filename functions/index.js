@@ -1,4 +1,4 @@
-const functions = require("firebase-functions");
+const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
 
 admin.initializeApp();
@@ -25,8 +25,8 @@ function haversine(lat1, lon1, lat2, lon2) {
 /** Lookup a user's stored FCM token */
 async function getFcmToken(userId) {
     try {
-        const userDoc = await db.collection("users").doc(userId).get();
-        return userDoc.exists ? userDoc.data().fcmToken || null : null;
+        const tokenDoc = await db.collection("users").doc(userId).collection("private").doc("data").get();
+        return tokenDoc.exists ? tokenDoc.data().fcmToken || null : null;
     } catch (_) {
         return null;
     }
@@ -196,29 +196,26 @@ exports.onIssueUpdated = functions.firestore
 //    • Notify the issue author when someone comments (unless it's themselves)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onCommentAdded = functions.firestore
-    .document("issues/{issueId}")
-    .onUpdate(async (change, context) => {
-        const before = change.before.data();
-        const after = change.after.data();
+    .document("issues/{issueId}/comments/{commentId}")
+    .onCreate(async (snap, context) => {
+        const latestComment = snap.data();
         const issueId = context.params.issueId;
 
-        const prevCount = (before.comments || []).length;
-        const nextCount = (after.comments || []).length;
-
-        if (nextCount <= prevCount) return null; // no new comment
-
-        const latestComment = after.comments[nextCount - 1];
+        // Fetch the parent issue to get the authorId and title
+        const issueDoc = await db.collection("issues").doc(issueId).get();
+        if (!issueDoc.exists) return null;
+        const issue = issueDoc.data();
 
         if (
             latestComment &&
-            after.authorId &&
-            latestComment.authorId !== after.authorId &&
-            after.authorId !== "anonymous"
+            issue.authorId &&
+            latestComment.authorId !== issue.authorId &&
+            issue.authorId !== "anonymous"
         ) {
             await createNotification({
-                userId: after.authorId,
+                userId: issue.authorId,
                 title: "💬 New Comment",
-                body: `${latestComment.authorName || "Someone"} commented on "${after.title}"`,
+                body: `${latestComment.authorName || "Someone"} commented on "${issue.title}"`,
                 type: "NEW_COMMENT",
                 issueId,
             });
@@ -360,7 +357,7 @@ exports.saveFcmToken = functions.https.onCall(async (data, context) => {
         throw new functions.https.HttpsError("invalid-argument", "A valid FCM token is required.");
     }
 
-    await db.collection("users").doc(context.auth.uid).set(
+    await db.collection("users").doc(context.auth.uid).collection("private").doc("data").set(
         { fcmToken: token, fcmUpdatedAt: new Date().toISOString() },
         { merge: true }
     );

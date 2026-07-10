@@ -57,7 +57,7 @@ export default function SolveScreen() {
 
             // Issues available to solve: not authored by user, not solved/failed
             const solveable = allIssues.filter(i =>
-                (i.authorId !== uid && i.authorName !== name) &&
+                (i.authorId !== uid) &&
                 (i.status !== 'Solved') &&
                 (i.status !== 'Failed')
             );

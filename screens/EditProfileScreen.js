@@ -12,7 +12,7 @@ import * as ImagePicker from 'expo-image-picker';
 import { Colors, Radius, Spacing } from '../theme';
 
 export default function EditProfileScreen({ navigation }) {
-    const { user } = useAuth();
+    const { user, reloadUser } = useAuth();
     const [displayName, setDisplayName] = useState(user?.displayName || '');
     const [photoURL, setPhotoURL] = useState(user?.photoURL || null);
     const [localPhoto, setLocalPhoto] = useState(null);
@@ -71,10 +71,11 @@ export default function EditProfileScreen({ navigation }) {
             await updateProfile(auth.currentUser, { displayName: displayName.trim(), photoURL: newPhotoURL });
             await setDoc(doc(db, 'users', user.uid), {
                 displayName: displayName.trim(), photoURL: newPhotoURL,
-                email: user.email, updatedAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString(),
             }, { merge: true });
             setPhotoURL(newPhotoURL);
             setLocalPhoto(null);
+            if (reloadUser) await reloadUser();
             showSuccess('Profile updated!');
         } catch (error) {
             console.error('[EditProfile] Save failed:', error);

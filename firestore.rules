@@ -46,7 +46,8 @@ service cloud.firestore {
                 request.resource.data.votes == resource.data.votes + 1 &&
                 request.resource.data.voters.hasAll(resource.data.voters) &&
                 request.resource.data.voters.size() == resource.data.voters.size() + 1 &&
-                request.resource.data.voters.hasAny([request.auth.uid])
+                request.resource.data.voters.hasAny([request.auth.uid]) &&
+                !resource.data.voters.hasAny([request.auth.uid])
               )
             )
             &&
@@ -56,7 +57,8 @@ service cloud.firestore {
               (
                 request.resource.data.solvers.hasAll(resource.data.solvers) &&
                 request.resource.data.solvers.size() == resource.data.solvers.size() + 1 &&
-                request.resource.data.solvers.hasAny([request.auth.uid])
+                request.resource.data.solvers.hasAny([request.auth.uid]) &&
+                !resource.data.solvers.hasAny([request.auth.uid])
               )
             )
             &&
@@ -65,11 +67,29 @@ service cloud.firestore {
               request.resource.data.status == resource.data.status ||
               (request.resource.data.status == 'In Progress' && 'solvers' in request.resource.data.diff(resource.data).affectedKeys())
             )
+            &&
+            // Validate Comments Increment
+            (
+              !('commentsCount' in request.resource.data.diff(resource.data).affectedKeys()) ||
+              (
+                request.resource.data.commentsCount == resource.data.commentsCount + 1
+              )
+            )
           )
         );
 
       // Only the author or an admin can delete an issue
       allow delete: if isOwner(resource.data.authorId) || isAdmin();
+      
+      // Comments Subcollection Rules
+      match /comments/{commentId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() 
+          && request.resource.data.authorId == request.auth.uid
+          && request.resource.data.text is string 
+          && request.resource.data.text.size() <= 1000;
+        allow update, delete: if isAdmin() || isOwner(resource.data.authorId);
+      }
     }
 
     // ─── ARCHIVED ISSUES (read-only) ────────────────────────────────────────
@@ -81,8 +101,8 @@ service cloud.firestore {
     // ─── WATCH AREAS ────────────────────────────────────────────────────────
     match /watchAreas/{areaId} {
       // Users can only read/write their own watch areas
-      allow read, create: if isSignedIn()
-        && request.auth.uid == request.resource.data.userId;
+      allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
+      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
       allow update, delete: if isSignedIn()
         && request.auth.uid == resource.data.userId;
     }
@@ -109,6 +129,11 @@ service cloud.firestore {
       // trustScore, rank are managed exclusively by Cloud Functions
       allow write: if isOwner(userId)
         && !request.resource.data.keys().hasAny(['trustScore', 'rank', 'reported', 'solved']);
+        
+      // Private User Data (FCM tokens, etc)
+      match /private/{docId} {
+        allow read, write: if isOwner(userId);
+      }
     }
 
   }

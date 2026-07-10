@@ -1,19 +1,13 @@
 import 'react-native-gesture-handler';
 import './config/i18n';
 import React, { useCallback, useRef, useEffect, useState } from 'react';
-import * as Sentry from '@sentry/react-native';
 import * as Notifications from 'expo-notifications';
-
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
     shouldPlaySound: true,
     shouldSetBadge: false,
   }),
-});
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '', 
-  debug: false,
 });
 import { View, Text, Animated } from 'react-native';
 import { NavigationContainer } from '@react-navigation/native';
@@ -305,7 +299,7 @@ function AppContent() {
   );
 }
 
-export default function App() {
+function App() {
   const [fontsLoaded, fontError] = Font.useFonts({
     ...MaterialCommunityIcons.font,
   });
@@ -328,4 +322,6 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
+export default App;
 

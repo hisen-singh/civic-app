@@ -1,6 +1,7 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { IssueService } from './IssueService';
 import NetInfo from '@react-native-community/netinfo';
+import * as FileSystem from 'expo-file-system';
 
 const QUEUE_KEY = '@civic_offline_queue';
 let isProcessing = false;
@@ -10,8 +11,17 @@ export const SyncService = {
         try {
             const queueStr = await AsyncStorage.getItem(QUEUE_KEY);
             const queue = queueStr ? JSON.parse(queueStr) : [];
+            let finalPhoto = issueData.photo;
+            if (finalPhoto && !finalPhoto.startsWith('http') && !finalPhoto.includes(FileSystem.documentDirectory)) {
+                const fileName = finalPhoto.split('/').pop();
+                const newPath = FileSystem.documentDirectory + fileName;
+                await FileSystem.copyAsync({ from: finalPhoto, to: newPath });
+                finalPhoto = newPath;
+            }
+            
             queue.push({
                 ...issueData,
+                photo: finalPhoto,
                 _queuedAt: Date.now()
             });
             await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(queue));
@@ -44,6 +54,7 @@ export const SyncService = {
                     // Upload photo if it's a local URI
                     if (issueData.photo && !issueData.photo.startsWith('http')) {
                         issueData.photo = await IssueService.uploadImage(issueData.photo);
+                        item.photo = issueData.photo; // Save uploaded URL back to item so it doesn't re-upload if addIssue fails
                     }
                     
                     await IssueService.addIssue(issueData);

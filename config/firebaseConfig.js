@@ -2,6 +2,7 @@ import { initializeApp } from "firebase/app";
 import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
 import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
+import { getRemoteConfig, fetchAndActivate } from "firebase/remote-config";
 import { initializeAuth, getReactNativePersistence, browserLocalPersistence } from 'firebase/auth';
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
@@ -26,5 +27,12 @@ export const db = initializeFirestore(app, {
     localCache: persistentLocalCache()
 });
 export const storage = getStorage(app);
+
+// Remote Config (Feature Flags)
+export const remoteConfig = getRemoteConfig(app);
+remoteConfig.settings.minimumFetchIntervalMillis = 3600000; // 1 hour (use 0 for dev)
+remoteConfig.defaultConfig = {
+    admin_dashboard_enabled: false,
+};
 // Analytics is optional for now, but good to have initialized if needed later
 // const analytics = getAnalytics(app); 
