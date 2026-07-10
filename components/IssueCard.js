@@ -94,8 +94,16 @@ export default function IssueCard({ issue, showActions = true, disablePress = fa
         ]).start();
     };
 
-    const triggerHaptic = (style = Haptics.ImpactFeedbackStyle.Light) => {
-        Haptics.impactAsync(style).catch(() => {});
+    const triggerHaptic = (style) => {
+        // Wrapped in try/catch: on a native build that predates expo-haptics,
+        // the native module is missing and throws synchronously. This keeps an
+        // optional tactile enhancement from ever crashing the app.
+        try {
+            const impactStyle = style ?? Haptics.ImpactFeedbackStyle?.Light;
+            Haptics.impactAsync(impactStyle)?.catch(() => {});
+        } catch (e) {
+            // Haptics unavailable (e.g. web, or a build without the native module) — ignore.
+        }
     };
 
     const handleUpvote = async () => {
