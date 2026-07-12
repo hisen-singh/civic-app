@@ -47,6 +47,15 @@
         "projectId": "29d13ce5-2f5d-4def-a55e-cd428313bfbe"
       }
     },
-    "owner": "l3nsingh"
+    "owner": "l3nsingh",
+    "plugins": [
+      "expo-localization",
+      [
+        "expo-notifications",
+        {
+          "color": "#0A0E1A"
+        }
+      ]
+    ]
   }
 }

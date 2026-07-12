@@ -4,13 +4,20 @@ import React, { useCallback, useRef, useEffect, useState } from 'react';
 import * as Sentry from '@sentry/react-native';
 import * as Notifications from 'expo-notifications';
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+// Guarded: on Android release builds without google-services.json (FCM config),
+// expo-notifications native init can throw at startup — before ErrorBoundary
+// exists — causing an instant crash. Never let notifications kill the app.
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+} catch (e) {
+  console.warn('Notifications unavailable:', e?.message);
+}
 Sentry.init({
   dsn: process.env.EXPO_PUBLIC_SENTRY_DSN || '', 
   debug: false,
