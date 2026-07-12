@@ -2,13 +2,17 @@ import "react-native-gesture-handler";
 import "./config/i18n";
 import React, { useCallback, useRef, useEffect, useState } from "react";
 import * as Notifications from "expo-notifications";
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-  }),
-});
+try {
+  Notifications.setNotificationHandler({
+    handleNotification: async () => ({
+      shouldShowAlert: true,
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+    }),
+  });
+} catch (e) {
+  console.warn("Failed to set notification handler (likely missing google-services.json on native Android build):", e);
+}
 import { View, Text, Animated } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
