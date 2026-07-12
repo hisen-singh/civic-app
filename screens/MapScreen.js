@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { View, StyleSheet, TouchableOpacity, Dimensions, Platform } from 'react-native';
 import { Text, Avatar } from 'react-native-paper';
-import MapView, { Marker, Circle } from 'react-native-maps';
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import * as Location from 'expo-location';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
 import { useAuth } from '../contexts/AuthContext';
@@ -172,6 +172,7 @@ export default function MapScreen({ navigation }) {
         <View style={styles.container}>
             <MapView
                 ref={mapRef}
+                provider={PROVIDER_GOOGLE}
                 style={styles.map}
                 customMapStyle={darkMapStyle}
                 showsUserLocation={true}

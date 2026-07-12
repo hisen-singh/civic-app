@@ -6,7 +6,7 @@ import { useNavigation } from '@react-navigation/native';
 import { collection, query, where, getDocs, addDoc, deleteDoc, doc, updateDoc } from 'firebase/firestore';
 import { db } from '../config/firebaseConfig';
 import { useAuth } from '../contexts/AuthContext';
-import MapView, { Circle } from 'react-native-maps';
+import MapView, { Circle, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Colors, Radius, Spacing } from '../theme';
 
 export default function WatchAreaScreen() {
@@ -137,6 +137,7 @@ export default function WatchAreaScreen() {
                     ) : (
                         <MapView 
                             style={styles.map}
+                            provider={PROVIDER_GOOGLE}
                             initialRegion={newAreaCoords}
                             onRegionChangeComplete={(region) => setNewAreaCoords(region)}
                         >
