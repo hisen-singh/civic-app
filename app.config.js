@@ -6,9 +6,11 @@ export default ({ config }) => {
       config: {
         ...config.android?.config,
         googleMaps: {
-          apiKey: process.env.EXPO_PUBLIC_MAPS_API_KEY || config.android?.config?.googleMaps?.apiKey
-        }
-      }
-    }
+          apiKey:
+            process.env.EXPO_PUBLIC_MAPS_API_KEY ||
+            config.android?.config?.googleMaps?.apiKey,
+        },
+      },
+    },
   };
 };

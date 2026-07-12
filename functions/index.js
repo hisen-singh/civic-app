@@ -552,3 +552,25 @@ exports.logAppCrash = functions.https.onRequest(async (req, res) => {
   }
 });
 
+exports.getClientCrashes = functions.https.onRequest(async (req, res) => {
+  res.set("Access-Control-Allow-Origin", "*");
+  res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+  res.set("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") {
+    res.status(204).send("");
+    return;
+  }
+  try {
+    const snapshot = await db.collection("client_crashes").orderBy("timestamp", "desc").limit(10).get();
+    const crashes = [];
+    snapshot.forEach(doc => {
+      crashes.push({ id: doc.id, ...doc.data() });
+    });
+    res.status(200).send({ crashes });
+  } catch (err) {
+    console.error("Failed to get crashes:", err);
+    res.status(500).send({ error: err.message });
+  }
+});
+
+

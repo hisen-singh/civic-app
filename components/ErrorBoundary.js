@@ -2,7 +2,7 @@ import React from 'react';
 import { View, StyleSheet, TouchableOpacity, SafeAreaView } from 'react-native';
 import { Text } from 'react-native-paper';
 import { MaterialCommunityIcons } from '@expo/vector-icons';
-import * as Sentry from '@sentry/react-native';
+
 import { Colors, Spacing, Radius } from '../theme';
 
 export default class ErrorBoundary extends React.Component {
@@ -17,7 +17,7 @@ export default class ErrorBoundary extends React.Component {
 
     componentDidCatch(error, errorInfo) {
         console.error("Uncaught error:", error, errorInfo);
-        Sentry.captureException(error);
+        // TODO: Re-add crash reporting when Sentry is properly configured
     }
 
     resetError = () => {
