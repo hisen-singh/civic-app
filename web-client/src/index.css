@@ -1,0 +1,85 @@
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap');
+
+:root {
+  --bg-color: #000000;
+  --text-primary: #FFFFFF;
+  --accent-critical: #FF4500;
+  --accent-action: #FFD700;
+  
+  --brutal-border: 2px solid var(--text-primary);
+  --brutal-shadow: 4px 4px 0px var(--accent-action);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Space Grotesk', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Utilitarian Form Elements */
+input, textarea, button, select {
+  font-family: inherit;
+  background: transparent;
+  color: inherit;
+  border: none;
+  outline: none;
+}
+
+/* Brutalist UI Components */
+.brutalist-card {
+  border: var(--brutal-border);
+  background-color: var(--bg-color);
+  padding: 1rem;
+  box-shadow: var(--brutal-shadow);
+  transition: transform 0.1s ease, box-shadow 0.1s ease;
+}
+
+.brutalist-button {
+  border: var(--brutal-border);
+  background-color: var(--accent-action);
+  color: var(--bg-color);
+  padding: 0.75rem 1.5rem;
+  font-weight: 800;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  box-shadow: 4px 4px 0px var(--text-primary);
+  transition: transform 0.05s ease, box-shadow 0.05s ease;
+}
+
+.brutalist-button:active {
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0px var(--text-primary);
+}
+
+.brutalist-button.critical {
+  background-color: var(--accent-critical);
+  color: #FFFFFF;
+}
+
+.brutalist-input {
+  border: var(--brutal-border);
+  padding: 0.75rem;
+  font-weight: 600;
+  background: #111;
+  width: 100%;
+}
+.brutalist-input:focus {
+  border-color: var(--accent-action);
+}
+
+/* Leaflet Map overrides for Dark Mode */
+.leaflet-container {
+  background-color: #111 !important;
+}
+.leaflet-tile {
+  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+}
