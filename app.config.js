@@ -9,6 +9,10 @@ export default ({ config }) => {
     plugins,
     android: {
       ...config.android,
+      googleServicesFile:
+        process.env.GOOGLE_SERVICES_FILE ||
+        config.android?.googleServicesFile ||
+        "./google-services.json",
       config: {
         ...config.android?.config,
         googleMaps: {

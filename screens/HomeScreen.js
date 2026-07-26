@@ -25,7 +25,6 @@ import { IssueService } from "../services/IssueService";
 import { useAuth } from "../contexts/AuthContext";
 import { Colors, Spacing, Radius, Shadows, Gradients, theme } from "../theme";
 import * as Location from "expo-location";
-import * as Notifications from "expo-notifications";
 
 const getAvatarColor = (name) => {
   const colors = [
