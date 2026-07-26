@@ -17,11 +17,14 @@ import { IssueService } from "../services/IssueService";
 import { useAuth } from "../contexts/AuthContext";
 import IssueCard from "../components/IssueCard";
 import BeforeAfterCard from "../components/BeforeAfterCard";
-import { Colors, Radius, Spacing, Shadows } from "../theme";
+import { Spacing, Shadows, theme } from "../theme";
 import { timeAgo, isValidYouTubeUrl } from "../utils/timeAgo";
 import * as ImagePicker from "expo-image-picker";
 import * as Print from "expo-print";
 import * as MailComposer from "expo-mail-composer";
+import { captureRef } from "react-native-view-shot";
+import * as Sharing from "expo-sharing";
+import NativeImpactCard from "../components/NativeImpactCard";
 
 export default function IssueDetailScreen({ route, navigation }) {
   const { issue: passedIssue, issueId: passedId } = route.params;
@@ -37,6 +40,8 @@ export default function IssueDetailScreen({ route, navigation }) {
   const scrollRef = useRef(null);
   const inputRef = useRef(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
+  const impactCardRef = useRef(null);
+  const [isSharing, setIsSharing] = useState(false);
 
   useEffect(() => {
     Animated.timing(fadeAnim, {
@@ -159,6 +164,31 @@ export default function IssueDetailScreen({ route, navigation }) {
     }
   };
 
+  const handleShareToSocials = async () => {
+    if (!impactCardRef.current) return;
+    setIsSharing(true);
+    try {
+      const uri = await captureRef(impactCardRef, {
+        format: "png",
+        quality: 1,
+      });
+      const isAvailable = await Sharing.isAvailableAsync();
+      if (isAvailable) {
+        await Sharing.shareAsync(uri, {
+          dialogTitle: "Share Civic Impact",
+          mimeType: "image/png",
+        });
+      } else {
+        Alert.alert("Error", "Sharing is not available on this device");
+      }
+    } catch (error) {
+      console.error("Failed to generate impact card:", error);
+      Alert.alert("Error", "Failed to share image.");
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
   // timeAgo is now imported from utils/timeAgo.js
 
   if (loading || !currentIssue) {
@@ -166,16 +196,21 @@ export default function IssueDetailScreen({ route, navigation }) {
       <View
         style={{
           flex: 1,
-          backgroundColor: Colors.background,
+          backgroundColor: theme.colors.surface,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color={Colors.accent} />
+        <ActivityIndicator size="large" color={theme.colors.accentBrand} />
         <Text
-          style={{ color: Colors.textTertiary, fontSize: 13, marginTop: 12 }}
+          style={{
+            color: theme.colors.textMuted,
+            fontSize: 13,
+            marginTop: 12,
+            fontWeight: "700",
+          }}
         >
-          Loading issue...
+          LOADING ISSUE...
         </Text>
       </View>
     );
@@ -187,7 +222,7 @@ export default function IssueDetailScreen({ route, navigation }) {
 
   return (
     <KeyboardAvoidingView
-      style={{ flex: 1, backgroundColor: Colors.background }}
+      style={{ flex: 1, backgroundColor: theme.colors.surface }}
       behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
@@ -200,11 +235,11 @@ export default function IssueDetailScreen({ route, navigation }) {
           <MaterialCommunityIcons
             name="arrow-left"
             size={22}
-            color={Colors.textPrimary}
+            color={theme.colors.textPrimary}
           />
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={styles.headerTitle}>Details</Text>
+          <Text style={styles.headerTitle}>DETAILS</Text>
         </View>
         <TouchableOpacity
           onPress={() => {
@@ -226,7 +261,7 @@ export default function IssueDetailScreen({ route, navigation }) {
           <MaterialCommunityIcons
             name="open-in-new"
             size={20}
-            color={Colors.textSecondary}
+            color={theme.colors.textPrimary}
           />
         </TouchableOpacity>
       </View>
@@ -293,27 +328,30 @@ export default function IssueDetailScreen({ route, navigation }) {
             >
               <View style={styles.afterPhotoIconWrap}>
                 {uploadingAfter ? (
-                  <ActivityIndicator size={18} color={Colors.success} />
+                  <ActivityIndicator
+                    size={18}
+                    color={theme.colors.accentBrand}
+                  />
                 ) : (
                   <MaterialCommunityIcons
                     name="camera-plus-outline"
                     size={20}
-                    color={Colors.success}
+                    color={theme.colors.accentBrand}
                   />
                 )}
               </View>
               <View style={{ flex: 1 }}>
                 <Text style={styles.afterPhotoBtnTitle}>
-                  {uploadingAfter ? "Uploading..." : 'Add "After" Photo'}
+                  {uploadingAfter ? "UPLOADING..." : 'ADD "AFTER" PHOTO'}
                 </Text>
                 <Text style={styles.afterPhotoBtnSub}>
-                  Show the community what you fixed
+                  SHOW THE COMMUNITY WHAT YOU FIXED
                 </Text>
               </View>
               <MaterialCommunityIcons
                 name="chevron-right"
                 size={20}
-                color={Colors.textTertiary}
+                color={theme.colors.textMuted}
               />
             </TouchableOpacity>
           )}
@@ -334,24 +372,24 @@ export default function IssueDetailScreen({ route, navigation }) {
               <MaterialCommunityIcons
                 name="youtube"
                 size={20}
-                color="#FF0000"
+                color={theme.colors.accentBrand}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.youtubeBtnTitle}>Watch Video</Text>
-              <Text style={styles.youtubeBtnSub}>Opens in YouTube</Text>
+              <Text style={styles.youtubeBtnTitle}>WATCH VIDEO</Text>
+              <Text style={styles.youtubeBtnSub}>OPENS IN YOUTUBE</Text>
             </View>
             <MaterialCommunityIcons
               name="chevron-right"
               size={20}
-              color={Colors.textTertiary}
+              color={theme.colors.textMuted}
             />
           </TouchableOpacity>
         ) : null}
 
         {/* Status Timeline */}
         <View style={styles.timelineSection}>
-          <Text style={styles.sectionTitle}>Status Timeline</Text>
+          <Text style={styles.sectionTitle}>STATUS TIMELINE</Text>
           <View style={styles.timelineCard}>
             {[
               {
@@ -403,10 +441,10 @@ export default function IssueDetailScreen({ route, navigation }) {
                         size={18}
                         color={
                           isFailed
-                            ? Colors.error
+                            ? "#FFF"
                             : isActive
                               ? "#FFF"
-                              : Colors.textTertiary
+                              : theme.colors.textMuted
                         }
                       />
                     </View>
@@ -415,14 +453,16 @@ export default function IssueDetailScreen({ route, navigation }) {
                         style={[
                           styles.timelineLabel,
                           isActive &&
-                            !isFailed && { color: Colors.textPrimary },
-                          isFailed && { color: Colors.error },
+                            !isFailed && { color: theme.colors.textPrimary },
+                          isFailed && { color: theme.colors.accentBrand },
                         ]}
                       >
-                        {isFailed ? "Failed" : step.label}
+                        {isFailed ? "FAILED" : step.label.toUpperCase()}
                       </Text>
                       <Text style={styles.timelineDesc}>
-                        {isFailed ? "Issue could not be resolved" : step.desc}
+                        {isFailed
+                          ? "ISSUE COULD NOT BE RESOLVED"
+                          : step.desc.toUpperCase()}
                       </Text>
                     </View>
                     {isCurrent && !isFailed && (
@@ -449,22 +489,55 @@ export default function IssueDetailScreen({ route, navigation }) {
               <MaterialCommunityIcons
                 name="email-fast-outline"
                 size={20}
-                color={Colors.accent}
+                color={theme.colors.accentBrand}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={styles.emailBtnTitle}>Email City Council</Text>
+              <Text style={styles.emailBtnTitle}>EMAIL CITY COUNCIL</Text>
               <Text style={styles.emailBtnSub}>
-                Generate a formal PDF report
+                GENERATE A FORMAL PDF REPORT
               </Text>
             </View>
             <MaterialCommunityIcons
               name="chevron-right"
               size={20}
-              color={Colors.textTertiary}
+              color={theme.colors.textMuted}
             />
           </TouchableOpacity>
         )}
+
+        {/* Share To Socials Action */}
+        <TouchableOpacity
+          onPress={handleShareToSocials}
+          disabled={isSharing}
+          activeOpacity={0.8}
+          style={styles.shareBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Share to Social Media"
+        >
+          <View style={styles.shareIconWrap}>
+            {isSharing ? (
+              <ActivityIndicator size={20} color="#FFFFFF" />
+            ) : (
+              <MaterialCommunityIcons
+                name="instagram"
+                size={20}
+                color="#FFFFFF"
+              />
+            )}
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={styles.shareBtnTitle}>SHARE TO SOCIALS</Text>
+            <Text style={styles.shareBtnSub}>
+              EXPORT IMPACT CARD TO IG/TWITTER
+            </Text>
+          </View>
+          <MaterialCommunityIcons
+            name="export-variant"
+            size={20}
+            color="#FFFFFF"
+          />
+        </TouchableOpacity>
 
         {/* Info Row */}
         <View style={styles.infoRow}>
@@ -472,20 +545,22 @@ export default function IssueDetailScreen({ route, navigation }) {
             <MaterialCommunityIcons
               name="clock-outline"
               size={14}
-              color={Colors.textTertiary}
+              color={theme.colors.textMuted}
             />
             <Text style={styles.infoText}>
-              Reported {timeAgo(currentIssue.createdAt)}
+              REPORTED {timeAgo(currentIssue.createdAt).toUpperCase()}
             </Text>
           </View>
           <View style={styles.infoItem}>
             <MaterialCommunityIcons
               name="map-marker-outline"
               size={14}
-              color={Colors.textTertiary}
+              color={theme.colors.textMuted}
             />
             <Text style={styles.infoText} numberOfLines={1}>
-              {currentIssue.location || "No location"}
+              {currentIssue.location
+                ? currentIssue.location.toUpperCase()
+                : "NO LOCATION"}
             </Text>
           </View>
         </View>
@@ -493,7 +568,7 @@ export default function IssueDetailScreen({ route, navigation }) {
         {/* Comments */}
         <View style={styles.commentsSection}>
           <View style={styles.commentsSectionHeader}>
-            <Text style={styles.sectionTitle}>Discussion</Text>
+            <Text style={styles.sectionTitle}>DISCUSSION</Text>
             <View style={styles.commentCountBadge}>
               <Text style={styles.commentCountText}>{comments.length}</Text>
             </View>
@@ -505,12 +580,12 @@ export default function IssueDetailScreen({ route, navigation }) {
                 <MaterialCommunityIcons
                   name="chat-outline"
                   size={28}
-                  color={Colors.textTertiary}
+                  color={theme.colors.textMuted}
                 />
               </View>
-              <Text style={styles.emptyTitle}>No comments yet</Text>
+              <Text style={styles.emptyTitle}>NO COMMENTS YET</Text>
               <Text style={styles.emptyDesc}>
-                Be the first to start the conversation.
+                BE THE FIRST TO START THE CONVERSATION.
               </Text>
             </View>
           ) : (
@@ -522,11 +597,17 @@ export default function IssueDetailScreen({ route, navigation }) {
                     .substring(0, 2)
                     .toUpperCase()}
                   style={{
-                    backgroundColor:
-                      index % 2 === 0 ? Colors.accent : Colors.accentDark,
+                    backgroundColor: theme.colors.surface,
+                    borderWidth: 2,
+                    borderColor: theme.colors.border,
+                    borderRadius: 0,
                     marginRight: 12,
                   }}
-                  labelStyle={{ fontSize: 11, fontWeight: "700" }}
+                  labelStyle={{
+                    fontSize: 11,
+                    fontWeight: "900",
+                    color: theme.colors.textPrimary,
+                  }}
                 />
                 <View style={{ flex: 1 }}>
                   <View
@@ -537,11 +618,13 @@ export default function IssueDetailScreen({ route, navigation }) {
                     }}
                   >
                     <Text style={styles.commentAuthor}>
-                      {comment.authorName || "Anonymous"}
+                      {comment.authorName
+                        ? comment.authorName.toUpperCase()
+                        : "ANONYMOUS"}
                     </Text>
                     <Text style={styles.commentTime}>
                       {" "}
-                      · {timeAgo(comment.createdAt)}
+                      · {timeAgo(comment.createdAt).toUpperCase()}
                     </Text>
                   </View>
                   <Text style={styles.commentText}>{comment.text}</Text>
@@ -552,6 +635,17 @@ export default function IssueDetailScreen({ route, navigation }) {
         </View>
       </Animated.ScrollView>
 
+      {/* Hidden Native Impact Card for Screenshotting */}
+      <View
+        style={{ position: "absolute", top: -10000, left: -10000 }}
+        pointerEvents="none"
+        collapsable={false}
+      >
+        <View ref={impactCardRef} collapsable={false}>
+          <NativeImpactCard issue={currentIssue} />
+        </View>
+      </View>
+
       {/* Comment Input */}
       <View style={styles.commentInputBar}>
         <View style={styles.commentInputWrap}>
@@ -560,11 +654,11 @@ export default function IssueDetailScreen({ route, navigation }) {
             value={commentText}
             onChangeText={setCommentText}
             placeholder="Add a comment..."
-            placeholderTextColor={Colors.textTertiary}
+            placeholderTextColor={theme.colors.textMuted}
             multiline
             mode="flat"
             style={styles.commentInput}
-            textColor={Colors.textPrimary}
+            textColor={theme.colors.textPrimary}
             theme={{ colors: { primary: "transparent" } }}
             underlineColor="transparent"
             activeUnderlineColor="transparent"
@@ -578,7 +672,7 @@ export default function IssueDetailScreen({ route, navigation }) {
             styles.sendBtn,
             (!commentText.trim() || submitting) && {
               opacity: 0.35,
-              backgroundColor: Colors.surfaceElevated,
+              backgroundColor: theme.colors.surface,
             },
           ]}
         >
@@ -601,18 +695,18 @@ const styles = {
     paddingTop: Spacing.headerTop,
     paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.lg,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
   },
   headerBackBtn: {
     padding: 8,
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    letterSpacing: -0.2,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
+    letterSpacing: 0.5,
   },
   youtubeBtn: {
     flexDirection: "row",
@@ -620,29 +714,32 @@ const styles = {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
     padding: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   youtubeIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: "rgba(255, 0, 0, 0.08)",
+    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
   },
   youtubeBtnTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   youtubeBtnSub: {
     fontSize: 11,
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
+    fontWeight: "600",
   },
   timelineSection: {
     marginHorizontal: Spacing.lg,
@@ -650,17 +747,17 @@ const styles = {
   },
   sectionTitle: {
     fontSize: 16,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    letterSpacing: -0.2,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
+    letterSpacing: 0.5,
   },
   timelineCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
     padding: Spacing.lg,
     marginTop: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   timelineStep: {
     paddingVertical: 6,
@@ -669,56 +766,57 @@ const styles = {
     width: 2,
     height: 18,
     marginLeft: 19,
-    backgroundColor: Colors.border,
+    backgroundColor: theme.colors.border,
     marginBottom: 4,
   },
   connectorLineActive: {
-    backgroundColor: Colors.success,
+    backgroundColor: theme.colors.accentBrand,
   },
   connectorLineFailed: {
-    backgroundColor: Colors.error,
+    backgroundColor: theme.colors.textPrimary,
   },
   timelineNode: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceElevated,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     alignItems: "center",
     justifyContent: "center",
   },
   timelineNodeActive: {
-    backgroundColor: Colors.success,
-    borderColor: Colors.success,
+    backgroundColor: theme.colors.accentBrand,
+    borderColor: theme.colors.accentBrand,
   },
   timelineNodeFailed: {
-    backgroundColor: Colors.errorSurface,
-    borderColor: Colors.error,
+    backgroundColor: theme.colors.textPrimary,
+    borderColor: theme.colors.textPrimary,
   },
   timelineNodeCurrent: {
-    ...Shadows.subtle,
+    ...Shadows.card,
   },
   timelineLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textTertiary,
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.textMuted,
   },
   timelineDesc: {
-    fontSize: 12,
-    color: Colors.textTertiary,
+    fontSize: 11,
+    fontWeight: "600",
+    color: theme.colors.textMuted,
     marginTop: 1,
   },
   currentBadge: {
-    backgroundColor: Colors.accentSurface,
+    backgroundColor: theme.colors.accentBrand,
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 0,
   },
   currentBadgeText: {
     fontSize: 9,
-    fontWeight: "800",
-    color: Colors.accent,
+    fontWeight: "900",
+    color: "#FFF",
     letterSpacing: 0.5,
   },
   infoRow: {
@@ -734,8 +832,9 @@ const styles = {
     marginBottom: Spacing.sm,
   },
   infoText: {
-    fontSize: 12,
-    color: Colors.textTertiary,
+    fontSize: 11,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
     marginLeft: 6,
   },
   commentsSection: {
@@ -748,83 +847,90 @@ const styles = {
     marginBottom: Spacing.lg,
   },
   commentCountBadge: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     paddingHorizontal: 8,
     paddingVertical: 2,
-    borderRadius: Radius.pill,
+    borderRadius: 0,
     marginLeft: 10,
   },
   commentCountText: {
     fontSize: 12,
-    fontWeight: "700",
-    color: Colors.textSecondary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
   },
   emptyComments: {
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     padding: Spacing.xxxl,
-    borderRadius: Radius.lg,
+    borderRadius: 0,
     alignItems: "center",
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   emptyIcon: {
     width: 56,
     height: 56,
-    borderRadius: 16,
-    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.md,
   },
   emptyTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   emptyDesc: {
-    fontSize: 13,
-    color: Colors.textTertiary,
+    fontSize: 12,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
   },
   commentCard: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
-    borderRadius: Radius.md,
+    borderRadius: 0,
     marginBottom: Spacing.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   commentAuthor: {
     fontSize: 13,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
   },
   commentTime: {
     fontSize: 11,
-    color: Colors.textTertiary,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
   },
   commentText: {
-    color: Colors.textSecondary,
-    fontSize: 14,
-    lineHeight: 20,
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "500",
+    lineHeight: 18,
   },
   commentInputBar: {
     flexDirection: "row",
     alignItems: "flex-end",
     padding: Spacing.md,
     paddingBottom: Spacing.xl,
-    backgroundColor: Colors.surface,
-    borderTopWidth: 1,
-    borderColor: Colors.borderSubtle,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 2,
+    borderColor: theme.colors.border,
   },
   commentInputWrap: {
     flex: 1,
-    backgroundColor: Colors.background,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     overflow: "hidden",
   },
   commentInput: {
@@ -836,8 +942,10 @@ const styles = {
   sendBtn: {
     width: 42,
     height: 42,
-    borderRadius: 14,
-    backgroundColor: Colors.accent,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.accentBrand,
     justifyContent: "center",
     alignItems: "center",
     marginLeft: 10,
@@ -848,53 +956,101 @@ const styles = {
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.md,
     padding: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.success + "30",
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.accentBrand,
     borderStyle: "dashed",
   },
   afterPhotoIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.successSurface,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
   },
   afterPhotoBtnTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
     marginBottom: 2,
   },
-  afterPhotoBtnSub: { fontSize: 11, color: Colors.textTertiary },
+  afterPhotoBtnSub: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    fontWeight: "600",
+  },
   emailBtn: {
     flexDirection: "row",
     alignItems: "center",
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.xl,
     padding: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   emailIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.accentSurface,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
     marginRight: 14,
   },
   emailBtnTitle: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
     marginBottom: 2,
   },
-  emailBtnSub: { fontSize: 11, color: Colors.textTertiary },
+  emailBtnSub: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    fontWeight: "600",
+  },
+  shareBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginHorizontal: Spacing.lg,
+    marginTop: Spacing.md,
+    padding: Spacing.lg,
+    minHeight: 48,
+    backgroundColor: theme.colors.accentBrand,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    ...Shadows.card,
+  },
+  shareIconWrap: {
+    width: 40,
+    height: 40,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
+  },
+  shareBtnTitle: {
+    fontSize: 13,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    marginBottom: 2,
+    textTransform: "uppercase",
+  },
+  shareBtnSub: {
+    fontSize: 11,
+    color: "#FFFFFF",
+    fontWeight: "700",
+  },
 };

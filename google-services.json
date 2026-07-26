@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1045062367632",
+    "project_id": "civic-d0574",
+    "storage_bucket": "civic-d0574.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1045062367632:android:18965e332a6b4868dc5b15",
+        "android_client_info": {
+          "package_name": "com.civic.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1045062367632-gip6bfimdm2ph3r0j9gplrjm7vr1d4f9.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBWMXZGwMOr7r2wZ-_xMyPr2aHp8_XwV-0"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1045062367632-gip6bfimdm2ph3r0j9gplrjm7vr1d4f9.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

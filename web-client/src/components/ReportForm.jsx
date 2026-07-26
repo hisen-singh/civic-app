@@ -12,6 +12,7 @@ const reportSchema = z.object({
 
 export default function ReportForm({ imageUrl, onCancel, onComplete }) {
   const addIssue = useCivicStore((state) => state.addIssue);
+  const user = useCivicStore((state) => state.user);
   const {
     register,
     handleSubmit,
@@ -34,9 +35,42 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
       createdAt: Date.now(),
       daysOpen: 0,
       reports: 1,
+      authorId: user?.uid || null, // FIX: Include authorId for Cloud Functions trust score calculation
     };
 
+    // Optimistic local state update to show reported issue immediately on map
     addIssue(newIssue);
+
+    // Background Queue Dispatch (Non-blocking message queue)
+    fetch("/api/queue/upload", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(newIssue),
+    }).catch(console.error);
+
+    // Semantic Toast/Success State (Using DOM to survive component unmount)
+    const toast = document.createElement("div");
+    toast.textContent = "Report queued for upload";
+    Object.assign(toast.style, {
+      position: "fixed",
+      bottom: "24px",
+      left: "50%",
+      transform: "translateX(-50%)",
+      backgroundColor: "var(--color-surface-elevated, #3b3b3a)",
+      color: "var(--color-success, #10b981)",
+      padding: "12px 24px",
+      borderRadius: "var(--radius-inner, 10px)",
+      zIndex: "9999",
+      fontWeight: "500",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.15)",
+      fontFamily: "inherit",
+    });
+    document.body.appendChild(toast);
+    setTimeout(() => {
+      if (document.body.contains(toast)) document.body.removeChild(toast);
+    }, 3000);
+
+    // Immediate UI Acknowledgment
     onComplete();
   };
 
@@ -46,7 +80,8 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
         position: "fixed",
         inset: 0,
         zIndex: 100,
-        background: "#000",
+        background: "var(--color-surface)",
+        color: "var(--color-text-primary)",
         display: "flex",
         flexDirection: "column",
       }}
@@ -57,18 +92,21 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
           display: "flex",
           justifyContent: "space-between",
           alignItems: "center",
-          borderBottom: "2px solid #fff",
+          borderBottom: "2px solid var(--color-border)",
         }}
       >
-        <h2 style={{ margin: 0, textTransform: "uppercase", fontWeight: 800 }}>
-          DETAILS
+        <h2
+          className="font-display text-5xl uppercase"
+          style={{ margin: 0, lineHeight: 1 }}
+        >
+          REPORT ISSUE
         </h2>
         <button
           onClick={onCancel}
           style={{
             background: "transparent",
             border: "none",
-            color: "#fff",
+            color: "var(--color-text-primary)",
             cursor: "pointer",
           }}
         >
@@ -79,10 +117,9 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
       <div style={{ padding: "2rem", flex: 1, overflowY: "auto" }}>
         {imageUrl && (
           <div
+            className="rounded-none border-2 border-black"
             style={{
               marginBottom: "2rem",
-              border: "2px solid #fff",
-              boxShadow: "4px 4px 0px #FFD700",
               maxHeight: "250px",
               overflow: "hidden",
             }}
@@ -112,7 +149,7 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
             </label>
             <input
               {...register("title")}
-              className="brutalist-input"
+              className="w-full p-3 rounded-none border-2 border-black bg-transparent text-black"
               placeholder="e.g., Massive Pothole"
             />
             {errors.title && (
@@ -140,7 +177,10 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
             >
               Category
             </label>
-            <select {...register("category")} className="brutalist-input">
+            <select
+              {...register("category")}
+              className="w-full p-3 rounded-none border-2 border-black bg-transparent text-black"
+            >
               <option value="">SELECT A CATEGORY...</option>
               <option value="Pothole">POTHOLE</option>
               <option value="Streetlight">STREETLIGHT OUT</option>
@@ -163,7 +203,7 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
 
           <button
             type="submit"
-            className="brutalist-button critical"
+            className="bg-[var(--color-accent-brand)] text-white rounded-none font-bold uppercase"
             style={{
               marginTop: "1rem",
               display: "flex",
@@ -171,6 +211,7 @@ export default function ReportForm({ imageUrl, onCancel, onComplete }) {
               alignItems: "center",
               gap: "0.5rem",
               padding: "1rem",
+              border: "none",
             }}
           >
             <Check size={24} /> PUBLISH ISSUE

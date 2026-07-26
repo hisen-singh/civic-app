@@ -23,7 +23,7 @@ import {
   uploadString,
   getDownloadURL,
 } from "firebase/storage";
-import { db, storage } from "../config/firebaseConfig";
+import { db, storage, auth } from "../config/firebaseConfig";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
 
@@ -353,7 +353,7 @@ export const IssueService = {
         location: issueData.location || "",
         latitude: issueData.latitude || null,
         longitude: issueData.longitude || null,
-        authorId: issueData.authorId || "anonymous",
+        authorId: issueData.authorId || auth?.currentUser?.uid || null,
         authorName: issueData.authorName || "Citizen",
         youtubeUrl: issueData.youtubeUrl || "",
         photo: issueData.photo || null,

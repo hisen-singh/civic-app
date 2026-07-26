@@ -56,11 +56,13 @@ export default function LoginOverlay({ onClose }) {
     <div style={styles.backdrop} onClick={onClose}>
       <div style={styles.container} onClick={(e) => e.stopPropagation()}>
         <button onClick={onClose} style={styles.closeBtn}>
-          <X size={32} color="#fff" />
+          <X size={32} />
         </button>
 
         <div style={styles.header}>
-          <h2 style={styles.title}>ACCESS</h2>
+          <h2 className="font-display text-5xl" style={styles.title}>
+            ACCESS
+          </h2>
           <p style={styles.subtitle}>IDENTIFY YOURSELF TO REPORT ISSUES</p>
         </div>
 
@@ -91,19 +93,25 @@ export default function LoginOverlay({ onClose }) {
 
           <div style={styles.actions}>
             <button
-              className="brutalist-button critical"
-              style={{ ...styles.actionBtn, background: "#FF4500" }}
+              className="font-bold uppercase"
+              style={{
+                ...styles.actionBtn,
+                background: "var(--color-accent-brand)",
+                color: "#fff",
+                border: "none",
+              }}
               onClick={() => handleAuth(false)}
               disabled={isLoading}
             >
               {isLoading ? "WORKING..." : "SIGN IN"}
             </button>
             <button
-              className="brutalist-button"
+              className="font-bold uppercase"
               style={{
                 ...styles.actionBtn,
-                background: "#FFD700",
-                color: "#000",
+                background: "var(--color-surface)",
+                color: "var(--color-text-primary)",
+                border: "2px solid var(--color-border)",
               }}
               onClick={() => handleAuth(true)}
               disabled={isLoading}
@@ -129,14 +137,14 @@ const styles = {
     padding: "1rem",
   },
   container: {
-    background: "#000",
-    border: "3px solid #fff",
-    boxShadow: "8px 8px 0px #FF4500",
+    background: "var(--color-surface)",
+    border: "3px solid var(--color-border)",
+    boxShadow: "8px 8px 0px var(--color-accent-brand)",
     width: "100%",
     maxWidth: "460px",
     padding: "2.5rem 2rem",
     position: "relative",
-    fontFamily: "'Space Grotesk', sans-serif",
+    borderRadius: "0px",
   },
   closeBtn: {
     position: "absolute",
@@ -144,6 +152,7 @@ const styles = {
     right: "1rem",
     background: "transparent",
     border: "none",
+    color: "var(--color-text-primary)",
     cursor: "pointer",
     padding: "0.25rem",
   },
@@ -151,16 +160,12 @@ const styles = {
     marginBottom: "2rem",
   },
   title: {
-    color: "#fff",
-    fontSize: "3rem",
-    fontWeight: 800,
+    color: "var(--color-text-primary)",
     margin: "0 0 0.25rem 0",
-    textTransform: "uppercase",
-    letterSpacing: "-0.02em",
     lineHeight: 1,
   },
   subtitle: {
-    color: "#FFD700",
+    color: "var(--color-accent-brand)",
     fontSize: "0.85rem",
     fontWeight: 800,
     margin: 0,
@@ -168,9 +173,9 @@ const styles = {
     letterSpacing: "0.1em",
   },
   errorBox: {
-    background: "#111",
-    border: "2px solid #FF4500",
-    color: "#FF4500",
+    background: "var(--color-surface)",
+    border: "2px solid var(--color-accent-brand)",
+    color: "var(--color-accent-brand)",
     padding: "1rem",
     marginBottom: "1.5rem",
     fontSize: "0.75rem",
@@ -188,21 +193,21 @@ const styles = {
     gap: "0.5rem",
   },
   label: {
-    color: "#fff",
+    color: "var(--color-text-primary)",
     fontSize: "0.85rem",
     fontWeight: 800,
     textTransform: "uppercase",
     letterSpacing: "0.1em",
   },
   input: {
-    background: "#000",
-    border: "2px solid #fff",
-    color: "#fff",
+    background: "var(--color-surface)",
+    border: "2px solid var(--color-border)",
+    color: "var(--color-text-primary)",
     padding: "1rem",
     fontSize: "1.25rem",
     fontWeight: 600,
-    fontFamily: "'Space Grotesk', sans-serif",
     outline: "none",
+    borderRadius: "0px",
   },
   actions: {
     display: "flex",
@@ -217,5 +222,7 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
+    borderRadius: "0px",
+    cursor: "pointer",
   },
 };

@@ -1,11 +1,10 @@
 import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, ScrollView, Animated, Dimensions } from "react-native";
+import { View, ScrollView, Animated } from "react-native";
 import { Text, ActivityIndicator } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { IssueService } from "../services/IssueService";
-import { Colors, Radius, Spacing, Shadows, Gradients } from "../theme";
+import { Spacing, theme, Shadows } from "../theme";
 
 export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true);
@@ -54,12 +53,12 @@ export default function AnalyticsScreen() {
       <View
         style={{
           flex: 1,
-          backgroundColor: Colors.background,
+          backgroundColor: theme.colors.surface,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color={Colors.accent} />
+        <ActivityIndicator size="large" color={theme.colors.accentBrand} />
       </View>
     );
   }
@@ -70,7 +69,11 @@ export default function AnalyticsScreen() {
 
   return (
     <Animated.ScrollView
-      style={{ flex: 1, backgroundColor: Colors.background, opacity: fadeAnim }}
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.surface,
+        opacity: fadeAnim,
+      }}
       contentContainerStyle={{
         padding: Spacing.xl,
         paddingTop: Spacing.headerTop + 24,
@@ -81,15 +84,23 @@ export default function AnalyticsScreen() {
         <Text
           style={{
             fontSize: 28,
-            fontWeight: "800",
-            color: Colors.textPrimary,
-            letterSpacing: -0.5,
+            fontWeight: "900",
+            color: theme.colors.textPrimary,
+            letterSpacing: 0.5,
             marginBottom: 8,
+            textTransform: "uppercase",
           }}
         >
-          Neighborhood Impact
+          NEIGHBORHOOD IMPACT
         </Text>
-        <Text style={{ fontSize: 14, color: Colors.textSecondary }}>
+        <Text
+          style={{
+            fontSize: 12,
+            fontWeight: "700",
+            color: theme.colors.textMuted,
+            textTransform: "uppercase",
+          }}
+        >
           Community statistics and issue resolution metrics.
         </Text>
       </View>
@@ -100,7 +111,7 @@ export default function AnalyticsScreen() {
           <MaterialCommunityIcons
             name="clipboard-text-multiple-outline"
             size={24}
-            color={Colors.accentLight}
+            color={theme.colors.textPrimary}
             style={{ marginBottom: 12 }}
           />
           <Text style={styles.cardValue}>{stats.total}</Text>
@@ -110,7 +121,7 @@ export default function AnalyticsScreen() {
           <MaterialCommunityIcons
             name="check-decagram-outline"
             size={24}
-            color={Colors.success}
+            color={theme.colors.accentBrand}
             style={{ marginBottom: 12 }}
           />
           <Text style={styles.cardValue}>{stats.solved}</Text>
@@ -120,7 +131,7 @@ export default function AnalyticsScreen() {
           <MaterialCommunityIcons
             name="progress-wrench"
             size={24}
-            color={Colors.warning}
+            color={theme.colors.accentBrand}
             style={{ marginBottom: 12 }}
           />
           <Text style={styles.cardValue}>{stats.inProgress}</Text>
@@ -130,7 +141,7 @@ export default function AnalyticsScreen() {
           <MaterialCommunityIcons
             name="chart-pie"
             size={24}
-            color={Colors.info}
+            color={theme.colors.textPrimary}
             style={{ marginBottom: 12 }}
           />
           <Text style={styles.cardValue}>{resolutionRate}%</Text>
@@ -140,13 +151,13 @@ export default function AnalyticsScreen() {
 
       {/* Category Breakdown (Bar Chart UI) */}
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>Issues by Category</Text>
+        <Text style={styles.sectionTitle}>ISSUES BY CATEGORY</Text>
         <View style={styles.chartContainer}>
           {stats.categories.map(([cat, count]) => {
             const pct = (count / maxCat) * 100;
             return (
               <View key={cat} style={styles.barRow}>
-                <Text style={styles.barLabel}>{cat}</Text>
+                <Text style={styles.barLabel}>{cat.toUpperCase()}</Text>
                 <View style={styles.barTrack}>
                   <View style={[styles.barFill, { width: `${pct}%` }]} />
                 </View>
@@ -157,9 +168,11 @@ export default function AnalyticsScreen() {
           {stats.categories.length === 0 && (
             <Text
               style={{
-                color: Colors.textTertiary,
+                color: theme.colors.textMuted,
                 textAlign: "center",
                 marginVertical: 20,
+                fontWeight: "700",
+                textTransform: "uppercase",
               }}
             >
               No data available
@@ -170,18 +183,7 @@ export default function AnalyticsScreen() {
 
       {/* Health Status */}
       <View style={styles.section}>
-        <LinearGradient
-          colors={
-            stats.critical > 5
-              ? ["rgba(239, 68, 68, 0.2)", "rgba(10, 14, 26, 0.95)"]
-              : resolutionRate > 50
-                ? ["rgba(16, 185, 129, 0.2)", "rgba(10, 14, 26, 0.95)"]
-                : ["rgba(245, 158, 11, 0.2)", "rgba(10, 14, 26, 0.95)"]
-          }
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={styles.healthCard}
-        >
+        <View style={styles.healthCard}>
           <View
             style={{
               flexDirection: "row",
@@ -199,26 +201,26 @@ export default function AnalyticsScreen() {
               }
               size={28}
               color={
-                stats.critical > 5
-                  ? Colors.error
-                  : resolutionRate > 50
-                    ? Colors.success
-                    : Colors.warning
+                stats.critical > 5 || resolutionRate <= 50
+                  ? theme.colors.accentBrand
+                  : theme.colors.textPrimary
               }
             />
             <Text style={styles.healthTitle}>
               {stats.critical > 5
-                ? "Attention Required"
+                ? "ATTENTION REQUIRED"
                 : resolutionRate > 50
-                  ? "Community is Healthy"
-                  : "Needs Improvement"}
+                  ? "COMMUNITY IS HEALTHY"
+                  : "NEEDS IMPROVEMENT"}
             </Text>
           </View>
           <Text
             style={{
-              color: Colors.textSecondary,
-              fontSize: 14,
-              lineHeight: 20,
+              color: theme.colors.textMuted,
+              fontSize: 13,
+              fontWeight: "700",
+              lineHeight: 18,
+              textTransform: "uppercase",
             }}
           >
             {stats.critical > 5
@@ -227,7 +229,7 @@ export default function AnalyticsScreen() {
                 ? "Your neighborhood is actively resolving issues. Thank you for your contributions!"
                 : "There are many open issues. Consider checking the map to see where you can help."}
           </Text>
-        </LinearGradient>
+        </View>
       </View>
     </Animated.ScrollView>
   );
@@ -242,24 +244,24 @@ const styles = {
   },
   gridCard: {
     width: "48%",
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
     padding: Spacing.lg,
     marginBottom: 16,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    ...Shadows.light,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    ...Shadows.card,
   },
   cardValue: {
     fontSize: 28,
-    fontWeight: "800",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   cardLabel: {
-    fontSize: 12,
-    color: Colors.textTertiary,
-    fontWeight: "600",
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    fontWeight: "800",
     textTransform: "uppercase",
   },
   section: {
@@ -267,16 +269,17 @@ const styles = {
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: Spacing.lg,
+    textTransform: "uppercase",
   },
   chartContainer: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
     padding: Spacing.xl,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   barRow: {
     flexDirection: "row",
@@ -285,40 +288,43 @@ const styles = {
   },
   barLabel: {
     width: 100,
-    fontSize: 13,
-    fontWeight: "600",
-    color: Colors.textSecondary,
+    fontSize: 12,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
   },
   barTrack: {
     flex: 1,
-    height: 8,
-    backgroundColor: Colors.background,
-    borderRadius: 4,
+    height: 12,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 0,
     overflow: "hidden",
     marginHorizontal: 12,
   },
   barFill: {
     height: "100%",
-    backgroundColor: Colors.accent,
-    borderRadius: 4,
+    backgroundColor: theme.colors.accentBrand,
+    borderRadius: 0,
   },
   barCount: {
     width: 32,
     textAlign: "right",
     fontSize: 13,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
   },
   healthCard: {
     padding: Spacing.xl,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   healthTitle: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontSize: 16,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginLeft: 12,
   },
 };

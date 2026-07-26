@@ -8,7 +8,7 @@ import { Share2 } from "lucide-react";
 // Custom Map Marker using Lucide
 const customIcon = new L.DivIcon({
   className: "custom-icon",
-  html: `<div style="background-color: #FFD700; width: 16px; height: 16px; border-radius: 50%; border: 2px solid #000; box-shadow: 2px 2px 0 #fff;"></div>`,
+  html: `<div style="background-color: var(--color-accent-brand); width: 16px; height: 16px; border: 2px solid var(--color-border); box-shadow: 2px 2px 0 var(--color-accent-brand);"></div>`,
   iconSize: [16, 16],
   iconAnchor: [8, 8],
 });
@@ -66,11 +66,7 @@ export default function MapScreen({ onShareIssue }) {
             <Popup className="brutalist-popup">
               <div
                 style={{
-                  background: "#000",
-                  color: "#fff",
-                  padding: "0.5rem",
-                  border: "2px solid #fff",
-                  boxShadow: "4px 4px 0 #FFD700",
+                  padding: "1rem",
                 }}
               >
                 <h3
@@ -79,7 +75,7 @@ export default function MapScreen({ onShareIssue }) {
                     fontWeight: 800,
                     margin: "0 0 0.5rem 0",
                     fontSize: "1.2rem",
-                    color: "#FFD700",
+                    color: "var(--color-accent-brand)",
                   }}
                 >
                   {issue.title}
@@ -90,9 +86,9 @@ export default function MapScreen({ onShareIssue }) {
 
                 <div
                   style={{
-                    background: "#111",
+                    background: "var(--color-surface-subtle)",
                     padding: "0.5rem",
-                    border: "1px solid #333",
+                    border: "1px solid var(--color-border)",
                     marginBottom: "0.5rem",
                   }}
                 >
@@ -100,7 +96,7 @@ export default function MapScreen({ onShareIssue }) {
                     style={{
                       margin: "0 0 0.25rem 0",
                       fontSize: "0.8rem",
-                      color: "#EF4444",
+                      color: "var(--color-accent-brand)",
                       fontWeight: 800,
                     }}
                   >
@@ -112,7 +108,6 @@ export default function MapScreen({ onShareIssue }) {
                 </div>
 
                 <button
-                  className="brutalist-button"
                   onClick={() => onShareIssue && onShareIssue(issue)}
                   style={{
                     width: "100%",
@@ -122,6 +117,13 @@ export default function MapScreen({ onShareIssue }) {
                     justifyContent: "center",
                     alignItems: "center",
                     gap: "0.5rem",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: 0,
+                    backgroundColor: "transparent",
+                    color: "var(--color-text-primary)",
+                    fontWeight: 700,
+                    textTransform: "uppercase",
+                    cursor: "pointer",
                   }}
                 >
                   <Share2 size={16} /> GENERATE SHARE CARD
@@ -143,13 +145,14 @@ export default function MapScreen({ onShareIssue }) {
         }}
       >
         <h1
+          className="font-display"
           style={{
             fontSize: "3rem",
-            fontWeight: 800,
             textTransform: "uppercase",
-            textShadow: "4px 4px 0px #FFD700",
+            textShadow: "4px 4px 0px var(--color-accent-brand)",
             margin: 0,
             lineHeight: 1,
+            color: "var(--color-text-primary)",
           }}
         >
           CIVIC

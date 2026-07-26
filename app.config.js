@@ -1,6 +1,12 @@
 export default ({ config }) => {
+  const existingPlugins = config.plugins || [];
+  const plugins = existingPlugins.includes("expo-mail-composer")
+    ? existingPlugins
+    : [...existingPlugins, "expo-mail-composer"];
+
   return {
     ...config,
+    plugins,
     android: {
       ...config.android,
       config: {

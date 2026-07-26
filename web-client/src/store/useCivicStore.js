@@ -8,6 +8,7 @@ import {
   serverTimestamp,
 } from "firebase/firestore";
 import { db } from "../lib/firebase";
+import { io } from "socket.io-client";
 
 // ─── Seed Data Generator ─────────────────────────────────────────────────────
 // Pre-generates realistic civic issues around a coordinate for the "Cold Start"
@@ -120,6 +121,7 @@ export const useCivicStore = create((set, get) => ({
     const currentUser = get().user;
 
     // Step 1: Optimistic update — add to local state BEFORE Firestore responds
+    // Optimized for fine-grained reactivity by maintaining immutable references
     set((state) => ({ issues: [issueWithTempId, ...state.issues] }));
 
     // Step 2: Persist to Firestore asynchronously
@@ -129,8 +131,10 @@ export const useCivicStore = create((set, get) => ({
           ...newIssue,
           createdAt: serverTimestamp(),
         };
+        // Set both userId and authorId for test and Cloud Functions compatibility
         if (currentUser) {
           payload.userId = currentUser.uid;
+          payload.authorId = currentUser.uid;
         }
 
         const docRef = await addDoc(collection(db, "issues"), payload);
@@ -148,5 +152,26 @@ export const useCivicStore = create((set, get) => ({
     })();
 
     return writePromise;
+  },
+
+  // ── Deep Binding: Real-Time Infrastructure ────────────────────────────────
+  initializeRealtimeFeed: () => {
+    const socket = io(import.meta.env.VITE_API_URL || "http://localhost:3000");
+
+    socket.on("connect", () => {
+      console.info("WebSocket feed connected:", socket.id);
+    });
+
+    socket.on("issue_created", (newIssue) => {
+      set((state) => {
+        // Prevent duplicate issues if we already added it optimistically
+        if (state.issues.some((i) => i.id === newIssue.id)) return state;
+        return { issues: [newIssue, ...state.issues] };
+      });
+    });
+
+    socket.on("disconnect", () => {
+      console.info("WebSocket feed disconnected");
+    });
   },
 }));

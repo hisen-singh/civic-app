@@ -18,7 +18,7 @@ import { auth, db, storage } from "../config/firebaseConfig";
 import { doc, setDoc } from "firebase/firestore";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import * as ImagePicker from "expo-image-picker";
-import { Colors, Radius, Spacing } from "../theme";
+import { Spacing, theme } from "../theme";
 
 export default function EditProfileScreen({ navigation }) {
   const { user, reloadUser } = useAuth();
@@ -155,7 +155,11 @@ export default function EditProfileScreen({ navigation }) {
 
   return (
     <Animated.View
-      style={{ flex: 1, backgroundColor: Colors.background, opacity: fadeAnim }}
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.surface,
+        opacity: fadeAnim,
+      }}
     >
       <View style={styles.header}>
         <TouchableOpacity
@@ -166,11 +170,11 @@ export default function EditProfileScreen({ navigation }) {
           <MaterialCommunityIcons
             name="arrow-left"
             size={22}
-            color={Colors.textPrimary}
+            color={theme.colors.textPrimary}
           />
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={styles.headerTitle}>Edit Profile</Text>
+          <Text style={styles.headerTitle}>EDIT PROFILE</Text>
         </View>
         <TouchableOpacity
           onPress={handleSave}
@@ -184,7 +188,7 @@ export default function EditProfileScreen({ navigation }) {
               (!hasChanges || saving) && { opacity: 0.35 },
             ]}
           >
-            {saving ? "Saving..." : "Save"}
+            {saving ? "SAVING..." : "SAVE"}
           </Text>
         </TouchableOpacity>
       </View>
@@ -209,11 +213,16 @@ export default function EditProfileScreen({ navigation }) {
           <MaterialCommunityIcons
             name="check-circle"
             size={16}
-            color={Colors.success}
+            color={theme.colors.accentBrand}
             style={{ marginRight: 8 }}
           />
           <Text
-            style={{ color: Colors.success, fontSize: 13, fontWeight: "600" }}
+            style={{
+              color: theme.colors.accentBrand,
+              fontSize: 13,
+              fontWeight: "800",
+              textTransform: "uppercase",
+            }}
           >
             {successMsg}
           </Text>
@@ -248,7 +257,7 @@ export default function EditProfileScreen({ navigation }) {
               </View>
             </TouchableOpacity>
             <TouchableOpacity onPress={pickAvatar} activeOpacity={0.7}>
-              <Text style={styles.changePhotoText}>Change Photo</Text>
+              <Text style={styles.changePhotoText}>CHANGE PHOTO</Text>
             </TouchableOpacity>
           </View>
 
@@ -263,14 +272,18 @@ export default function EditProfileScreen({ navigation }) {
               }}
               mode="outlined"
               style={styles.input}
-              textColor={Colors.textPrimary}
+              textColor={theme.colors.textPrimary}
               theme={{
-                colors: { primary: Colors.accent, outline: Colors.border },
+                colors: {
+                  primary: theme.colors.accentBrand,
+                  outline: theme.colors.border,
+                },
+                roundness: 0,
               }}
               left={
                 <TextInput.Icon
                   icon="account-outline"
-                  color={Colors.textTertiary}
+                  color={theme.colors.textMuted}
                 />
               }
               maxLength={50}
@@ -284,7 +297,7 @@ export default function EditProfileScreen({ navigation }) {
               <MaterialCommunityIcons
                 name="email-outline"
                 size={18}
-                color={Colors.textTertiary}
+                color={theme.colors.textMuted}
                 style={{ marginRight: 12 }}
               />
               <Text style={styles.readOnlyText} numberOfLines={1}>
@@ -299,14 +312,21 @@ export default function EditProfileScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name={isVerified ? "check-decagram" : "alert-circle-outline"}
                   size={12}
-                  color={isVerified ? Colors.success : Colors.warning}
+                  color={
+                    isVerified
+                      ? theme.colors.accentBrand
+                      : theme.colors.textMuted
+                  }
                   style={{ marginRight: 4 }}
                 />
                 <Text
                   style={{
                     fontSize: 10,
-                    fontWeight: "700",
-                    color: isVerified ? Colors.success : Colors.warning,
+                    fontWeight: "800",
+                    color: isVerified
+                      ? theme.colors.accentBrand
+                      : theme.colors.textMuted,
+                    textTransform: "uppercase",
                   }}
                 >
                   {isVerified ? "VERIFIED" : "UNVERIFIED"}
@@ -323,19 +343,19 @@ export default function EditProfileScreen({ navigation }) {
                 {resendingEmail ? (
                   <ActivityIndicator
                     size={14}
-                    color={Colors.accent}
+                    color={theme.colors.accentBrand}
                     style={{ marginRight: 8 }}
                   />
                 ) : (
                   <MaterialCommunityIcons
                     name="email-send-outline"
                     size={16}
-                    color={Colors.accent}
+                    color={theme.colors.accentBrand}
                     style={{ marginRight: 8 }}
                   />
                 )}
                 <Text style={styles.resendText}>
-                  {resendingEmail ? "Sending..." : "Resend Verification Email"}
+                  {resendingEmail ? "SENDING..." : "RESEND VERIFICATION EMAIL"}
                 </Text>
               </TouchableOpacity>
             )}
@@ -349,9 +369,9 @@ export default function EditProfileScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name="calendar-outline"
                   size={16}
-                  color={Colors.textTertiary}
+                  color={theme.colors.textMuted}
                 />
-                <Text style={styles.infoLabel}>Joined</Text>
+                <Text style={styles.infoLabel}>JOINED</Text>
                 <Text style={styles.infoValue}>
                   {user?.metadata?.creationTime
                     ? new Date(user.metadata.creationTime).toLocaleDateString(
@@ -366,9 +386,9 @@ export default function EditProfileScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name="shield-check-outline"
                   size={16}
-                  color={Colors.textTertiary}
+                  color={theme.colors.textMuted}
                 />
-                <Text style={styles.infoLabel}>User ID</Text>
+                <Text style={styles.infoLabel}>USER ID</Text>
                 <Text
                   style={[
                     styles.infoValue,
@@ -390,10 +410,17 @@ export default function EditProfileScreen({ navigation }) {
               <MaterialCommunityIcons
                 name="alert-circle-outline"
                 size={16}
-                color={Colors.error}
+                color={theme.colors.accentBrand}
                 style={{ marginRight: 8 }}
               />
-              <Text style={{ color: Colors.error, fontSize: 13, flex: 1 }}>
+              <Text
+                style={{
+                  color: theme.colors.accentBrand,
+                  fontSize: 13,
+                  flex: 1,
+                  fontWeight: "700",
+                }}
+              >
                 {errorMsg}
               </Text>
             </View>
@@ -411,120 +438,153 @@ const styles = {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.md,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    letterSpacing: -0.2,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
+    letterSpacing: 1,
+    textTransform: "uppercase",
   },
-  saveBtn: { fontSize: 15, fontWeight: "700", color: Colors.accent },
+  saveBtn: {
+    fontSize: 15,
+    fontWeight: "800",
+    color: theme.colors.accentBrand,
+    textTransform: "uppercase",
+  },
   successToast: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: Colors.successSurface,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.accentBrand,
     paddingVertical: 10,
     paddingHorizontal: 16,
     marginHorizontal: Spacing.xl,
     marginTop: Spacing.sm,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
   },
   avatarSection: { alignItems: "center", marginBottom: 32, marginTop: 8 },
   avatarWrap: { position: "relative", marginBottom: 12 },
   avatar: {
     width: 100,
     height: 100,
-    borderRadius: 34,
-    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surfaceSubtle,
   },
   avatarPlaceholder: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: Colors.accent,
+    backgroundColor: theme.colors.accentBrand,
   },
-  avatarInitials: { fontSize: 36, fontWeight: "700", color: "#FFF" },
+  avatarInitials: { fontSize: 36, fontWeight: "900", color: "#FFF" },
   cameraIcon: {
     position: "absolute",
-    bottom: 0,
-    right: 0,
+    bottom: -4,
+    right: -4,
     width: 32,
     height: 32,
-    borderRadius: 16,
-    backgroundColor: Colors.accentDark,
+    borderRadius: 0,
+    backgroundColor: theme.colors.textPrimary,
     justifyContent: "center",
     alignItems: "center",
-    borderWidth: 3,
-    borderColor: Colors.background,
+    borderWidth: 2,
+    borderColor: theme.colors.surface,
   },
-  changePhotoText: { color: Colors.accent, fontSize: 14, fontWeight: "600" },
+  changePhotoText: {
+    color: theme.colors.accentBrand,
+    fontSize: 14,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
   fieldSection: { marginBottom: 28 },
   fieldLabel: {
     fontSize: 11,
-    fontWeight: "700",
-    color: Colors.textTertiary,
-    letterSpacing: 0.5,
+    fontWeight: "800",
+    color: theme.colors.textMuted,
+    letterSpacing: 1,
     marginBottom: 10,
+    textTransform: "uppercase",
   },
-  input: { backgroundColor: Colors.surfaceElevated },
+  input: { backgroundColor: theme.colors.surface, borderRadius: 0 },
   readOnlyField: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     padding: 16,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
-  readOnlyText: { flex: 1, color: Colors.textSecondary, fontSize: 14 },
+  readOnlyText: { flex: 1, color: theme.colors.textPrimary, fontSize: 14 },
   verifiedBadge: {
     flexDirection: "row",
     alignItems: "center",
     paddingHorizontal: 8,
     paddingVertical: 4,
-    borderRadius: 6,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  verifiedActive: { backgroundColor: Colors.successSurface },
-  verifiedInactive: { backgroundColor: Colors.warningSurface },
+  verifiedActive: { backgroundColor: theme.colors.surface },
+  verifiedInactive: { backgroundColor: theme.colors.surface },
   resendBtn: {
     flexDirection: "row",
     alignItems: "center",
     marginTop: 10,
-    backgroundColor: Colors.accentSurface,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.accentBrand,
     paddingVertical: 12,
     paddingHorizontal: 16,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
   },
-  resendText: { color: Colors.accent, fontSize: 13, fontWeight: "600" },
+  resendText: {
+    color: theme.colors.accentBrand,
+    fontSize: 13,
+    fontWeight: "800",
+    textTransform: "uppercase",
+  },
   infoCard: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     padding: Spacing.lg,
   },
   infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
   infoLabel: {
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
     fontSize: 13,
     marginLeft: 10,
     flex: 1,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
-  infoValue: { color: Colors.textSecondary, fontSize: 13, fontWeight: "600" },
+  infoValue: {
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   infoDivider: {
-    height: 1,
-    backgroundColor: Colors.border,
+    height: 2,
+    backgroundColor: theme.colors.border,
     marginVertical: 12,
   },
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.errorSurface,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.accentBrand,
     padding: 12,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
     marginBottom: 16,
   },
 };

@@ -11,10 +11,16 @@ try {
     }),
   });
 } catch (e) {
-  console.warn("Failed to set notification handler (likely missing google-services.json on native Android build):", e);
+  console.warn(
+    "Failed to set notification handler (likely missing google-services.json on native Android build):",
+    e,
+  );
 }
-import { View, Text, Animated } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { View, Text, Animated, Image } from "react-native";
+import {
+  NavigationContainer,
+  DarkTheme as NavDarkTheme,
+} from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
@@ -29,7 +35,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Font from "expo-font";
-import { Colors, Radius, Shadows } from "./theme";
+import { Colors, Radius, Shadows, theme } from "./theme";
 
 // Screens
 import HomeScreen from "./screens/HomeScreen";
@@ -45,6 +51,7 @@ import WatchAreaScreen from "./screens/WatchAreaScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import EditProfileScreen from "./screens/EditProfileScreen";
 import AnalyticsScreen from "./screens/AnalyticsScreen";
+import PublicProfileScreen from "./screens/PublicProfileScreen";
 
 // Auth
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -52,18 +59,17 @@ import { AuthProvider, useAuth } from "./contexts/AuthContext";
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Theme Configuration — unified with theme.js
-const theme = {
-  ...DefaultTheme,
+const navTheme = {
+  ...NavDarkTheme,
+  dark: true,
   colors: {
-    ...DefaultTheme.colors,
-    primary: Colors.textPrimary,
-    secondary: Colors.textSecondary,
-    tertiary: Colors.success,
-    background: Colors.background,
-    surface: Colors.surface,
-    onSurface: Colors.textPrimary,
-    onBackground: Colors.textPrimary,
+    ...NavDarkTheme.colors,
+    primary: theme.colors.accentBrand,
+    background: theme.colors.surface,
+    card: theme.colors.surface,
+    text: theme.colors.textPrimary,
+    border: theme.colors.border,
+    notification: theme.colors.accentBrand,
   },
 };
 
@@ -78,18 +84,18 @@ function TabIcon({ name, color, focused }) {
     >
       <View
         style={{
-          width: focused ? 40 : 36,
-          height: focused ? 40 : 36,
-          borderRadius: focused ? 14 : 12,
-          backgroundColor: focused ? Colors.accentSurface : "transparent",
+          width: 40,
+          height: 40,
+          borderRadius: 9999,
+          backgroundColor: focused ? theme.colors.accentBrand : "transparent",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
         <MaterialCommunityIcons
           name={name}
-          color={focused ? Colors.accentLight : color}
-          size={focused ? 24 : 22}
+          color={focused ? "#FFFFFF" : theme.colors.textPrimary}
+          size={22}
         />
       </View>
       {focused && (
@@ -97,8 +103,8 @@ function TabIcon({ name, color, focused }) {
           style={{
             width: 4,
             height: 4,
-            borderRadius: 2,
-            backgroundColor: Colors.accentLight,
+            borderRadius: 9999,
+            backgroundColor: theme.colors.accentBrand,
             marginTop: 4,
           }}
         />
@@ -115,28 +121,28 @@ function MainTabs() {
   const tabBarHeight = 64 + Math.max(insets.bottom, 8);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: Colors.surface,
-            borderTopWidth: 1,
-            borderTopColor: Colors.border,
+            backgroundColor: theme.colors.surface,
+            borderTopWidth: 2,
+            borderTopColor: theme.colors.border,
             elevation: 0,
             height: tabBarHeight,
             paddingBottom: Math.max(insets.bottom, 8),
             paddingTop: 8,
             paddingHorizontal: 8,
-            ...Shadows.subtle,
           },
-          tabBarActiveTintColor: Colors.accentLight,
-          tabBarInactiveTintColor: Colors.tabInactive,
+          tabBarActiveTintColor: theme.colors.accentBrand,
+          tabBarInactiveTintColor: theme.colors.textPrimary,
           tabBarLabelStyle: {
             fontSize: 10,
-            fontWeight: "700",
+            fontWeight: "800",
             marginTop: 2,
-            letterSpacing: 0.2,
+            letterSpacing: 0.5,
+            textTransform: "uppercase",
           },
           tabBarHideOnKeyboard: true,
         }}
@@ -179,33 +185,18 @@ function MainTabs() {
             tabBarIcon: () => (
               <View
                 style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 9999,
                   marginTop: -8,
-                  overflow: "hidden",
-                  ...Shadows.fab,
+                  backgroundColor: theme.colors.accentBrand,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderWidth: 3,
+                  borderColor: theme.colors.surface,
                 }}
               >
-                <LinearGradient
-                  colors={[
-                    Colors.accentDark,
-                    Colors.accent,
-                    Colors.accentLight,
-                  ]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    borderWidth: 3,
-                    borderColor: Colors.surface,
-                    borderRadius: 26,
-                  }}
-                >
-                  <MaterialCommunityIcons name="plus" color="#FFF" size={28} />
-                </LinearGradient>
+                <MaterialCommunityIcons name="plus" color="#FFF" size={28} />
               </View>
             ),
           }}
@@ -261,6 +252,7 @@ function AppStack() {
         options={{ presentation: "modal" }}
       />
       <Stack.Screen name="IssueDetail" component={IssueDetailScreen} />
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} />
       <Stack.Screen name="WatchArea" component={WatchAreaScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
@@ -301,6 +293,10 @@ function SplashScreen() {
       }}
     >
       <Animated.View style={{ opacity: pulseAnim, alignItems: "center" }}>
+        <Image
+          source={require("./assets/logo.jpg")}
+          style={{ width: 90, height: 90, borderRadius: 45, marginBottom: 16 }}
+        />
         <Text
           style={{
             fontSize: 42,
@@ -368,8 +364,8 @@ function AppContent() {
 
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-      <NavigationContainer>
-        {user ? <AppStack /> : <AuthStack />}
+      <NavigationContainer theme={navTheme}>
+        <AppStack />
       </NavigationContainer>
     </Animated.View>
   );

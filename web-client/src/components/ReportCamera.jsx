@@ -65,12 +65,13 @@ export default function ReportCamera({ onCapture, onCancel }) {
           justifyContent: "center",
           padding: "2rem",
           textAlign: "center",
-          background: "#000",
+          background: "var(--color-surface)",
+          color: "var(--color-text-primary)",
         }}
       >
         <p
           style={{
-            color: "#EF4444",
+            color: "var(--color-accent-brand)",
             fontWeight: 800,
             fontSize: "1.5rem",
             marginBottom: "1rem",
@@ -78,7 +79,7 @@ export default function ReportCamera({ onCapture, onCancel }) {
         >
           {error}
         </p>
-        <button className="brutalist-button" onClick={onCancel}>
+        <button className="brutalist-button rounded-none" onClick={onCancel}>
           BACK TO MAP
         </button>
       </div>
@@ -110,11 +111,12 @@ export default function ReportCamera({ onCapture, onCancel }) {
         }}
       >
         <h2
+          className="font-display text-4xl"
           style={{
             margin: 0,
             textTransform: "uppercase",
-            fontWeight: 800,
-            textShadow: "2px 2px 0px #FFD700",
+            color: "#fff",
+            textShadow: "2px 2px 0px var(--color-accent-brand)",
           }}
         >
           REPORT ISSUE
@@ -157,8 +159,8 @@ export default function ReportCamera({ onCapture, onCancel }) {
           padding: "2rem",
           display: "flex",
           justifyContent: "center",
-          background: "#111",
-          borderTop: "2px solid #fff",
+          background: "#000",
+          borderTop: "2px solid var(--color-border)",
         }}
       >
         <button
@@ -166,8 +168,8 @@ export default function ReportCamera({ onCapture, onCancel }) {
           style={{
             width: 80,
             height: 80,
-            borderRadius: "50%",
-            background: "#FFD700",
+            borderRadius: "0px",
+            background: "var(--color-accent-brand)",
             border: "4px solid #fff",
             display: "flex",
             justifyContent: "center",
@@ -176,7 +178,7 @@ export default function ReportCamera({ onCapture, onCancel }) {
             boxShadow: "4px 4px 0px #fff",
           }}
         >
-          <Camera size={32} color="#000" />
+          <Camera size={32} color="#fff" />
         </button>
       </div>
     </div>

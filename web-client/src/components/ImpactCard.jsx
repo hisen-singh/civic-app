@@ -5,7 +5,7 @@ import React from "react";
  *
  * Two visual states driven by `issue.status`:
  *   "Open"   → Outrage Card  (Electric Orange, aggressive tone)
- *   "Solved" → Hero Card     (Safety Yellow, celebratory tone)
+ *   "Solved" → Hero Card     (Celebratory tone using Electric Orange)
  *
  * Designed to be captured as a screenshot / exported as an image.
  * Uses NO border-radius, hard offset shadows, Space Grotesk 800.
@@ -16,10 +16,9 @@ const CARD_WIDTH = 420;
 const styles = {
   card: {
     width: CARD_WIDTH,
-    fontFamily: "'Space Grotesk', sans-serif",
-    background: "#000",
-    color: "#fff",
-    border: "3px solid #fff",
+    background: "var(--color-surface-card)",
+    color: "var(--color-text-primary)",
+    border: "3px solid var(--color-border)",
     position: "relative",
     overflow: "hidden",
   },
@@ -34,17 +33,17 @@ const styles = {
   }),
   headerLabel: {
     fontSize: "0.7rem",
-    fontWeight: 800,
+    fontWeight: 900,
     letterSpacing: "0.15em",
     textTransform: "uppercase",
-    color: "#000",
+    color: "#fff",
   },
   headerBrand: {
     fontSize: "0.7rem",
-    fontWeight: 800,
+    fontWeight: 900,
     letterSpacing: "0.15em",
     textTransform: "uppercase",
-    color: "#000",
+    color: "#fff",
     opacity: 0.7,
   },
 
@@ -57,7 +56,7 @@ const styles = {
     border: `2px solid ${accent}`,
     padding: "4px 10px",
     fontSize: "0.7rem",
-    fontWeight: 800,
+    fontWeight: 900,
     letterSpacing: "0.1em",
     textTransform: "uppercase",
     color: accent,
@@ -65,11 +64,18 @@ const styles = {
   }),
   title: {
     fontSize: "1.6rem",
-    fontWeight: 800,
+    fontWeight: 900,
     lineHeight: 1.15,
     textTransform: "uppercase",
     letterSpacing: "-0.02em",
     margin: "0 0 20px 0",
+  },
+  description: {
+    fontSize: "0.85rem",
+    fontWeight: 500,
+    color: "var(--color-text-muted)",
+    margin: "0 0 20px 0",
+    lineHeight: 1.4,
   },
 
   // ── Stats Block ──
@@ -77,66 +83,67 @@ const styles = {
     display: "flex",
     gap: 0,
     marginBottom: 20,
+    border: "2px solid var(--color-border)",
   },
   statCell: (accent, isFirst) => ({
     flex: 1,
     padding: "16px 14px",
-    background: "#111",
-    borderLeft: isFirst ? "none" : "2px solid #333",
+    background: "var(--color-surface-subtle)",
+    borderLeft: isFirst ? "none" : "2px solid var(--color-border)",
     textAlign: "center",
   }),
   statNumber: (accent) => ({
     fontSize: "2.4rem",
-    fontWeight: 800,
+    fontWeight: 900,
     lineHeight: 1,
     color: accent,
   }),
   statLabel: {
     fontSize: "0.6rem",
-    fontWeight: 800,
+    fontWeight: 900,
     letterSpacing: "0.15em",
     textTransform: "uppercase",
-    color: "#888",
+    color: "var(--color-text-muted)",
     marginTop: 6,
   },
 
   // ── Outrage CTA ──
   outrageMessage: {
-    background: "#111",
-    border: "2px solid #FF4500",
+    background: "var(--color-surface-subtle)",
+    border: "2px solid var(--color-accent-brand)",
     padding: "14px 16px",
     marginBottom: 16,
   },
   outrageText: {
     fontSize: "0.85rem",
-    fontWeight: 800,
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.05em",
-    color: "#FF4500",
+    color: "var(--color-accent-brand)",
     margin: 0,
     lineHeight: 1.4,
   },
 
   // ── Hero CTA ──
   heroMessage: {
-    background: "#111",
-    border: "2px solid #FFD700",
+    background: "var(--color-surface-subtle)",
+    border: "2px solid var(--color-accent-brand)",
     padding: "14px 16px",
     marginBottom: 16,
   },
   heroText: {
     fontSize: "0.85rem",
-    fontWeight: 800,
+    fontWeight: 900,
     textTransform: "uppercase",
     letterSpacing: "0.05em",
-    color: "#FFD700",
+    color: "var(--color-accent-brand)",
     margin: 0,
     lineHeight: 1.4,
   },
 
   // ── Footer ──
   footer: {
-    borderTop: "2px solid #333",
+    borderTop: "2px solid var(--color-border)",
     padding: "12px 20px",
     display: "flex",
     justifyContent: "space-between",
@@ -144,8 +151,8 @@ const styles = {
   },
   footerText: {
     fontSize: "0.65rem",
-    fontWeight: 600,
-    color: "#666",
+    fontWeight: 700,
+    color: "var(--color-text-muted)",
     letterSpacing: "0.05em",
     textTransform: "uppercase",
   },
@@ -156,11 +163,11 @@ const styles = {
     top: 60,
     right: -20,
     transform: "rotate(12deg)",
-    border: "4px solid #FFD700",
+    border: "4px solid var(--color-accent-brand)",
     padding: "6px 36px",
     fontSize: "1.4rem",
-    fontWeight: 800,
-    color: "#FFD700",
+    fontWeight: 900,
+    color: "var(--color-accent-brand)",
     letterSpacing: "0.15em",
     textTransform: "uppercase",
     opacity: 0.25,
@@ -170,7 +177,13 @@ const styles = {
 
 export default function ImpactCard({ issue, cardRef }) {
   const isResolved = issue.status === "Solved";
-  const accent = isResolved ? "#FFD700" : "#FF4500";
+  const urgency = issue.urgency || "medium";
+  const accent =
+    urgency === "low"
+      ? "var(--color-status-low)"
+      : urgency === "critical"
+        ? "var(--color-status-critical)"
+        : "var(--color-status-medium)";
 
   return (
     <div ref={cardRef} style={styles.card}>
@@ -188,7 +201,12 @@ export default function ImpactCard({ issue, cardRef }) {
       {/* ── Body ── */}
       <div style={styles.body}>
         <div style={styles.category(accent)}>{issue.category || "ISSUE"}</div>
-        <h2 style={styles.title}>{issue.title}</h2>
+        <h2 className="font-display text-4xl" style={styles.title}>
+          {issue.title}
+        </h2>
+        {issue.description && (
+          <p style={styles.description}>{issue.description}</p>
+        )}
 
         {/* ── Stats ── */}
         <div style={styles.statsBlock}>

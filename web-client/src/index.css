@@ -1,13 +1,21 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;600;700;800&display=swap');
-
+@import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 :root {
-  --bg-color: #000000;
-  --text-primary: #FFFFFF;
-  --accent-critical: #FF4500;
-  --accent-action: #FFD700;
-  
-  --brutal-border: 2px solid var(--text-primary);
-  --brutal-shadow: 4px 4px 0px var(--accent-action);
+  --color-surface:              #121212;
+  --color-surface-subtle:       #121212;
+  --color-surface-card:         rgba(255, 255, 255, 0.08);
+  --color-text-primary:         #e0e0e0;
+  --color-text-muted:           #A0A0A0;
+  --color-action-default:       #e0e0e0;   
+  --color-action-hover:         #FF4500;
+  --color-accent-brand:         #FF4500;   
+  --color-accent-brand-subtle:  #121212;   
+  --color-border:               rgba(255, 255, 255, 0.1);
+  --color-status-low:           #008080;
+  --color-status-medium:        #8B5CF6;
+  --color-status-critical:      #E53935;
+  --radius-outer:               28px;
+  --radius-inner:               16px;
 }
 
 * {
@@ -17,14 +25,19 @@
 }
 
 body {
-  font-family: 'Space Grotesk', sans-serif;
-  background-color: var(--bg-color);
-  color: var(--text-primary);
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+  background-color: var(--color-surface-subtle);
+  color: var(--color-text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
 
-/* Utilitarian Form Elements */
+/* Utilities */
+.font-display {
+  font-family: 'Anton', sans-serif;
+  text-transform: uppercase;
+}
+
 input, textarea, button, select {
   font-family: inherit;
   background: transparent;
@@ -33,53 +46,45 @@ input, textarea, button, select {
   outline: none;
 }
 
-/* Brutalist UI Components */
-.brutalist-card {
-  border: var(--brutal-border);
-  background-color: var(--bg-color);
-  padding: 1rem;
-  box-shadow: var(--brutal-shadow);
-  transition: transform 0.1s ease, box-shadow 0.1s ease;
-}
-
-.brutalist-button {
-  border: var(--brutal-border);
-  background-color: var(--accent-action);
-  color: var(--bg-color);
-  padding: 0.75rem 1.5rem;
-  font-weight: 800;
-  font-size: 1.1rem;
-  text-transform: uppercase;
-  cursor: pointer;
-  box-shadow: 4px 4px 0px var(--text-primary);
-  transition: transform 0.05s ease, box-shadow 0.05s ease;
-}
-
-.brutalist-button:active {
-  transform: translate(2px, 2px);
-  box-shadow: 2px 2px 0px var(--text-primary);
-}
-
-.brutalist-button.critical {
-  background-color: var(--accent-critical);
-  color: #FFFFFF;
-}
-
-.brutalist-input {
-  border: var(--brutal-border);
-  padding: 0.75rem;
-  font-weight: 600;
-  background: #111;
-  width: 100%;
-}
-.brutalist-input:focus {
-  border-color: var(--accent-action);
-}
-
-/* Leaflet Map overrides for Dark Mode */
+/* Leaflet Map overrides for Dark Mode using semantic tokens */
 .leaflet-container {
-  background-color: #111 !important;
+  background-color: var(--color-surface-subtle) !important;
 }
 .leaflet-tile {
-  filter: invert(100%) hue-rotate(180deg) brightness(95%) contrast(90%);
+  /* No filter needed — using CARTO dark_all tiles natively */
+}
+
+/* Brutalist Leaflet Popup styling overrides */
+.brutalist-popup .leaflet-popup-content-wrapper {
+  background: var(--color-surface) !important;
+  color: var(--color-text-primary) !important;
+  border-radius: 0px !important;
+  border: 2px solid var(--color-border) !important;
+  box-shadow: 4px 4px 0px var(--color-accent-brand) !important;
+  padding: 0 !important;
+}
+
+.brutalist-popup .leaflet-popup-content {
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.brutalist-popup .leaflet-popup-tip-container {
+  display: none !important;
+}
+
+.brutalist-popup a.leaflet-popup-close-button {
+  color: var(--color-text-primary) !important;
+  font-family: inherit !important;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  top: 4px !important;
+  right: 4px !important;
+  background: transparent !important;
+  border: none !important;
+  text-decoration: none !important;
+}
+
+.brutalist-popup a.leaflet-popup-close-button:hover {
+  color: var(--color-accent-brand) !important;
 }

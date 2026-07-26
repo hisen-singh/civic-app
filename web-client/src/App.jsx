@@ -18,6 +18,9 @@ function App() {
   const user = useCivicStore((state) => state.user);
   const loginStore = useCivicStore((state) => state.login);
   const logoutStore = useCivicStore((state) => state.logout);
+  const initializeRealtimeFeed = useCivicStore(
+    (state) => state.initializeRealtimeFeed,
+  );
 
   // Sync Firebase auth state with Zustand store
   useEffect(() => {
@@ -30,6 +33,11 @@ function App() {
     });
     return () => unsubscribe();
   }, [loginStore, logoutStore]);
+
+  // Initialize Real-Time WebSockets Feed
+  useEffect(() => {
+    initializeRealtimeFeed();
+  }, [initializeRealtimeFeed]);
 
   const handleCapture = (imageUrl) => {
     setCapturedImage(imageUrl);
@@ -49,103 +57,115 @@ function App() {
   return (
     <div
       style={{
-        height: "100vh",
-        width: "100vw",
         display: "flex",
+        minHeight: "100dvh",
         flexDirection: "column",
-        position: "relative",
-        overflow: "hidden",
+        backgroundColor: "var(--color-surface)",
       }}
     >
-      {currentView === "map" && (
-        <>
-          <MapScreen onShareIssue={(issue) => setShareIssue(issue)} />
+      {/* Semantic Header */}
+      <header
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          padding: "12px 16px",
+          backgroundColor: "var(--color-surface)",
+          borderBottom: "2px solid var(--color-border)",
+        }}
+      >
+        <h1
+          className="font-display"
+          style={{
+            fontSize: "2rem",
+            lineHeight: 1,
+            letterSpacing: "-0.02em",
+            color: "var(--color-text-primary)",
+          }}
+        >
+          CIVIC
+        </h1>
 
-          {/* Top Right Auth Button */}
-          <div
+        <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+          <button
             style={{
-              position: "absolute",
-              top: "1.5rem",
-              right: "1.5rem",
-              zIndex: 10,
-            }}
-          >
-            {user ? (
-              <button
-                className="brutalist-button"
-                onClick={() => signOut(auth)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  fontSize: "0.8rem",
-                  background: "#000",
-                  color: "#fff",
-                  border: "2px solid #fff",
-                }}
-              >
-                SIGN OUT
-              </button>
-            ) : (
-              <button
-                className="brutalist-button"
-                onClick={() => setShowLogin(true)}
-                style={{
-                  padding: "0.5rem 1rem",
-                  fontSize: "0.8rem",
-                  display: "flex",
-                  alignItems: "center",
-                  gap: "0.5rem",
-                  background: "#000",
-                  color: "#fff",
-                  border: "2px solid #fff",
-                  boxShadow: "4px 4px 0 #FF4500",
-                }}
-              >
-                <User size={16} /> SIGN IN
-              </button>
-            )}
-          </div>
-
-          {/* Centered Aggressive Report Button */}
-          <div
-            style={{
-              position: "absolute",
-              bottom: "2rem",
-              left: "0",
-              right: "0",
               display: "flex",
-              justifyContent: "center",
-              zIndex: 10,
+              alignItems: "center",
+              gap: "8px",
+              padding: "8px 16px",
+              backgroundColor: "var(--color-accent-brand)",
+              color: "#fff",
+              border: "2px solid var(--color-border)",
+              borderRadius: 0,
+              fontWeight: 700,
+              textTransform: "uppercase",
+              cursor: "pointer",
+              fontSize: "0.85rem",
             }}
+            onClick={() => setCurrentView("camera")}
           >
+            <Camera size={18} /> Report Issue
+          </button>
+
+          {user ? (
             <button
-              className="brutalist-button critical"
-              onClick={() => setCurrentView("camera")}
               style={{
-                padding: "1rem 2rem",
-                fontSize: "1.25rem",
+                padding: "8px 16px",
+                backgroundColor: "var(--color-surface)",
+                color: "var(--color-text-primary)",
+                border: "2px solid var(--color-border)",
+                borderRadius: 0,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                cursor: "pointer",
+                fontSize: "0.85rem",
+              }}
+              onClick={() => signOut(auth)}
+            >
+              Sign Out
+            </button>
+          ) : (
+            <button
+              style={{
                 display: "flex",
                 alignItems: "center",
-                gap: "0.75rem",
-                borderRadius: "0",
+                gap: "8px",
+                padding: "8px 16px",
+                backgroundColor: "var(--color-surface)",
+                color: "var(--color-text-primary)",
+                border: "2px solid var(--color-border)",
+                borderRadius: 0,
+                fontWeight: 700,
+                textTransform: "uppercase",
+                cursor: "pointer",
+                fontSize: "0.85rem",
               }}
+              onClick={() => setShowLogin(true)}
             >
-              <Camera size={28} /> REPORT ISSUE
+              <User size={16} /> Sign In
             </button>
-          </div>
-        </>
-      )}
+          )}
+        </div>
+      </header>
 
-      {currentView === "camera" && (
-        <ReportCamera onCapture={handleCapture} onCancel={handleCancel} />
-      )}
+      {/* Main Content Area */}
+      <main style={{ flex: 1, minWidth: 0, position: "relative" }}>
+        {currentView === "map" && (
+          <MapScreen onShareIssue={(issue) => setShareIssue(issue)} />
+        )}
 
-      {currentView === "form" && (
-        <ReportForm
-          imageUrl={capturedImage}
-          onCancel={handleCancel}
-          onComplete={handleComplete}
-        />
-      )}
+        {currentView === "camera" && (
+          <ReportCamera onCapture={handleCapture} onCancel={handleCancel} />
+        )}
+
+        {currentView === "form" && (
+          <ReportForm
+            imageUrl={capturedImage}
+            onCancel={handleCancel}
+            onComplete={handleComplete}
+          />
+        )}
+      </main>
 
       {/* Share Overlay — renders above everything when an issue is selected */}
       {shareIssue && (

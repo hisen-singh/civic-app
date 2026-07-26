@@ -90,7 +90,7 @@ exports.onIssueCreated = functions.firestore
     const issueId = context.params.issueId;
 
     if (!issue.latitude || !issue.longitude) {
-      console.log(`Issue ${issueId} has no coordinates – skipping.`);
+      console.info(`Issue ${issueId} has no coordinates – skipping.`);
       return null;
     }
 
@@ -124,7 +124,7 @@ exports.onIssueCreated = functions.firestore
       });
 
       await Promise.all(jobs);
-      console.log(
+      console.info(
         `[onIssueCreated] ${jobs.length} notifications sent for issue ${issueId}.`,
       );
       return null;
@@ -178,7 +178,7 @@ exports.onIssueUpdated = functions.firestore
       }
 
       await Promise.all(jobs);
-      console.log(
+      console.info(
         `[onIssueUpdated] Sent ${jobs.length} SOLVED notifications for ${issueId}.`,
       );
     }
@@ -246,7 +246,7 @@ exports.recalculateTrustScores = functions.pubsub
   .schedule("0 0 * * *")
   .timeZone("Asia/Kolkata")
   .onRun(async () => {
-    console.log("[recalculateTrustScores] Starting...");
+    console.info("[recalculateTrustScores] Starting...");
 
     const issuesSnap = await db.collection("issues").get();
     const userScores = {};
@@ -301,7 +301,7 @@ exports.recalculateTrustScores = functions.pubsub
       });
       await batch.commit();
     }
-    console.log(`[recalculateTrustScores] Updated ${sorted.length} users.`);
+    console.info(`[recalculateTrustScores] Updated ${sorted.length} users.`);
     return null;
   });
 
@@ -313,7 +313,7 @@ exports.archiveOldIssues = functions.pubsub
   .schedule("0 0 * * 0") // Every Sunday midnight
   .timeZone("Asia/Kolkata")
   .onRun(async () => {
-    console.log("[archiveOldIssues] Starting...");
+    console.info("[archiveOldIssues] Starting...");
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
@@ -336,7 +336,7 @@ exports.archiveOldIssues = functions.pubsub
     });
 
     await batch.commit();
-    console.log(`[archiveOldIssues] Archived ${snap.size} issues.`);
+    console.info(`[archiveOldIssues] Archived ${snap.size} issues.`);
     return null;
   });
 
@@ -348,7 +348,7 @@ exports.cleanupNotifications = functions.pubsub
   .schedule("0 1 * * *") // 1am every day
   .timeZone("Asia/Kolkata")
   .onRun(async () => {
-    console.log("[cleanupNotifications] Starting...");
+    console.info("[cleanupNotifications] Starting...");
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
@@ -364,7 +364,7 @@ exports.cleanupNotifications = functions.pubsub
     snap.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
 
-    console.log(
+    console.info(
       `[cleanupNotifications] Deleted ${snap.size} old notifications.`,
     );
     return null;
@@ -481,7 +481,7 @@ exports.setAdminRole = functions.https.onCall(async (data, context) => {
       { merge: true },
     );
 
-  console.log(
+  console.info(
     `[setAdminRole] Admin role granted to ${targetUid} by ${context.auth.uid}`,
   );
   return { success: true };
@@ -523,7 +523,7 @@ exports.adminUpdateIssueStatus = functions.https.onCall(
     }
 
     await db.collection("issues").doc(issueId).update({ status: newStatus });
-    console.log(
+    console.info(
       `[adminUpdateIssueStatus] Issue ${issueId} → ${newStatus} by admin ${context.auth.uid}`,
     );
     return { success: true };
@@ -540,10 +540,13 @@ exports.logAppCrash = functions.https.onRequest(async (req, res) => {
   }
   try {
     const errorData = req.body;
-    console.error("[logAppCrash] CLIENT CRASH DETECTED:", JSON.stringify(errorData, null, 2));
+    console.error(
+      "[logAppCrash] CLIENT CRASH DETECTED:",
+      JSON.stringify(errorData, null, 2),
+    );
     await db.collection("client_crashes").add({
       ...errorData,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     });
     res.status(200).send({ success: true });
   } catch (err) {
@@ -561,9 +564,13 @@ exports.getClientCrashes = functions.https.onRequest(async (req, res) => {
     return;
   }
   try {
-    const snapshot = await db.collection("client_crashes").orderBy("timestamp", "desc").limit(10).get();
+    const snapshot = await db
+      .collection("client_crashes")
+      .orderBy("timestamp", "desc")
+      .limit(10)
+      .get();
     const crashes = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       crashes.push({ id: doc.id, ...doc.data() });
     });
     res.status(200).send({ crashes });
@@ -573,4 +580,35 @@ exports.getClientCrashes = functions.https.onRequest(async (req, res) => {
   }
 });
 
+// ─────────────────────────────────────────────────────────────────────────────
+// 14. CALCULATE TRUST SCORE (on issue created)
+// ─────────────────────────────────────────────────────────────────────────────
+exports.calculateTrustScore = functions.firestore
+  .document("issues/{issueId}")
+  .onCreate(async (snap, context) => {
+    const newIssue = snap.data();
+    const authorId = newIssue.authorId || newIssue.userId;
 
+    if (!authorId) {
+      console.info(
+        "[WARNING] No authorId found on issue. Skipping trust score calculation.",
+      );
+      return null;
+    }
+
+    const userRef = db.collection("users").doc(authorId);
+
+    try {
+      await userRef.set(
+        {
+          trustScore: admin.firestore.FieldValue.increment(10),
+        },
+        { merge: true },
+      );
+      console.info(`[SUCCESS] Trust score incremented for user: ${authorId}`);
+      return null;
+    } catch (error) {
+      console.error("[ERROR] Failed to update trust score:", error);
+      return null;
+    }
+  });

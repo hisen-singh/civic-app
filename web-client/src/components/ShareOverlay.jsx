@@ -104,7 +104,9 @@ export default function ShareOverlay({ issue, onClose }) {
         </button>
 
         {/* Header */}
-        <h2 style={overlayStyles.header}>GENERATE SHARE CARD</h2>
+        <h2 className="font-display text-4xl" style={overlayStyles.header}>
+          GENERATE SHARE CARD
+        </h2>
         <p style={overlayStyles.subheader}>
           {issue.status === "Solved"
             ? "Share this civic win with your community."
@@ -119,26 +121,27 @@ export default function ShareOverlay({ issue, onClose }) {
         {/* Action Buttons */}
         <div style={overlayStyles.actions}>
           <button
-            className="brutalist-button critical"
+            className="brutalist-button critical rounded-none"
             onClick={handleNativeShare}
             style={overlayStyles.actionBtn}
           >
             <Share2 size={20} /> SHARE
           </button>
           <button
-            className="brutalist-button"
+            className="brutalist-button rounded-none"
             onClick={handleDownload}
             style={overlayStyles.actionBtn}
           >
             <Download size={20} /> DOWNLOAD
           </button>
           <button
-            className="brutalist-button"
+            className="brutalist-button rounded-none"
             onClick={handleCopyToClipboard}
             style={{
               ...overlayStyles.actionBtn,
-              background: "#fff",
-              color: "#000",
+              background: "var(--color-surface)",
+              color: "var(--color-text-primary)",
+              border: "2px solid var(--color-border)",
             }}
           >
             <Copy size={20} /> COPY
@@ -150,10 +153,22 @@ export default function ShareOverlay({ issue, onClose }) {
           <p style={overlayStyles.status}>GENERATING...</p>
         )}
         {status === "success" && (
-          <p style={{ ...overlayStyles.status, color: "#FFD700" }}>✓ DONE</p>
+          <p
+            style={{
+              ...overlayStyles.status,
+              color: "var(--color-accent-brand)",
+            }}
+          >
+            ✓ DONE
+          </p>
         )}
         {status === "error" && (
-          <p style={{ ...overlayStyles.status, color: "#EF4444" }}>
+          <p
+            style={{
+              ...overlayStyles.status,
+              color: "var(--color-accent-brand)",
+            }}
+          >
             ✗ FAILED — TRY DOWNLOAD
           </p>
         )}
@@ -193,10 +208,8 @@ const overlayStyles = {
     padding: 8,
   },
   header: {
+    color: "#fff",
     fontWeight: 800,
-    fontSize: "1.4rem",
-    textTransform: "uppercase",
-    letterSpacing: "0.05em",
     margin: "0 0 6px 0",
     textAlign: "center",
   },
