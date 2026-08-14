@@ -1,6 +1,6 @@
 // __tests__/MapScreen.test.js
 // MapScreen relies heavily on native hardware (GPS, Google Maps/Apple Maps).
-// Due to React 19 test renderer incompatibilities with native map views, 
+// Due to React 19 test renderer incompatibilities with native map views,
 // we bypass deep render tests here to prevent false-positive crashes in CI.
 // The actual logic is covered in end-to-end (E2E) testing.
 

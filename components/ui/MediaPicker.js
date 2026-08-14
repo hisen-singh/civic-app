@@ -1,4 +1,4 @@
-import React from "react";
+import React from 'react';
 import {
   View,
   TouchableOpacity,
@@ -6,15 +6,15 @@ import {
   Image,
   StyleSheet,
   Alert,
-} from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as ImagePicker from "expo-image-picker";
-import { Colors } from "../../theme";
+} from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import * as ImagePicker from 'expo-image-picker';
+import { Colors } from '../../theme';
 
 export default function MediaPicker({ photo, setPhoto }) {
   const pickImage = async () => {
     const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
+      mediaTypes: ['images'],
       allowsEditing: true,
       aspect: [4, 3],
       quality: 0.5,
@@ -26,10 +26,10 @@ export default function MediaPicker({ photo, setPhoto }) {
 
   const takePhoto = async () => {
     const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
+    if (status !== 'granted') {
       Alert.alert(
-        "Permission Required",
-        "Camera access is needed to take photos.",
+        'Permission Required',
+        'Camera access is needed to take photos.',
       );
       return;
     }
@@ -102,64 +102,64 @@ export default function MediaPicker({ photo, setPhoto }) {
 
 const styles = StyleSheet.create({
   container: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginBottom: 20,
   },
   photoPreviewWrap: {
-    position: "relative",
+    position: 'relative',
     marginBottom: 20,
     borderRadius: 0, // Brutalist sharp
     borderWidth: 2,
-    borderColor: "#FFFFFF",
-    overflow: "hidden",
+    borderColor: '#FFFFFF',
+    overflow: 'hidden',
   },
   photoPreview: {
-    width: "100%",
+    width: '100%',
     height: 220,
-    backgroundColor: "#000000",
+    backgroundColor: '#000000',
   },
   removePhotoBtn: {
-    position: "absolute",
+    position: 'absolute',
     top: -2,
     right: -2,
     width: 48,
     height: 48,
     borderRadius: 0, // Blocky brutalist
-    backgroundColor: "#FF4500", // Electric Orange
+    backgroundColor: '#FF4500', // Electric Orange
     borderWidth: 2,
-    borderColor: "#FFFFFF",
-    justifyContent: "center",
-    alignItems: "center",
+    borderColor: '#FFFFFF',
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   photoBtn: {
     flex: 1,
-    backgroundColor: "#000000",
+    backgroundColor: '#000000',
     borderRadius: 0, // Sharp
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
     paddingVertical: 20,
-    alignItems: "center",
+    alignItems: 'center',
   },
   photoBtnIcon: {
     width: 48,
     height: 48,
     borderRadius: 0, // Sharp
-    backgroundColor: "#222222",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#222222',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 8,
     borderWidth: 1,
-    borderColor: "#444444",
+    borderColor: '#444444',
   },
   photoBtnTitle: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    color: '#FFFFFF',
+    fontWeight: '800',
     fontSize: 14,
     marginBottom: 2,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   photoBtnSub: {
-    color: "#A0AAB5",
+    color: '#A0AAB5',
     fontSize: 11,
   },
 });

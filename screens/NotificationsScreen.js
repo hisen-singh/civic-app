@@ -1,25 +1,25 @@
-import React, { useState, useCallback, useRef } from "react";
+import React, { useState, useCallback, useRef } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   StyleSheet,
   Animated,
-} from "react-native";
-import { Text, IconButton, ActivityIndicator } from "react-native-paper";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { NotificationService } from "../services/NotificationService";
-import { useAuth } from "../contexts/AuthContext";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Spacing, theme } from "../theme";
+} from 'react-native';
+import { Text, IconButton, ActivityIndicator } from 'react-native-paper';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { NotificationService } from '../services/NotificationService';
+import { useAuth } from '../contexts/AuthContext';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { Spacing, theme } from '../theme';
 
 // Time-ago formatter
 const timeAgo = (dateStr) => {
-  if (!dateStr) return "";
+  if (!dateStr) return '';
   const now = new Date();
   const date = new Date(dateStr);
   const seconds = Math.floor((now - date) / 1000);
-  if (seconds < 60) return "just now";
+  if (seconds < 60) return 'just now';
   const minutes = Math.floor(seconds / 60);
   if (minutes < 60) return `${minutes}m ago`;
   const hours = Math.floor(minutes / 60);
@@ -30,10 +30,10 @@ const timeAgo = (dateStr) => {
 };
 
 const NOTIF_ICONS = {
-  WATCH_AREA_ALERT: "map-marker-radius",
-  ISSUE_SOLVED: "check-decagram",
-  SOLVER_JOINED: "account-plus",
-  NEW_COMMENT: "chat-outline",
+  WATCH_AREA_ALERT: 'map-marker-radius',
+  ISSUE_SOLVED: 'check-decagram',
+  SOLVER_JOINED: 'account-plus',
+  NEW_COMMENT: 'chat-outline',
 };
 
 export default function NotificationsScreen() {
@@ -78,7 +78,7 @@ export default function NotificationsScreen() {
       );
     }
     if (notif.issueId) {
-      navigation.navigate("IssueDetail", { issueId: notif.issueId });
+      navigation.navigate('IssueDetail', { issueId: notif.issueId });
     }
   };
 
@@ -93,7 +93,7 @@ export default function NotificationsScreen() {
           size={24}
           onPress={() => navigation.goBack()}
         />
-        <View style={{ flex: 1, alignItems: "center" }}>
+        <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={styles.headerTitle}>NOTIFICATIONS</Text>
           {unreadCount > 0 && (
             <Text style={styles.unreadBadge}>{unreadCount} NEW</Text>
@@ -119,7 +119,7 @@ export default function NotificationsScreen() {
 
       {loading ? (
         <View
-          style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
+          style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}
         >
           <ActivityIndicator size="large" color={theme.colors.accentBrand} />
         </View>
@@ -151,7 +151,7 @@ export default function NotificationsScreen() {
                 <View style={[styles.card, !notif.read && styles.unreadCard]}>
                   <View style={styles.iconContainer}>
                     <MaterialCommunityIcons
-                      name={NOTIF_ICONS[notif.type] || "bell-outline"}
+                      name={NOTIF_ICONS[notif.type] || 'bell-outline'}
                       size={20}
                       color={
                         !notif.read
@@ -191,8 +191,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingTop: Spacing.headerTop,
     paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.sm,
@@ -202,13 +202,13 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: 0.5,
   },
   unreadBadge: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.accentBrand,
     marginTop: 2,
   },
@@ -216,8 +216,8 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingTop: 80,
   },
   emptyIcon: {
@@ -227,24 +227,24 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 2,
     borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   emptyDesc: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
     color: theme.colors.textMuted,
   },
   card: {
-    flexDirection: "row",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    alignItems: 'flex-start',
     backgroundColor: theme.colors.surface,
     marginBottom: Spacing.sm,
     borderRadius: 0,
@@ -263,8 +263,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: Spacing.md,
   },
   textContainer: {
@@ -272,24 +272,24 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textMuted,
     marginBottom: 4,
   },
   unreadText: {
     color: theme.colors.textPrimary,
-    fontWeight: "900",
+    fontWeight: '900',
   },
   body: {
     fontSize: 13,
     color: theme.colors.textPrimary,
-    fontWeight: "500",
+    fontWeight: '500',
     marginBottom: Spacing.sm,
     lineHeight: 18,
   },
   time: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: '700',
     color: theme.colors.textMuted,
   },
   unreadDot: {

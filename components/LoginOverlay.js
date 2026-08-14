@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   Modal,
   View,
@@ -10,26 +10,26 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { AuthService } from "../services/AuthService";
-import { Spacing, theme } from "../theme";
+} from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AuthService } from '../services/AuthService';
+import { Spacing, theme } from '../theme';
 
 export default function LoginOverlay({ visible, onClose }) {
   const [isLogin, setIsLogin] = useState(true);
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
-      setError("Email and password are required.");
+      setError('Email and password are required.');
       return;
     }
     if (!isLogin && !name.trim()) {
-      setError("Name is required for signup.");
+      setError('Name is required for signup.');
       return;
     }
 
@@ -44,17 +44,17 @@ export default function LoginOverlay({ visible, onClose }) {
       // Success! Close the modal.
       onClose();
     } catch (err) {
-      console.error("Auth error:", err);
+      console.error('Auth error:', err);
       // Simple generic error message handling
       if (
-        err.code === "auth/wrong-password" ||
-        err.code === "auth/user-not-found"
+        err.code === 'auth/wrong-password' ||
+        err.code === 'auth/user-not-found'
       ) {
-        setError("Invalid credentials. Try again.");
-      } else if (err.code === "auth/email-already-in-use") {
-        setError("Email is already registered.");
+        setError('Invalid credentials. Try again.');
+      } else if (err.code === 'auth/email-already-in-use') {
+        setError('Email is already registered.');
       } else {
-        setError(err.message || "An error occurred.");
+        setError(err.message || 'An error occurred.');
       }
     } finally {
       setLoading(false);
@@ -72,14 +72,14 @@ export default function LoginOverlay({ visible, onClose }) {
         <View style={styles.overlayBackground}>
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
               style={styles.containerWrap}
             >
               <View style={styles.modalBox}>
                 {/* Header */}
                 <View style={styles.header}>
                   <Text style={styles.title}>
-                    {isLogin ? "SIGN IN" : "JOIN THE FIGHT"}
+                    {isLogin ? 'SIGN IN' : 'JOIN THE FIGHT'}
                   </Text>
                   <TouchableOpacity
                     onPress={onClose}
@@ -147,7 +147,7 @@ export default function LoginOverlay({ visible, onClose }) {
                       <ActivityIndicator color="#FFFFFF" size="small" />
                     ) : (
                       <Text style={styles.submitText}>
-                        {isLogin ? "AUTHORIZE" : "CREATE ACCOUNT"}
+                        {isLogin ? 'AUTHORIZE' : 'CREATE ACCOUNT'}
                       </Text>
                     )}
                   </TouchableOpacity>
@@ -163,9 +163,9 @@ export default function LoginOverlay({ visible, onClose }) {
                   disabled={loading}
                 >
                   <Text style={styles.toggleText}>
-                    {isLogin ? "No account? " : "Already registered? "}
+                    {isLogin ? 'No account? ' : 'Already registered? '}
                     <Text style={styles.toggleTextHighlight}>
-                      {isLogin ? "Sign up here." : "Sign in."}
+                      {isLogin ? 'Sign up here.' : 'Sign in.'}
                     </Text>
                   </Text>
                 </TouchableOpacity>
@@ -181,13 +181,13 @@ export default function LoginOverlay({ visible, onClose }) {
 const styles = StyleSheet.create({
   overlayBackground: {
     flex: 1,
-    backgroundColor: "rgba(0, 0, 0, 0.85)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0, 0, 0, 0.85)',
+    justifyContent: 'center',
+    alignItems: 'center',
     padding: Spacing.lg,
   },
   containerWrap: {
-    width: "100%",
+    width: '100%',
     maxWidth: 400,
   },
   modalBox: {
@@ -203,23 +203,23 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   header: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     marginBottom: Spacing.xl,
   },
   title: {
     color: theme.colors.textPrimary,
     fontSize: 24,
-    fontWeight: "900",
-    textTransform: "uppercase",
+    fontWeight: '900',
+    textTransform: 'uppercase',
     letterSpacing: 1,
   },
   closeBtn: {
     width: 48,
     height: 48,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: -12, // Offset to align visually while maintaining touch target
     marginTop: -12,
   },
@@ -231,10 +231,10 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   errorText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
   },
   form: {
     gap: Spacing.md,
@@ -247,15 +247,15 @@ const styles = StyleSheet.create({
     height: 48, // 48x48 min touch target
     paddingHorizontal: Spacing.md,
     fontSize: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   submitBtn: {
     backgroundColor: theme.colors.accentBrand,
     borderWidth: 2,
     borderColor: theme.colors.border,
     height: 48,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: Spacing.sm,
     shadowColor: theme.colors.border,
     shadowOffset: { width: 4, height: 4 },
@@ -264,26 +264,26 @@ const styles = StyleSheet.create({
     elevation: 0,
   },
   submitText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
     letterSpacing: 1,
   },
   toggleBtn: {
     marginTop: Spacing.xl,
     minHeight: 48,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   toggleText: {
     color: theme.colors.textPrimary,
     fontSize: 14,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   toggleTextHighlight: {
     color: theme.colors.accentBrand, // Electric orange highlight
-    fontWeight: "800",
-    textDecorationLine: "underline",
+    fontWeight: '800',
+    textDecorationLine: 'underline',
   },
 });

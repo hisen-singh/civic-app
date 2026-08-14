@@ -1,10 +1,10 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, ScrollView, Animated } from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
-import { useFocusEffect } from "@react-navigation/native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { IssueService } from "../services/IssueService";
-import { Spacing, theme, Shadows } from "../theme";
+import React, { useState, useCallback, useRef, useEffect } from 'react';
+import { View, ScrollView, Animated } from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { useFocusEffect } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IssueService } from '../services/IssueService';
+import { Spacing, theme, Shadows } from '../theme';
 
 export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true);
@@ -36,7 +36,7 @@ export default function AnalyticsScreen() {
 
       setStats({ total, solved, inProgress, critical, categories });
     } catch (e) {
-      console.error("Failed to load analytics", e);
+      console.error('Failed to load analytics', e);
     } finally {
       setLoading(false);
     }
@@ -54,8 +54,8 @@ export default function AnalyticsScreen() {
         style={{
           flex: 1,
           backgroundColor: theme.colors.surface,
-          justifyContent: "center",
-          alignItems: "center",
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         <ActivityIndicator size="large" color={theme.colors.accentBrand} />
@@ -84,11 +84,11 @@ export default function AnalyticsScreen() {
         <Text
           style={{
             fontSize: 28,
-            fontWeight: "900",
+            fontWeight: '900',
             color: theme.colors.textPrimary,
             letterSpacing: 0.5,
             marginBottom: 8,
-            textTransform: "uppercase",
+            textTransform: 'uppercase',
           }}
         >
           NEIGHBORHOOD IMPACT
@@ -96,9 +96,9 @@ export default function AnalyticsScreen() {
         <Text
           style={{
             fontSize: 12,
-            fontWeight: "700",
+            fontWeight: '700',
             color: theme.colors.textMuted,
-            textTransform: "uppercase",
+            textTransform: 'uppercase',
           }}
         >
           Community statistics and issue resolution metrics.
@@ -169,10 +169,10 @@ export default function AnalyticsScreen() {
             <Text
               style={{
                 color: theme.colors.textMuted,
-                textAlign: "center",
+                textAlign: 'center',
                 marginVertical: 20,
-                fontWeight: "700",
-                textTransform: "uppercase",
+                fontWeight: '700',
+                textTransform: 'uppercase',
               }}
             >
               No data available
@@ -186,18 +186,18 @@ export default function AnalyticsScreen() {
         <View style={styles.healthCard}>
           <View
             style={{
-              flexDirection: "row",
-              alignItems: "center",
+              flexDirection: 'row',
+              alignItems: 'center',
               marginBottom: 12,
             }}
           >
             <MaterialCommunityIcons
               name={
                 stats.critical > 5
-                  ? "alert"
+                  ? 'alert'
                   : resolutionRate > 50
-                    ? "shield-check"
-                    : "alert-circle-outline"
+                    ? 'shield-check'
+                    : 'alert-circle-outline'
               }
               size={28}
               color={
@@ -208,26 +208,26 @@ export default function AnalyticsScreen() {
             />
             <Text style={styles.healthTitle}>
               {stats.critical > 5
-                ? "ATTENTION REQUIRED"
+                ? 'ATTENTION REQUIRED'
                 : resolutionRate > 50
-                  ? "COMMUNITY IS HEALTHY"
-                  : "NEEDS IMPROVEMENT"}
+                  ? 'COMMUNITY IS HEALTHY'
+                  : 'NEEDS IMPROVEMENT'}
             </Text>
           </View>
           <Text
             style={{
               color: theme.colors.textMuted,
               fontSize: 13,
-              fontWeight: "700",
+              fontWeight: '700',
               lineHeight: 18,
-              textTransform: "uppercase",
+              textTransform: 'uppercase',
             }}
           >
             {stats.critical > 5
               ? `There are ${stats.critical} critical issues in the area. Please exercise caution and assist if possible.`
               : resolutionRate > 50
-                ? "Your neighborhood is actively resolving issues. Thank you for your contributions!"
-                : "There are many open issues. Consider checking the map to see where you can help."}
+                ? 'Your neighborhood is actively resolving issues. Thank you for your contributions!'
+                : 'There are many open issues. Consider checking the map to see where you can help.'}
           </Text>
         </View>
       </View>
@@ -237,13 +237,13 @@ export default function AnalyticsScreen() {
 
 const styles = {
   grid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
     marginBottom: Spacing.xxl,
   },
   gridCard: {
-    width: "48%",
+    width: '48%',
     backgroundColor: theme.colors.surface,
     borderRadius: 0,
     padding: Spacing.lg,
@@ -254,25 +254,25 @@ const styles = {
   },
   cardValue: {
     fontSize: 28,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   cardLabel: {
     fontSize: 11,
     color: theme.colors.textMuted,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   section: {
     marginBottom: Spacing.xxxl,
   },
   sectionTitle: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: Spacing.lg,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   chartContainer: {
     backgroundColor: theme.colors.surface,
@@ -282,14 +282,14 @@ const styles = {
     borderColor: theme.colors.border,
   },
   barRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: 16,
   },
   barLabel: {
     width: 100,
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textPrimary,
   },
   barTrack: {
@@ -299,19 +299,19 @@ const styles = {
     borderWidth: 1,
     borderColor: theme.colors.border,
     borderRadius: 0,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginHorizontal: 12,
   },
   barFill: {
-    height: "100%",
+    height: '100%',
     backgroundColor: theme.colors.accentBrand,
     borderRadius: 0,
   },
   barCount: {
     width: 32,
-    textAlign: "right",
+    textAlign: 'right',
     fontSize: 13,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
   },
   healthCard: {
@@ -323,7 +323,7 @@ const styles = {
   },
   healthTitle: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginLeft: 12,
   },

@@ -1,24 +1,24 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   RefreshControl,
   Animated,
-} from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
-import { useAuth } from "../contexts/AuthContext";
-import { IssueService } from "../services/IssueService";
-import { useFocusEffect } from "@react-navigation/native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import IssueCard from "../components/IssueCard";
-import { Spacing, theme } from "../theme";
+} from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { useAuth } from '../contexts/AuthContext';
+import { IssueService } from '../services/IssueService';
+import { useFocusEffect } from '@react-navigation/native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import IssueCard from '../components/IssueCard';
+import { Spacing, theme } from '../theme';
 
 export default function LeaderboardScreen() {
   const { user } = useAuth();
   const [leaderboard, setLeaderboard] = useState([]);
   const [trendingIssues, setTrendingIssues] = useState([]);
-  const [activeTab, setActiveTab] = useState("heroes");
+  const [activeTab, setActiveTab] = useState('heroes');
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -49,11 +49,11 @@ export default function LeaderboardScreen() {
         const userMap = {};
         allIssues.forEach((issue) => {
           const reporterId = issue.authorId;
-          if (reporterId && reporterId !== "anonymous") {
+          if (reporterId && reporterId !== 'anonymous') {
             if (!userMap[reporterId]) {
               userMap[reporterId] = {
                 id: reporterId,
-                name: issue.authorName || "Unknown",
+                name: issue.authorName || 'Unknown',
                 reported: 0,
                 supported: 0,
                 solved: 0,
@@ -73,7 +73,7 @@ export default function LeaderboardScreen() {
               };
             }
             userMap[solverId].supported += 1;
-            if (issue.status === "Solved") {
+            if (issue.status === 'Solved') {
               userMap[solverId].solved += 1;
             }
           });
@@ -82,18 +82,18 @@ export default function LeaderboardScreen() {
         const ranked = Object.values(userMap).map((u) => {
           const score = u.reported * 50 + u.supported * 30 + u.solved * 100;
           const isCurrentUser = u.id === user?.uid;
-          let title = "Participant";
-          if (score >= 500) title = "Community Lead";
-          else if (score >= 300) title = "Local Coordinator";
-          else if (score >= 150) title = "Verified Contributor";
-          else if (score >= 50) title = "Active Member";
+          let title = 'Participant';
+          if (score >= 500) title = 'Community Lead';
+          else if (score >= 300) title = 'Local Coordinator';
+          else if (score >= 150) title = 'Verified Contributor';
+          else if (score >= 50) title = 'Active Member';
 
           return {
             ...u,
             score,
             title,
             isCurrentUser,
-            name: isCurrentUser ? u.name + " (You)" : u.name,
+            name: isCurrentUser ? u.name + ' (You)' : u.name,
           };
         });
         ranked.sort((a, b) => b.score - a.score);
@@ -110,7 +110,7 @@ export default function LeaderboardScreen() {
           .sort((a, b) => b.trendingScore - a.trendingScore);
         setTrendingIssues(rankedIssues);
       } catch (error) {
-        console.error("Leaderboard error:", error);
+        console.error('Leaderboard error:', error);
       } finally {
         setLoading(false);
         setRefreshing(false);
@@ -133,24 +133,24 @@ export default function LeaderboardScreen() {
   const getMedalStyle = (rank) => {
     if (rank === 1)
       return {
-        bg: "transparent",
+        bg: 'transparent',
         border: theme.colors.accentBrand,
         color: theme.colors.accentBrand,
-        icon: "crown",
+        icon: 'crown',
       };
     if (rank === 2)
       return {
-        bg: "transparent",
+        bg: 'transparent',
         border: theme.colors.border,
         color: theme.colors.textPrimary,
-        icon: "medal",
+        icon: 'medal',
       };
     if (rank === 3)
       return {
-        bg: "transparent",
+        bg: 'transparent',
         border: theme.colors.border,
         color: theme.colors.textPrimary,
-        icon: "medal-outline",
+        icon: 'medal-outline',
       };
     return null;
   };
@@ -175,42 +175,42 @@ export default function LeaderboardScreen() {
 
         <View style={styles.tabContainer}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === "heroes" && styles.tabActive]}
-            onPress={() => setActiveTab("heroes")}
+            style={[styles.tab, activeTab === 'heroes' && styles.tabActive]}
+            onPress={() => setActiveTab('heroes')}
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons
               name="account-star-outline"
               size={16}
-              color={activeTab === "heroes" ? "#FFF" : theme.colors.textPrimary}
+              color={activeTab === 'heroes' ? '#FFF' : theme.colors.textPrimary}
               style={{ marginRight: 6 }}
             />
             <Text
               style={[
                 styles.tabText,
-                activeTab === "heroes" && styles.tabTextActive,
+                activeTab === 'heroes' && styles.tabTextActive,
               ]}
             >
               CONTRIBUTORS
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.tab, activeTab === "problems" && styles.tabActive]}
-            onPress={() => setActiveTab("problems")}
+            style={[styles.tab, activeTab === 'problems' && styles.tabActive]}
+            onPress={() => setActiveTab('problems')}
             activeOpacity={0.7}
           >
             <MaterialCommunityIcons
               name="trending-up"
               size={16}
               color={
-                activeTab === "problems" ? "#FFF" : theme.colors.textPrimary
+                activeTab === 'problems' ? '#FFF' : theme.colors.textPrimary
               }
               style={{ marginRight: 6 }}
             />
             <Text
               style={[
                 styles.tabText,
-                activeTab === "problems" && styles.tabTextActive,
+                activeTab === 'problems' && styles.tabTextActive,
               ]}
             >
               TRENDING
@@ -227,7 +227,7 @@ export default function LeaderboardScreen() {
         }}
       >
         {loading ? (
-          <View style={{ alignItems: "center", paddingTop: 40 }}>
+          <View style={{ alignItems: 'center', paddingTop: 40 }}>
             <ActivityIndicator
               animating={true}
               color={theme.colors.accentBrand}
@@ -243,7 +243,7 @@ export default function LeaderboardScreen() {
               LOADING DATA...
             </Text>
           </View>
-        ) : activeTab === "heroes" ? (
+        ) : activeTab === 'heroes' ? (
           leaderboard.length === 0 ? (
             <View style={styles.emptyState}>
               <View style={styles.emptyIcon}>
@@ -288,7 +288,7 @@ export default function LeaderboardScreen() {
                               { color: medal.color },
                             ]}
                           >
-                            {(person.name || "U").substring(0, 2).toUpperCase()}
+                            {(person.name || 'U').substring(0, 2).toUpperCase()}
                           </Text>
                         </View>
                         <View
@@ -307,7 +307,7 @@ export default function LeaderboardScreen() {
                           />
                         </View>
                         <Text style={styles.podiumName} numberOfLines={1}>
-                          {person.name?.split(" ")[0] || "User"}
+                          {person.name?.split(' ')[0] || 'User'}
                         </Text>
                         <Text
                           style={[styles.podiumScore, { color: medal.color }]}
@@ -339,7 +339,7 @@ export default function LeaderboardScreen() {
 
                     <View style={styles.rankAvatar}>
                       <Text style={styles.rankAvatarText}>
-                        {(person.name || "U").substring(0, 2).toUpperCase()}
+                        {(person.name || 'U').substring(0, 2).toUpperCase()}
                       </Text>
                     </View>
 
@@ -355,7 +355,7 @@ export default function LeaderboardScreen() {
                       <Text style={styles.personTitle}>{person.title}</Text>
                     </View>
 
-                    <View style={{ alignItems: "flex-end" }}>
+                    <View style={{ alignItems: 'flex-end' }}>
                       <Text
                         style={[
                           styles.score,
@@ -435,19 +435,19 @@ const styles = {
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: 4,
     letterSpacing: 0.5,
   },
   headerSub: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
     color: theme.colors.textMuted,
     marginBottom: Spacing.xl,
   },
   tabContainer: {
-    flexDirection: "row",
+    flexDirection: 'row',
     backgroundColor: theme.colors.surface,
     borderRadius: 0,
     padding: 4,
@@ -456,10 +456,10 @@ const styles = {
   },
   tab: {
     flex: 1,
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderRadius: 0,
   },
   tabActive: {
@@ -467,22 +467,22 @@ const styles = {
   },
   tabText: {
     color: theme.colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: '800',
     fontSize: 13,
   },
   tabTextActive: {
-    color: "#FFF",
+    color: '#FFF',
   },
   // Podium
   podiumRow: {
-    flexDirection: "row",
-    justifyContent: "center",
-    alignItems: "flex-end",
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'flex-end',
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.xxl,
   },
   podiumCard: {
-    alignItems: "center",
+    alignItems: 'center',
     flex: 1,
     paddingVertical: Spacing.lg,
   },
@@ -496,39 +496,39 @@ const styles = {
     borderWidth: 2,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: 4,
   },
   podiumInitials: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: '900',
   },
   podiumRankBadge: {
     width: 22,
     height: 22,
     borderRadius: 0,
     borderWidth: 2,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginTop: -12,
     marginBottom: 6,
   },
   podiumName: {
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: 2,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   podiumScore: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: '900',
   },
   // Rank Cards
   emptyState: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: 60,
     paddingHorizontal: 40,
   },
@@ -539,25 +539,25 @@ const styles = {
     borderWidth: 2,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   emptyDesc: {
     fontSize: 14,
     color: theme.colors.textMuted,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 20,
   },
   rankCard: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     backgroundColor: theme.colors.surface,
@@ -573,7 +573,7 @@ const styles = {
   },
   rankBadge: {
     width: 36,
-    alignItems: "center",
+    alignItems: 'center',
     marginRight: Spacing.md,
   },
   rankAvatar: {
@@ -583,46 +583,46 @@ const styles = {
     borderWidth: 2,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: Spacing.md,
   },
   rankAvatarText: {
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
   },
   rankNumberPlain: {
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
   },
   personName: {
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   personTitle: {
     fontSize: 11,
     color: theme.colors.textMuted,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   score: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.accentBrand,
   },
   scoreLabel: {
     fontSize: 10,
     color: theme.colors.textPrimary,
-    textTransform: "uppercase",
-    fontWeight: "800",
+    textTransform: 'uppercase',
+    fontWeight: '800',
   },
   yourPosition: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     marginHorizontal: Spacing.lg,
     marginTop: Spacing.lg,
     padding: Spacing.lg,
@@ -635,19 +635,19 @@ const styles = {
     fontSize: 13,
     color: theme.colors.textPrimary,
     marginLeft: 8,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   trendingLabel: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: Spacing.xl,
     marginBottom: Spacing.sm,
   },
   trendingLabelText: {
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.accentBrand,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     letterSpacing: 0.3,
   },
 };

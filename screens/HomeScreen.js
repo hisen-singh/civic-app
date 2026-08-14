@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -8,41 +8,41 @@ import {
   Animated,
   Image,
   ScrollView,
-} from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
-import { collection, query, where, getDocs } from "firebase/firestore";
-import { db } from "../config/firebaseConfig";
-import IssueCard from "../components/IssueCard";
-import SkeletonCard from "../components/ui/SkeletonCard";
-import FilterPills from "../components/ui/FilterPills";
-import GradientButton from "../components/ui/GradientButton";
-import AnimatedPressable from "../components/ui/AnimatedPressable";
-import { IssueService } from "../services/IssueService";
-import { useAuth } from "../contexts/AuthContext";
-import { Colors, Spacing, Radius, Shadows, Gradients, theme } from "../theme";
-import * as Location from "expo-location";
+} from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { collection, query, where, getDocs } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
+import IssueCard from '../components/IssueCard';
+import SkeletonCard from '../components/ui/SkeletonCard';
+import FilterPills from '../components/ui/FilterPills';
+import GradientButton from '../components/ui/GradientButton';
+import AnimatedPressable from '../components/ui/AnimatedPressable';
+import { IssueService } from '../services/IssueService';
+import { useAuth } from '../contexts/AuthContext';
+import { Colors, Spacing, Radius, Shadows, Gradients, theme } from '../theme';
+import * as Location from 'expo-location';
 
 const getAvatarColor = (name) => {
   const colors = [
-    "#E53935",
-    "#D81B60",
-    "#8E24AA",
-    "#5E35B1",
-    "#3949AB",
-    "#1E88E5",
-    "#00ACC1",
-    "#00897B",
-    "#43A047",
-    "#7CB342",
-    "#F4511E",
-    "#6D4C41",
+    '#E53935',
+    '#D81B60',
+    '#8E24AA',
+    '#5E35B1',
+    '#3949AB',
+    '#1E88E5',
+    '#00ACC1',
+    '#00897B',
+    '#43A047',
+    '#7CB342',
+    '#F4511E',
+    '#6D4C41',
   ];
   let hash = 0;
-  for (let i = 0; i < (name || "").length; i++) {
+  for (let i = 0; i < (name || '').length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   return colors[Math.abs(hash) % colors.length];
@@ -55,13 +55,13 @@ export default function HomeScreen() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState("All");
+  const [selectedCategory, setSelectedCategory] = useState('All');
   const [lastDoc, setLastDoc] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
   const [loadError, setLoadError] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
-  const [locationName, setLocationName] = useState("Your Area");
+  const [locationName, setLocationName] = useState('Your Area');
   const [stories, setStories] = useState([]);
 
   const loadStories = async () => {
@@ -83,19 +83,19 @@ export default function HomeScreen() {
         } else if (issue.location) {
           const locLower = issue.location.toLowerCase();
           const isUS =
-            locLower.includes("ave") ||
-            locLower.includes("st") ||
-            locLower.includes("chicago") ||
-            locLower.includes("il");
+            locLower.includes('ave') ||
+            locLower.includes('st') ||
+            locLower.includes('chicago') ||
+            locLower.includes('il');
           if (!isUS) {
             isIndia = true;
           }
         }
 
-        const authorName = issue.authorName || "";
+        const authorName = issue.authorName || '';
         if (
-          authorName.toLowerCase().includes("city") ||
-          authorName.toLowerCase().includes("open data")
+          authorName.toLowerCase().includes('city') ||
+          authorName.toLowerCase().includes('open data')
         ) {
           isIndia = false;
         }
@@ -103,11 +103,11 @@ export default function HomeScreen() {
         if (!isIndia) return;
 
         const rId = issue.authorId;
-        if (rId && rId !== "anonymous") {
+        if (rId && rId !== 'anonymous') {
           if (!userMap[rId]) {
             userMap[rId] = {
               id: rId,
-              name: issue.authorName || "Citizen",
+              name: issue.authorName || 'Citizen',
               reported: 0,
               supported: 0,
               solved: 0,
@@ -120,14 +120,14 @@ export default function HomeScreen() {
           if (!userMap[sId]) {
             userMap[sId] = {
               id: sId,
-              name: "Citizen",
+              name: 'Citizen',
               reported: 0,
               supported: 0,
               solved: 0,
             };
           }
           userMap[sId].supported += 1;
-          if (issue.status === "Solved") {
+          if (issue.status === 'Solved') {
             userMap[sId].solved += 1;
           }
         });
@@ -141,7 +141,7 @@ export default function HomeScreen() {
         .slice(0, 15);
       setStories(ranked);
     } catch (e) {
-      console.warn("Failed to load stories data", e);
+      console.warn('Failed to load stories data', e);
     }
   };
 
@@ -150,7 +150,7 @@ export default function HomeScreen() {
     (async () => {
       try {
         const { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") return;
+        if (status !== 'granted') return;
         const loc = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.Balanced,
         });
@@ -159,12 +159,12 @@ export default function HomeScreen() {
           longitude: loc.coords.longitude,
         });
         if (place) {
-          const city = place.city || place.subregion || place.region || "";
-          const region = place.region || "";
+          const city = place.city || place.subregion || place.region || '';
+          const region = place.region || '';
           setLocationName(
             city && region && city !== region
               ? `${city}, ${region}`
-              : city || region || "Your Area",
+              : city || region || 'Your Area',
           );
         }
       } catch (e) {
@@ -206,7 +206,7 @@ export default function HomeScreen() {
     setLoadError(false);
     try {
       const fetchCategory =
-        activeCategory === "Nearby" ? "All" : activeCategory;
+        activeCategory === 'Nearby' ? 'All' : activeCategory;
       const { data, lastDoc: newLastDoc } =
         await IssueService.getIssuesPaginated(
           10,
@@ -229,19 +229,19 @@ export default function HomeScreen() {
         } else if (issue.location) {
           const locLower = issue.location.toLowerCase();
           const isUS =
-            locLower.includes("ave") ||
-            locLower.includes("st") ||
-            locLower.includes("chicago") ||
-            locLower.includes("il");
+            locLower.includes('ave') ||
+            locLower.includes('st') ||
+            locLower.includes('chicago') ||
+            locLower.includes('il');
           if (!isUS) {
             isIndia = true;
           }
         }
 
-        const authorName = issue.authorName || "";
+        const authorName = issue.authorName || '';
         if (
-          authorName.toLowerCase().includes("city") ||
-          authorName.toLowerCase().includes("open data")
+          authorName.toLowerCase().includes('city') ||
+          authorName.toLowerCase().includes('open data')
         ) {
           isIndia = false;
         }
@@ -266,13 +266,13 @@ export default function HomeScreen() {
       console.error(error);
 
       // Fallback if missing index: try fetching 'All' and rely on client-filter
-      if (error.message && error.message.includes("index")) {
+      if (error.message && error.message.includes('index')) {
         try {
           const { data, lastDoc: newLastDoc } =
             await IssueService.getIssuesPaginated(
               10,
               isRefresh ? null : lastDoc,
-              "All",
+              'All',
               null,
             );
           const indiaOnlyData = data.filter((issue) => {
@@ -289,18 +289,18 @@ export default function HomeScreen() {
             } else if (issue.location) {
               const locLower = issue.location.toLowerCase();
               const isUS =
-                locLower.includes("ave") ||
-                locLower.includes("st") ||
-                locLower.includes("chicago") ||
-                locLower.includes("il");
+                locLower.includes('ave') ||
+                locLower.includes('st') ||
+                locLower.includes('chicago') ||
+                locLower.includes('il');
               if (!isUS) {
                 isIndia = true;
               }
             }
-            const authorName = issue.authorName || "";
+            const authorName = issue.authorName || '';
             if (
-              authorName.toLowerCase().includes("city") ||
-              authorName.toLowerCase().includes("open data")
+              authorName.toLowerCase().includes('city') ||
+              authorName.toLowerCase().includes('open data')
             ) {
               isIndia = false;
             }
@@ -341,42 +341,42 @@ export default function HomeScreen() {
   }, [selectedCategory]);
 
   const filteredIssues = issues.filter((issue) => {
-    if (selectedCategory === "Urgent")
-      return ["critical", "high"].includes(issue.urgency);
-    if (selectedCategory === "Solved") return issue.status === "Solved";
-    if (selectedCategory === "Nearby") return issue.latitude && issue.longitude;
+    if (selectedCategory === 'Urgent')
+      return ['critical', 'high'].includes(issue.urgency);
+    if (selectedCategory === 'Solved') return issue.status === 'Solved';
+    if (selectedCategory === 'Nearby') return issue.latitude && issue.longitude;
     return true;
   });
 
   const openCount = issues.filter(
-    (i) => i.status !== "Solved" && i.status !== "Failed",
+    (i) => i.status !== 'Solved' && i.status !== 'Failed',
   ).length;
-  const solvedCount = issues.filter((i) => i.status === "Solved").length;
+  const solvedCount = issues.filter((i) => i.status === 'Solved').length;
   const urgentCount = issues.filter((i) =>
-    ["critical", "high"].includes(i.urgency),
+    ['critical', 'high'].includes(i.urgency),
   ).length;
 
   const categories = [
     {
-      id: "All",
-      title: t("home.tab_feed", "Feed"),
-      icon: "view-dashboard-outline",
+      id: 'All',
+      title: t('home.tab_feed', 'Feed'),
+      icon: 'view-dashboard-outline',
     },
     {
-      id: "Urgent",
-      title: t("home.tab_critical", "Critical"),
-      icon: "alert-circle-outline",
+      id: 'Urgent',
+      title: t('home.tab_critical', 'Critical'),
+      icon: 'alert-circle-outline',
     },
     {
-      id: "Solved",
-      title: t("home.tab_resolved", "Resolved"),
-      icon: "check-decagram-outline",
+      id: 'Solved',
+      title: t('home.tab_resolved', 'Resolved'),
+      icon: 'check-decagram-outline',
     },
-    { id: "Nearby", title: "Nearby", icon: "map-marker-outline" },
+    { id: 'Nearby', title: 'Nearby', icon: 'map-marker-outline' },
   ];
 
   const displayName =
-    user?.displayName || user?.email?.split("@")[0] || "Citizen";
+    user?.displayName || user?.email?.split('@')[0] || 'Citizen';
   const initials = displayName.substring(0, 2).toUpperCase();
 
   const currentUserScore = stories.find((s) => s.id === user?.uid)?.score || 0;
@@ -388,9 +388,9 @@ export default function HomeScreen() {
         <Text
           style={{
             fontSize: 11,
-            fontWeight: "800",
+            fontWeight: '800',
             color: theme.colors.textMuted,
-            textTransform: "uppercase",
+            textTransform: 'uppercase',
             letterSpacing: 1,
             marginBottom: 12,
           }}
@@ -401,15 +401,15 @@ export default function HomeScreen() {
           horizontal
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={{
-            flexDirection: "row",
+            flexDirection: 'row',
             gap: 16,
             paddingVertical: 4,
           }}
         >
           {/* My Story (You) */}
           <TouchableOpacity
-            onPress={() => navigation.navigate("Profile")}
-            style={{ alignItems: "center", width: 64 }}
+            onPress={() => navigation.navigate('Profile')}
+            style={{ alignItems: 'center', width: 64 }}
             activeOpacity={0.8}
           >
             <View
@@ -418,34 +418,34 @@ export default function HomeScreen() {
                 height: 58,
                 borderRadius: 29,
                 borderWidth: 2,
-                borderColor: "rgba(255, 255, 255, 0.1)",
+                borderColor: 'rgba(255, 255, 255, 0.1)',
                 padding: 2,
-                justifyContent: "center",
-                alignItems: "center",
+                justifyContent: 'center',
+                alignItems: 'center',
                 backgroundColor: theme.colors.surfaceSubtle,
               }}
             >
               <View
                 style={{
-                  width: "100%",
-                  height: "100%",
+                  width: '100%',
+                  height: '100%',
                   borderRadius: 25,
                   backgroundColor: theme.colors.accentBrandSubtle,
-                  justifyContent: "center",
-                  alignItems: "center",
-                  overflow: "hidden",
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                  overflow: 'hidden',
                 }}
               >
                 {user?.photoURL ? (
                   <Image
                     source={{ uri: user.photoURL }}
-                    style={{ width: "100%", height: "100%" }}
+                    style={{ width: '100%', height: '100%' }}
                   />
                 ) : (
                   <Text
                     style={{
                       fontSize: 16,
-                      fontWeight: "900",
+                      fontWeight: '900',
                       color: theme.colors.accentBrand,
                     }}
                   >
@@ -456,7 +456,7 @@ export default function HomeScreen() {
               {/* Instagram-style plus overlay */}
               <View
                 style={{
-                  position: "absolute",
+                  position: 'absolute',
                   bottom: 0,
                   right: 0,
                   backgroundColor: theme.colors.accentBrand,
@@ -465,8 +465,8 @@ export default function HomeScreen() {
                   borderRadius: 9,
                   borderWidth: 2,
                   borderColor: theme.colors.surface,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                 }}
               >
                 <MaterialCommunityIcons name="plus" size={12} color="#FFFFFF" />
@@ -475,10 +475,10 @@ export default function HomeScreen() {
             <Text
               style={{
                 fontSize: 10,
-                fontWeight: "800",
+                fontWeight: '800',
                 color: theme.colors.textPrimary,
                 marginTop: 6,
-                textAlign: "center",
+                textAlign: 'center',
               }}
               numberOfLines={1}
             >
@@ -487,7 +487,7 @@ export default function HomeScreen() {
             <Text
               style={{
                 fontSize: 9,
-                fontWeight: "700",
+                fontWeight: '700',
                 color: theme.colors.accentBrand,
                 marginTop: 1,
               }}
@@ -500,7 +500,7 @@ export default function HomeScreen() {
           {/* Active Stories */}
           {stories.map((story) => {
             if (story.id === user?.uid) return null;
-            const sDisplayName = story.name || "Citizen";
+            const sDisplayName = story.name || 'Citizen';
             const sInitials = sDisplayName.substring(0, 2).toUpperCase();
             const sAvatarBg = getAvatarColor(sDisplayName);
 
@@ -508,12 +508,12 @@ export default function HomeScreen() {
               <TouchableOpacity
                 key={story.id}
                 onPress={() =>
-                  navigation.navigate("PublicProfile", {
+                  navigation.navigate('PublicProfile', {
                     userId: story.id,
                     userName: sDisplayName,
                   })
                 }
-                style={{ alignItems: "center", width: 64 }}
+                style={{ alignItems: 'center', width: 64 }}
                 activeOpacity={0.8}
               >
                 <View
@@ -524,25 +524,25 @@ export default function HomeScreen() {
                     borderWidth: 2.5,
                     borderColor: theme.colors.accentBrand, // Orange active ring
                     padding: 2,
-                    justifyContent: "center",
-                    alignItems: "center",
+                    justifyContent: 'center',
+                    alignItems: 'center',
                   }}
                 >
                   <View
                     style={{
-                      width: "100%",
-                      height: "100%",
+                      width: '100%',
+                      height: '100%',
                       borderRadius: 25,
                       backgroundColor: sAvatarBg,
-                      justifyContent: "center",
-                      alignItems: "center",
+                      justifyContent: 'center',
+                      alignItems: 'center',
                     }}
                   >
                     <Text
                       style={{
                         fontSize: 16,
-                        fontWeight: "900",
-                        color: "#FFFFFF",
+                        fontWeight: '900',
+                        color: '#FFFFFF',
                       }}
                     >
                       {sInitials}
@@ -552,19 +552,19 @@ export default function HomeScreen() {
                 <Text
                   style={{
                     fontSize: 10,
-                    fontWeight: "800",
+                    fontWeight: '800',
                     color: theme.colors.textPrimary,
                     marginTop: 6,
-                    textAlign: "center",
+                    textAlign: 'center',
                   }}
                   numberOfLines={1}
                 >
-                  {sDisplayName.split(" ")[0]}
+                  {sDisplayName.split(' ')[0]}
                 </Text>
                 <Text
                   style={{
                     fontSize: 9,
-                    fontWeight: "700",
+                    fontWeight: '700',
                     color: theme.colors.textMuted,
                     marginTop: 1,
                   }}
@@ -583,8 +583,8 @@ export default function HomeScreen() {
         <GradientButton
           label="Report an Issue"
           icon="camera-plus-outline"
-          onPress={() => navigation.navigate("ReportIssue")}
-          style={{ maxWidth: 400, alignSelf: "center", width: "100%" }}
+          onPress={() => navigation.navigate('ReportIssue')}
+          style={{ maxWidth: 400, alignSelf: 'center', width: '100%' }}
         />
       </View>
 
@@ -650,7 +650,7 @@ export default function HomeScreen() {
               color="#FFF"
               style={{ marginRight: 6 }}
             />
-            <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 14 }}>
+            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>
               Retry
             </Text>
           </TouchableOpacity>
@@ -663,27 +663,27 @@ export default function HomeScreen() {
         <View style={styles.emptyIconCircle}>
           <MaterialCommunityIcons
             name={
-              selectedCategory === "Solved"
-                ? "check-all"
-                : "clipboard-text-off-outline"
+              selectedCategory === 'Solved'
+                ? 'check-all'
+                : 'clipboard-text-off-outline'
             }
             size={32}
             color={theme.colors.textMuted}
           />
         </View>
         <Text style={styles.emptyTitle}>
-          {selectedCategory === "All"
-            ? "No issues reported yet"
+          {selectedCategory === 'All'
+            ? 'No issues reported yet'
             : `No ${categories.find((c) => c.id === selectedCategory)?.title.toLowerCase()} issues`}
         </Text>
         <Text style={styles.emptyDesc}>
-          {selectedCategory === "All"
-            ? "Be the first to report a community issue."
-            : "Nothing to show in this category right now."}
+          {selectedCategory === 'All'
+            ? 'Be the first to report a community issue.'
+            : 'Nothing to show in this category right now.'}
         </Text>
-        {selectedCategory === "All" && (
+        {selectedCategory === 'All' && (
           <TouchableOpacity
-            onPress={() => navigation.navigate("ReportIssue")}
+            onPress={() => navigation.navigate('ReportIssue')}
             activeOpacity={0.8}
             style={styles.emptyAction}
           >
@@ -693,7 +693,7 @@ export default function HomeScreen() {
               color="#FFF"
               style={{ marginRight: 6 }}
             />
-            <Text style={{ color: "#FFF", fontWeight: "700", fontSize: 14 }}>
+            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 14 }}>
               Report an Issue
             </Text>
           </TouchableOpacity>
@@ -713,18 +713,18 @@ export default function HomeScreen() {
       <View
         style={[
           styles.header,
-          { maxWidth: 800, alignSelf: "center", width: "100%" },
+          { maxWidth: 800, alignSelf: 'center', width: '100%' },
         ]}
       >
-        <View style={{ flexDirection: "row", alignItems: "center", flex: 1 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <Image
-            source={require("../assets/logo.jpg")}
+            source={require('../assets/logo.jpg')}
             style={{ width: 34, height: 34, borderRadius: 17, marginRight: 10 }}
           />
           <Text style={styles.brandTitle}>CIVIC</Text>
         </View>
         <AnimatedPressable
-          onPress={() => navigation.navigate("Notifications")}
+          onPress={() => navigation.navigate('Notifications')}
           activeScale={0.92}
         >
           <View style={styles.headerBtn}>
@@ -751,8 +751,8 @@ export default function HomeScreen() {
         contentContainerStyle={{
           paddingBottom: 120,
           maxWidth: 800,
-          alignSelf: "center",
-          width: "100%",
+          alignSelf: 'center',
+          width: '100%',
         }}
         ListHeaderComponent={renderHeader}
         ListEmptyComponent={renderEmptyState}
@@ -796,21 +796,21 @@ const styles = {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.lg,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.border,
   },
   brandTitle: {
     fontSize: 28,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: -1,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   headerBtn: {
-    position: "relative",
+    position: 'relative',
     padding: 10,
     backgroundColor: theme.colors.surfaceSubtle,
     borderRadius: 0,
@@ -818,7 +818,7 @@ const styles = {
     borderColor: theme.colors.border,
   },
   notifDot: {
-    position: "absolute",
+    position: 'absolute',
     top: 6,
     right: 6,
     width: 8,
@@ -836,24 +836,24 @@ const styles = {
     borderColor: theme.colors.border,
   },
   heroTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     marginBottom: Spacing.lg,
   },
   heroLabel: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.accentBrand,
     letterSpacing: 1,
     marginBottom: 4,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   heroTitle: {
     fontSize: 16,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textPrimary,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   heroIconWrap: {
     width: 40,
@@ -862,11 +862,11 @@ const styles = {
     backgroundColor: theme.colors.surfaceSubtle,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   statsRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     backgroundColor: theme.colors.surfaceSubtle,
     borderRadius: 0,
     padding: Spacing.md,
@@ -875,19 +875,19 @@ const styles = {
   },
   statPill: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   statValue: {
     fontSize: 22,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    fontWeight: '900',
+    color: '#FFFFFF',
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textMuted,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   statDivider: {
@@ -896,7 +896,7 @@ const styles = {
     marginVertical: 4,
   },
   loadingContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingTop: 80,
   },
   loadingText: {
@@ -905,8 +905,8 @@ const styles = {
     marginTop: 12,
   },
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 60,
     paddingHorizontal: 40,
   },
@@ -915,29 +915,29 @@ const styles = {
     height: 72,
     borderRadius: 0,
     backgroundColor: theme.colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
     borderWidth: 2,
     borderColor: theme.colors.border,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textPrimary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: Spacing.sm,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   emptyDesc: {
     fontSize: 14,
     color: theme.colors.textMuted,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 20,
   },
   emptyAction: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.accentBrand,
     paddingHorizontal: Spacing.xl,
     paddingVertical: 10,
@@ -945,37 +945,37 @@ const styles = {
     marginTop: Spacing.xl,
   },
   fab: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 28,
     right: 20,
     width: 56,
     height: 56,
     borderRadius: 0,
     backgroundColor: theme.colors.accentBrand,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   newIssuePill: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
-    alignItems: "center",
+    alignItems: 'center',
     paddingTop: 8,
   },
   newIssuePillInner: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.accentBrand,
     paddingHorizontal: 18,
     paddingVertical: 8,
     borderRadius: 0,
   },
   newIssuePillText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 13,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 };

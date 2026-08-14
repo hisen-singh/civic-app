@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef } from 'react';
 import {
   View,
   TouchableOpacity,
@@ -6,19 +6,21 @@ import {
   Alert,
   Linking,
   Animated,
-} from "react-native";
-import { Card, Text } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
-import { useAuth } from "../contexts/AuthContext";
-import { IssueService } from "../services/IssueService";
-import { useNavigation } from "@react-navigation/native";
-import { Spacing, Shadows, theme } from "../theme";
-import { timeAgo, isValidYouTubeUrl } from "../utils/timeAgo";
-import ShareModal from "./ShareModal";
-import CommentBottomSheet from "./CommentBottomSheet";
-import AnimatedPressable from "./ui/AnimatedPressable";
+} from 'react-native';
+import { Card, Text } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons, FontAwesome5 } from '@expo/vector-icons';
+import * as Haptics from 'expo-haptics';
+import { useAuth } from '../contexts/AuthContext';
+import { IssueService } from '../services/IssueService';
+import { useNavigation } from '@react-navigation/native';
+import { Spacing, Shadows, theme } from '../theme';
+import { timeAgo, isValidYouTubeUrl } from '../utils/timeAgo';
+import ShareModal from './ShareModal';
+import CommentBottomSheet from './CommentBottomSheet';
+import BottomSheet from './BottomSheet';
+import ReportBottomSheet from './ReportBottomSheet';
+import AnimatedPressable from './ui/AnimatedPressable';
 
 const getYouTubeID = (url) => {
   if (!url) return null;
@@ -30,23 +32,23 @@ const getYouTubeID = (url) => {
 const ImpactBadge = ({ impact }) => {
   const impacts = {
     critical: {
-      label: "CRITICAL",
-      color: "#FFFFFF",
+      label: 'CRITICAL',
+      color: '#FFFFFF',
       bg: theme.colors.statusCritical,
     },
     high: {
-      label: "HIGH",
-      color: "#FFFFFF",
+      label: 'HIGH',
+      color: '#FFFFFF',
       bg: theme.colors.statusMedium,
     },
     medium: {
-      label: "MEDIUM",
-      color: "#FFFFFF",
+      label: 'MEDIUM',
+      color: '#FFFFFF',
       bg: theme.colors.statusMedium,
     },
     low: {
-      label: "LOW",
-      color: "#FFFFFF",
+      label: 'LOW',
+      color: '#FFFFFF',
       bg: theme.colors.statusLow,
     },
   };
@@ -56,7 +58,7 @@ const ImpactBadge = ({ impact }) => {
       style={{
         backgroundColor: data.bg,
         borderWidth: data.borderColor ? 1 : 0,
-        borderColor: data.borderColor || "transparent",
+        borderColor: data.borderColor || 'transparent',
         paddingHorizontal: 8,
         paddingVertical: 3,
         borderRadius: 9999,
@@ -66,7 +68,7 @@ const ImpactBadge = ({ impact }) => {
         style={{
           color: data.color,
           fontSize: 10,
-          fontWeight: "900",
+          fontWeight: '900',
           letterSpacing: 0.5,
         }}
       >
@@ -79,29 +81,29 @@ const ImpactBadge = ({ impact }) => {
 const StatusBadge = ({ status }) => {
   const statuses = {
     Open: {
-      label: "OPEN",
+      label: 'OPEN',
       color: theme.colors.textPrimary,
       bg: theme.colors.surface,
       borderColor: theme.colors.border,
     },
-    "In Progress": {
-      label: "IN PROGRESS",
+    'In Progress': {
+      label: 'IN PROGRESS',
       color: theme.colors.textPrimary,
       bg: theme.colors.surface,
       borderColor: theme.colors.accentBrand,
     },
     Solved: {
-      label: "RESOLVED",
-      color: "#FFFFFF",
+      label: 'RESOLVED',
+      color: '#FFFFFF',
       bg: theme.colors.accentBrand,
     },
     Failed: {
-      label: "FAILED",
-      color: "#FFFFFF",
+      label: 'FAILED',
+      color: '#FFFFFF',
       bg: theme.colors.statusCritical,
     },
   };
-  const data = statuses[status] || statuses["Open"];
+  const data = statuses[status] || statuses['Open'];
   return (
     <View
       style={{
@@ -117,7 +119,7 @@ const StatusBadge = ({ status }) => {
         style={{
           color: data.color,
           fontSize: 10,
-          fontWeight: "900",
+          fontWeight: '900',
           letterSpacing: 0.5,
         }}
       >
@@ -142,11 +144,13 @@ export default function IssueCard({
   const alreadyVoted = user ? (issue.voters || []).includes(user.uid) : false;
   const [localVotes, setLocalVotes] = useState(issue.votes || 0);
   const [hasVoted, setHasVoted] = useState(alreadyVoted);
-  const [localStatus, setLocalStatus] = useState(issue.status || "Open");
+  const [localStatus, setLocalStatus] = useState(issue.status || 'Open');
   const [isDeleted, setIsDeleted] = useState(false);
   const [menuVisible, setMenuVisible] = useState(false);
   const [shareVisible, setShareVisible] = useState(false);
   const [commentSheetVisible, setCommentSheetVisible] = useState(false);
+  const [solveSheetVisible, setSolveSheetVisible] = useState(false);
+  const [reportSheetVisible, setReportSheetVisible] = useState(false);
   const initialCommentCount =
     issue.commentsCount ?? (issue.comments || []).length;
   const [localCommentCount, setLocalCommentCount] =
@@ -223,7 +227,7 @@ export default function IssueCard({
         setHasVoted(true); // Keep disabled since server confirmed it
       }
     } catch (e) {
-      console.error("Failed to upvote:", e);
+      console.error('Failed to upvote:', e);
       setLocalVotes((prev) => prev - 1);
       setHasVoted(false);
     }
@@ -233,20 +237,20 @@ export default function IssueCard({
     if (
       isSolving ||
       !user ||
-      localStatus === "Solved" ||
-      localStatus === "Failed"
+      localStatus === 'Solved' ||
+      localStatus === 'Failed'
     )
       return;
 
     triggerHaptic(Haptics.ImpactFeedbackStyle.Medium);
     setIsSolving(true);
-    setLocalStatus("In Progress");
+    setLocalStatus('In Progress');
     try {
       await IssueService.joinIssue(issue.id, user.uid);
     } catch (e) {
-      console.error("Failed to join issue:", e);
+      console.error('Failed to join issue:', e);
       setIsSolving(false);
-      setLocalStatus(issue.status || "Open");
+      setLocalStatus(issue.status || 'Open');
     }
   };
 
@@ -255,8 +259,8 @@ export default function IssueCard({
     try {
       await IssueService.updateIssueStatus(issue.id, newStatus);
     } catch (e) {
-      console.error("Failed to update status:", e);
-      setLocalStatus(issue.status || "Open");
+      console.error('Failed to update status:', e);
+      setLocalStatus(issue.status || 'Open');
     }
   };
 
@@ -267,8 +271,8 @@ export default function IssueCard({
       );
     } else {
       Alert.alert(
-        "Invalid Link",
-        "This link does not appear to be a valid YouTube URL.",
+        'Invalid Link',
+        'This link does not appear to be a valid YouTube URL.',
       );
     }
   };
@@ -276,7 +280,7 @@ export default function IssueCard({
   const handleCardPress = () => {
     animatePress();
     if (!disablePress) {
-      navigation.navigate("IssueDetail", { issueId: issue.id });
+      navigation.navigate('IssueDetail', { issueId: issue.id });
     }
   };
 
@@ -292,7 +296,21 @@ export default function IssueCard({
     setShareVisible(true);
   };
 
-  const authorName = issue.authorName || "Citizen";
+  const handleSelectSolveOption = (option) => {
+    setSolveSheetVisible(false);
+    if (option === 'fund' || option === 'FUND THE FIX') {
+      Alert.alert(
+        'Fund the Fix',
+        'Thank you for supporting this issue! Funding feature coming soon.',
+      );
+    } else if (option === 'labor' || option === 'PLEDGE YOUR TIME') {
+      handleSolve();
+    } else if (option === 'amplify' || option === 'AMPLIFY ISSUE') {
+      handleShare();
+    }
+  };
+
+  const authorName = issue.authorName || 'Citizen';
   const initials = authorName.substring(0, 2).toUpperCase();
 
   const getAvatarColor = (name) => {
@@ -305,10 +323,10 @@ export default function IssueCard({
       theme.colors.statusLow,
       theme.colors.statusMedium,
       theme.colors.statusCritical,
-      "#3B82F6", // Blue
-      "#8B5CF6", // Violet
-      "#EC4899", // Pink
-      "#10B981", // Emerald
+      '#3B82F6', // Blue
+      '#8B5CF6', // Violet
+      '#EC4899', // Pink
+      '#10B981', // Emerald
     ];
     return colors[Math.abs(hash) % colors.length];
   };
@@ -326,33 +344,33 @@ export default function IssueCard({
     }[issue.urgency] || theme.colors.statusMedium;
 
   const urgencyBgColor = theme.colors.surfaceCard;
-  const urgencyLabel = (issue.urgency || "medium").toUpperCase() + " URGENCY";
+  const urgencyLabel = (issue.urgency || 'medium').toUpperCase() + ' URGENCY';
 
-  const textColor = "#FFFFFF";
-  const textMuted = "rgba(255, 255, 255, 0.9)";
+  const textColor = '#FFFFFF';
+  const textMuted = 'rgba(255, 255, 255, 0.9)';
   const surfaceSubtle = hasMedia
-    ? "rgba(255,255,255,0.15)"
+    ? 'rgba(255,255,255,0.15)'
     : theme.colors.surfaceSubtle;
-  const borderColor = hasMedia ? "rgba(255,255,255,0.2)" : theme.colors.border;
-  const accentColor = hasMedia ? "#FFFFFF" : urgencyColor;
+  const borderColor = hasMedia ? 'rgba(255,255,255,0.2)' : theme.colors.border;
+  const accentColor = hasMedia ? '#FFFFFF' : urgencyColor;
 
   const handleDelete = () => {
     closeMenu();
     Alert.alert(
-      "Delete Report",
-      "This action cannot be undone. The report will be permanently removed.",
+      'Delete Report',
+      'This action cannot be undone. The report will be permanently removed.',
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Delete",
-          style: "destructive",
+          text: 'Delete',
+          style: 'destructive',
           onPress: async () => {
             try {
               await IssueService.deleteIssue(issue.id);
               setIsDeleted(true);
             } catch (e) {
-              console.error("Failed to delete issue:", e);
-              Alert.alert("Error", "Could not delete issue. Please try again.");
+              console.error('Failed to delete issue:', e);
+              Alert.alert('Error', 'Could not delete issue. Please try again.');
             }
           },
         },
@@ -371,8 +389,8 @@ export default function IssueCard({
           styles.card,
           {
             backgroundColor: urgencyBgColor,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
+            backdropFilter: 'blur(16px)',
+            WebkitBackdropFilter: 'blur(16px)',
           },
           hasMedia && { borderWidth: 0 },
         ]}
@@ -380,7 +398,7 @@ export default function IssueCard({
         {hasMedia && (
           <View
             style={{
-              position: "absolute",
+              position: 'absolute',
               top: 0,
               left: 0,
               right: 0,
@@ -393,7 +411,7 @@ export default function IssueCard({
                   issue.photo ||
                   `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
               }}
-              style={{ width: "100%", height: "100%" }}
+              style={{ width: '100%', height: '100%' }}
               resizeMode="cover"
             />
           </View>
@@ -463,13 +481,13 @@ export default function IssueCard({
         >
           <View style={styles.authorRow}>
             <TouchableOpacity
-              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}
               activeOpacity={0.7}
               onPress={() => {
                 if (issue.authorId) {
-                  navigation.navigate("PublicProfile", {
+                  navigation.navigate('PublicProfile', {
                     userId: issue.authorId,
-                    userName: issue.authorName || "User",
+                    userName: issue.authorName || 'User',
                   });
                 }
               }}
@@ -480,7 +498,7 @@ export default function IssueCard({
                   { backgroundColor: avatarBg, borderColor: avatarBg },
                 ]}
               >
-                <Text style={[styles.authorInitials, { color: "#FFFFFF" }]}>
+                <Text style={[styles.authorInitials, { color: '#FFFFFF' }]}>
                   {initials}
                 </Text>
               </View>
@@ -490,8 +508,8 @@ export default function IssueCard({
                 </Text>
                 <View
                   style={{
-                    flexDirection: "row",
-                    alignItems: "center",
+                    flexDirection: 'row',
+                    alignItems: 'center',
                     marginTop: 2,
                   }}
                 >
@@ -527,7 +545,7 @@ export default function IssueCard({
                       ]}
                       numberOfLines={1}
                     >
-                      {issue.location || "Location not set"}
+                      {issue.location || 'Location not set'}
                     </Text>
                   </View>
                 </View>
@@ -544,11 +562,11 @@ export default function IssueCard({
               <Text
                 style={{
                   color: theme.colors.accentBrand,
-                  fontWeight: "900",
+                  fontWeight: '900',
                   fontSize: 12,
                 }}
               >
-                {`  [${(issue.category || "General").toUpperCase()}]`}
+                {`  [${(issue.category || 'General').toUpperCase()}]`}
               </Text>
             )}
           </Text>
@@ -562,11 +580,11 @@ export default function IssueCard({
               <Text
                 style={{
                   color: theme.colors.accentBrand,
-                  fontWeight: "900",
+                  fontWeight: '900',
                   fontSize: 12,
                 }}
               >
-                {`  [${(issue.category || "General").toUpperCase()}]`}
+                {`  [${(issue.category || 'General').toUpperCase()}]`}
               </Text>
             </Text>
           ) : null}
@@ -584,7 +602,7 @@ export default function IssueCard({
                   <Animated.View style={{ transform: [{ scale: voteAnim }] }}>
                     <MaterialCommunityIcons
                       name={
-                        hasVoted ? "arrow-up-bold" : "arrow-up-bold-outline"
+                        hasVoted ? 'arrow-up-bold' : 'arrow-up-bold-outline'
                       }
                       size={20}
                       color={hasVoted ? accentColor : textMuted}
@@ -634,14 +652,34 @@ export default function IssueCard({
                   />
                 </View>
               </AnimatedPressable>
+
+              {!isAuthor && (
+                <AnimatedPressable
+                  onPress={() => setReportSheetVisible(true)}
+                  activeScale={0.92}
+                >
+                  <View
+                    style={[
+                      styles.actionBtn,
+                      { backgroundColor: surfaceSubtle, borderColor },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="flag-outline"
+                      size={19}
+                      color={textMuted}
+                    />
+                  </View>
+                </AnimatedPressable>
+              )}
             </View>
 
             {showActions &&
-              localStatus !== "Solved" &&
-              localStatus !== "Failed" &&
+              localStatus !== 'Solved' &&
+              localStatus !== 'Failed' &&
               !isAuthor && (
                 <AnimatedPressable
-                  onPress={handleSolve}
+                  onPress={() => setSolveSheetVisible(true)}
                   disabled={isSolving}
                   activeScale={0.95}
                 >
@@ -650,17 +688,20 @@ export default function IssueCard({
                       style={[
                         styles.primaryActionBtn,
                         styles.primaryActionBtnActive,
-                        { borderColor: "#B71C1C" },
+                        { borderColor: theme.colors.accentBrand },
                       ]}
                     >
                       <FontAwesome5
                         name="fist-raised"
                         size={12}
-                        color="#B71C1C"
+                        color={theme.colors.accentBrand}
                         style={{ marginRight: 6 }}
                       />
                       <Text
-                        style={[styles.primaryActionText, { color: "#B71C1C" }]}
+                        style={[
+                          styles.primaryActionText,
+                          { color: theme.colors.accentBrand },
+                        ]}
                       >
                         Solving
                       </Text>
@@ -669,7 +710,7 @@ export default function IssueCard({
                     <View
                       style={[
                         styles.primaryActionBtn,
-                        { backgroundColor: "#B71C1C" },
+                        { backgroundColor: theme.colors.accentBrand },
                       ]}
                     >
                       <FontAwesome5
@@ -678,7 +719,7 @@ export default function IssueCard({
                         color="#FFFFFF"
                         style={{ marginRight: 6 }}
                       />
-                      <Text style={styles.primaryActionText}>Solve</Text>
+                      <Text style={styles.primaryActionText}>Help Solve</Text>
                     </View>
                   )}
                 </AnimatedPressable>
@@ -686,10 +727,10 @@ export default function IssueCard({
 
             {showActions &&
               isAuthor &&
-              localStatus !== "Solved" &&
-              localStatus !== "Failed" && (
+              localStatus !== 'Solved' &&
+              localStatus !== 'Failed' && (
                 <AnimatedPressable
-                  onPress={() => handleUpdateStatus("Solved")}
+                  onPress={() => handleUpdateStatus('Solved')}
                   activeScale={0.95}
                 >
                   <View style={[styles.primaryActionBtn, styles.markFixedBtn]}>
@@ -725,6 +766,18 @@ export default function IssueCard({
         initialComments={issue.comments || []}
         onCommentAdded={() => setLocalCommentCount((prev) => prev + 1)}
       />
+      <BottomSheet
+        visible={solveSheetVisible}
+        onClose={() => setSolveSheetVisible(false)}
+        onSelectOption={handleSelectSolveOption}
+        issue={issue}
+      />
+      <ReportBottomSheet
+        visible={reportSheetVisible}
+        onClose={() => setReportSheetVisible(false)}
+        contentType="issue"
+        issueId={issue.id}
+      />
     </Animated.View>
   );
 }
@@ -737,43 +790,43 @@ const styles = {
     borderRadius: theme.radius.outer,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    overflow: "hidden",
+    overflow: 'hidden',
     ...Shadows.card,
   },
   media: {
-    width: "100%",
+    width: '100%',
     height: 200,
     backgroundColor: theme.colors.surfaceSubtle,
   },
   mediaGradient: {
-    position: "absolute",
+    position: 'absolute',
     left: 0,
     right: 0,
     bottom: 0,
     height: 80,
   },
   topBadges: {
-    position: "absolute",
+    position: 'absolute',
     top: 12,
     left: 12,
     right: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.55)',
     paddingHorizontal: 10,
     paddingVertical: 5,
     borderRadius: 0,
     borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
+    borderColor: 'rgba(255,255,255,0.1)',
   },
   categoryChipInline: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 5,
@@ -788,18 +841,18 @@ const styles = {
     marginRight: 6,
   },
   categoryChipText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: '700',
     letterSpacing: 0.3,
   },
   textOnlyMedia: {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.md,
     paddingBottom: Spacing.xs,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
   },
   contentSection: {
     paddingHorizontal: Spacing.lg,
@@ -807,12 +860,12 @@ const styles = {
     paddingBottom: Spacing.lg,
   },
   contentSectionGlass: {
-    backgroundColor: "transparent",
+    backgroundColor: 'transparent',
     borderTopWidth: 0,
   },
   authorRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.sm,
   },
   authorAvatar: {
@@ -820,20 +873,20 @@ const styles = {
     height: 32,
     borderRadius: 9999,
     backgroundColor: theme.colors.accentBrandSubtle,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginRight: Spacing.sm,
     borderWidth: 1,
     borderColor: theme.colors.border,
   },
   authorInitials: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.accentBrand,
   },
   authorName: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
     color: theme.colors.textPrimary,
   },
   authorMeta: {
@@ -843,58 +896,58 @@ const styles = {
   },
   titleText: {
     fontSize: 18,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    fontWeight: '900',
+    color: '#FFFFFF',
     lineHeight: 24,
     marginBottom: Spacing.sm,
     letterSpacing: -0.2,
-    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   descriptionText: {
     fontSize: 15,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.9)",
+    fontWeight: '700',
+    color: 'rgba(255,255,255,0.9)',
     lineHeight: 22,
     marginBottom: Spacing.md,
-    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowColor: 'rgba(0, 0, 0, 0.8)',
     textShadowOffset: { width: 0, height: 1 },
     textShadowRadius: 3,
   },
   metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
     backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: theme.radius.inner,
-    alignSelf: "flex-start",
+    alignSelf: 'flex-start',
   },
   metaText: {
     fontSize: 12,
     color: theme.colors.textMuted,
     marginLeft: 4,
     flexShrink: 1,
-    fontWeight: "500",
+    fontWeight: '500',
   },
   actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
     borderTopColor: theme.colors.border,
   },
   socialActions: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 12,
     minHeight: 44,
@@ -906,21 +959,21 @@ const styles = {
   },
   actionBtnActive: {
     backgroundColor: theme.colors.accentBrandSubtle,
-    borderColor: "rgba(37, 99, 235, 0.3)",
+    borderColor: 'rgba(37, 99, 235, 0.3)',
   },
   actionCount: {
     color: theme.colors.textMuted,
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
     marginLeft: 4,
   },
   actionCountActive: {
     color: theme.colors.accentBrand,
   },
   primaryActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingHorizontal: 16,
     minHeight: 44,
     borderRadius: 9999,
@@ -936,27 +989,27 @@ const styles = {
     borderColor: theme.colors.accentBrand,
   },
   primaryActionText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   playOverlay: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.25)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0,0,0,0.25)',
   },
   playButton: {
     width: 56,
     height: 56,
     borderRadius: 9999,
-    backgroundColor: "rgba(0,0,0,0.7)",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'center',
+    alignItems: 'center',
     paddingLeft: 3,
   },
 };

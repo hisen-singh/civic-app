@@ -1,0 +1,13 @@
+{
+  "name": "civic-firestore-tests",
+  "private": true,
+  "scripts": {
+    "test": "jest --ci --forceExit",
+    "test:emulator": "firebase emulators:exec --only firestore \"npx jest --ci --forceExit\""
+  },
+  "devDependencies": {
+    "@firebase/rules-unit-testing": "^4.0.0",
+    "firebase": "^12.6.0",
+    "jest": "^29.7.0"
+  }
+}

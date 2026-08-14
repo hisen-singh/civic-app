@@ -9,6 +9,7 @@ Civic Hero is a mobile-first civic platform for reporting, solving, and visualiz
 ## Commands
 
 ### Development
+
 - **Start app**: `npm start` or `npx expo start`
 - **Android**: `npm run android`
 - **iOS**: `npm run ios`
@@ -16,23 +17,27 @@ Civic Hero is a mobile-first civic platform for reporting, solving, and visualiz
 - **Admin dashboard**: `npm run admin:dev`
 
 ### Testing
+
 - **Unit tests**: `npm test`
 - **Tests with coverage**: `npm test -- --coverage`
 - **E2E tests**: `npm run test:e2e` (requires Maestro CLI)
 - **CI pipeline**: GitHub Actions runs on push to `main` and PRs
 
 ### Building
+
 - **Preview APK**: `npm run build:preview`
 - **Production AAB**: `npm run build:production`
 - **Admin dashboard build**: `npm run admin:build`
 
 ### Deploying
+
 - **Firebase (rules, indexes, functions)**: `firebase deploy --only firestore:indexes,firestore:rules,functions`
 - **Admin dashboard to hosting**: `npm run admin:deploy`
 
 ## Architecture
 
 ### Project Structure
+
 ```
 civic-hero/
 ├── App.js                     # Entry point (navigation, auth, splash)
@@ -53,6 +58,7 @@ civic-hero/
 ```
 
 ### Technology Stack
+
 - **Mobile**: React Native 0.81.5 with Expo SDK 54
 - **Admin**: React + Vite
 - **Backend**: Firebase (Auth, Firestore, Cloud Functions, Storage)
@@ -64,6 +70,7 @@ civic-hero/
 - **Crash Monitoring**: Sentry
 
 ### Key Patterns
+
 - **Service-oriented**: UI screens are lightweight; all logic lives in `/services`
 - **Caching**: `IssueService` uses in-memory caching with TTL and request deduplication
 - **Auth resilience**: `AuthContext` has an 8-second safety timeout to prevent infinite loading
@@ -72,10 +79,12 @@ civic-hero/
 - **Batched writes**: Cloud Functions chunk batch operations to stay under the 500-write limit
 
 ## Design System
+
 - **Theme**: Dark mode (`theme.js`) with accent gradients
 - **Colors**: Deep dark backgrounds, slate text, indigo/purple accents, green success states
 - **Components**: GradientButton, FilterPills, AnimatedPressable, BeforeAfterCard
 - **Icons**: MaterialCommunityIcons (rounded, minimal)
 
 ## Environment Variables
+
 - `EXPO_PUBLIC_SENTRY_DSN` — Sentry DSN for crash reporting

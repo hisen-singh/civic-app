@@ -1,5 +1,8 @@
 {
   "name": "civic-app",
+  "engines": {
+    "node": ">=22.13 <23"
+  },
   "license": "0BSD",
   "version": "1.0.0",
   "description": "Civic — A trusted platform for reporting and resolving local community issues.",
@@ -18,7 +21,13 @@
     "admin:build": "cd admin-dashboard && npm run build",
     "admin:deploy": "npm run admin:build && firebase deploy --only hosting",
     "seed": "node scripts/seed311.mjs",
-    "seed:india": "node scripts/seedIndia.mjs"
+    "seed:india": "node scripts/seedIndia.mjs",
+    "test:firestore-rules": "firebase emulators:exec --only firestore \"cd tests && npx jest --ci --forceExit\"",
+    "lint": "npx eslint . --max-warnings=0",
+    "format:check": "npx prettier --check .",
+    "typecheck": "npx tsc --noEmit",
+    "verify": "npm run lint && npm run format:check && npm run typecheck && npm test && npx expo-doctor",
+    "format": "npx prettier --write ."
   },
   "dependencies": {
     "@expo/vector-icons": "^15.1.1",
@@ -73,6 +82,7 @@
     "babel-preset-expo": "^54.0.6",
     "jest": "^29.7.0",
     "jest-expo": "~54.0.17",
+    "prettier": "^3.9.6",
     "react-refresh": "^0.18.0",
     "react-test-renderer": "^19.1.0",
     "typescript": "~5.9.2"
@@ -80,7 +90,9 @@
   "jest": {
     "preset": "jest-expo",
     "testPathIgnorePatterns": [
-      "<rootDir>/web-client/"
+      "<rootDir>/web-client/",
+      "<rootDir>/tests/",
+      "<rootDir>/functions/"
     ],
     "transformIgnorePatterns": [
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|native-base|react-native-svg|firebase|@firebase)"

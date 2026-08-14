@@ -1,0 +1,38 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isValidImage() {
+      return request.resource.size < 5 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    // Profile avatars — filename must match auth uid (e.g. avatars/{uid}.jpg)
+    match /avatars/{fileName} {
+      allow read: if true;
+      allow write: if isSignedIn()
+        && fileName == request.auth.uid + '.jpg'
+        && isValidImage();
+    }
+
+    // User-scoped uploads (issue photos, after photos, etc.)
+    match /users/{userId}/{allPaths=**} {
+      allow read: if true;
+      allow write: if isOwner(userId) && isValidImage();
+    }
+
+    // Legacy issue paths — read-only for existing content uploaded before user-scoped paths
+    match /issues/{allPaths=**} {
+      allow read: if true;
+      allow write: if false;
+    }
+  }
+}

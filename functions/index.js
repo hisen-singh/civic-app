@@ -1,5 +1,5 @@
-const functions = require("firebase-functions/v1");
-const admin = require("firebase-admin");
+const functions = require('firebase-functions/v1');
+const admin = require('firebase-admin');
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -26,10 +26,10 @@ function haversine(lat1, lon1, lat2, lon2) {
 async function getFcmToken(userId) {
   try {
     const tokenDoc = await db
-      .collection("users")
+      .collection('users')
       .doc(userId)
-      .collection("private")
-      .doc("data")
+      .collection('private')
+      .doc('data')
       .get();
     return tokenDoc.exists ? tokenDoc.data().fcmToken || null : null;
   } catch (_) {
@@ -40,7 +40,7 @@ async function getFcmToken(userId) {
 /** Send a push notification + persist to Firestore */
 async function createNotification({ userId, title, body, type, issueId }) {
   // 1. Persist to Firestore (in-app notifications)
-  await db.collection("notifications").add({
+  await db.collection('notifications').add({
     userId,
     title,
     body,
@@ -54,19 +54,19 @@ async function createNotification({ userId, title, body, type, issueId }) {
   const expoPushToken = await getFcmToken(userId);
   if (expoPushToken) {
     try {
-      const response = await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
+      const response = await fetch('https://exp.host/--/api/v2/push/send', {
+        method: 'POST',
         headers: {
-          Accept: "application/json",
-          "Accept-encoding": "gzip, deflate",
-          "Content-Type": "application/json",
+          Accept: 'application/json',
+          'Accept-encoding': 'gzip, deflate',
+          'Content-Type': 'application/json',
         },
         body: JSON.stringify({
           to: expoPushToken,
-          sound: "default",
+          sound: 'default',
           title: title,
           body: body,
-          data: { type, issueId: issueId || "" },
+          data: { type, issueId: issueId || '' },
         }),
       });
       const receipt = await response.json();
@@ -84,7 +84,7 @@ async function createNotification({ userId, title, body, type, issueId }) {
 //    • Notifies users whose Watch Areas contain the new issue
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onIssueCreated = functions.firestore
-  .document("issues/{issueId}")
+  .document('issues/{issueId}')
   .onCreate(async (snapshot, context) => {
     const issue = snapshot.data();
     const issueId = context.params.issueId;
@@ -96,8 +96,8 @@ exports.onIssueCreated = functions.firestore
 
     try {
       const areasSnap = await db
-        .collection("watchAreas")
-        .where("active", "==", true)
+        .collection('watchAreas')
+        .where('active', '==', true)
         .get();
 
       const jobs = [];
@@ -114,9 +114,9 @@ exports.onIssueCreated = functions.firestore
           jobs.push(
             createNotification({
               userId: area.userId,
-              title: "📍 New Issue in your Watch Area",
+              title: '📍 New Issue in your Watch Area',
               body: `${issue.category} reported nearby: ${issue.title}`,
-              type: "WATCH_AREA_ALERT",
+              type: 'WATCH_AREA_ALERT',
               issueId,
             }),
           );
@@ -129,7 +129,7 @@ exports.onIssueCreated = functions.firestore
       );
       return null;
     } catch (err) {
-      console.error("[onIssueCreated] Error:", err);
+      console.error('[onIssueCreated] Error:', err);
       return null;
     }
   });
@@ -140,24 +140,24 @@ exports.onIssueCreated = functions.firestore
 //    • When status → "In Progress", notify the reporter that someone joined
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onIssueUpdated = functions.firestore
-  .document("issues/{issueId}")
+  .document('issues/{issueId}')
   .onUpdate(async (change, context) => {
     const before = change.before.data();
     const after = change.after.data();
     const issueId = context.params.issueId;
 
     // Status change: → Solved
-    if (before.status !== "Solved" && after.status === "Solved") {
+    if (before.status !== 'Solved' && after.status === 'Solved') {
       const jobs = [];
 
       // Notify reporter
-      if (after.authorId && after.authorId !== "anonymous") {
+      if (after.authorId && after.authorId !== 'anonymous') {
         jobs.push(
           createNotification({
             userId: after.authorId,
-            title: "✅ Your Issue Was Resolved!",
+            title: '✅ Your Issue Was Resolved!',
             body: `"${after.title}" has been marked as solved by the community.`,
-            type: "ISSUE_SOLVED",
+            type: 'ISSUE_SOLVED',
             issueId,
           }),
         );
@@ -169,9 +169,9 @@ exports.onIssueUpdated = functions.firestore
         jobs.push(
           createNotification({
             userId: solverId,
-            title: "🏆 Issue Resolved!",
+            title: '🏆 Issue Resolved!',
             body: `An issue you helped with ("${after.title}") has been marked solved!`,
-            type: "ISSUE_SOLVED",
+            type: 'ISSUE_SOLVED',
             issueId,
           }),
         );
@@ -190,13 +190,13 @@ exports.onIssueUpdated = functions.firestore
     if (
       newSolvers.length > 0 &&
       after.authorId &&
-      after.authorId !== "anonymous"
+      after.authorId !== 'anonymous'
     ) {
       await createNotification({
         userId: after.authorId,
-        title: "🤝 Someone is helping!",
+        title: '🤝 Someone is helping!',
         body: `A community member just joined your issue: "${after.title}"`,
-        type: "SOLVER_JOINED",
+        type: 'SOLVER_JOINED',
         issueId,
       });
     }
@@ -209,13 +209,13 @@ exports.onIssueUpdated = functions.firestore
 //    • Notify the issue author when someone comments (unless it's themselves)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.onCommentAdded = functions.firestore
-  .document("issues/{issueId}/comments/{commentId}")
+  .document('issues/{issueId}/comments/{commentId}')
   .onCreate(async (snap, context) => {
     const latestComment = snap.data();
     const issueId = context.params.issueId;
 
     // Fetch the parent issue to get the authorId and title
-    const issueDoc = await db.collection("issues").doc(issueId).get();
+    const issueDoc = await db.collection('issues').doc(issueId).get();
     if (!issueDoc.exists) return null;
     const issue = issueDoc.data();
 
@@ -223,13 +223,13 @@ exports.onCommentAdded = functions.firestore
       latestComment &&
       issue.authorId &&
       latestComment.authorId !== issue.authorId &&
-      issue.authorId !== "anonymous"
+      issue.authorId !== 'anonymous'
     ) {
       await createNotification({
         userId: issue.authorId,
-        title: "💬 New Comment",
-        body: `${latestComment.authorName || "Someone"} commented on "${issue.title}"`,
-        type: "NEW_COMMENT",
+        title: '💬 New Comment',
+        body: `${latestComment.authorName || 'Someone'} commented on "${issue.title}"`,
+        type: 'NEW_COMMENT',
         issueId,
       });
     }
@@ -243,18 +243,18 @@ exports.onCommentAdded = functions.firestore
 //    • Writes the result back to the 'users' collection
 // ─────────────────────────────────────────────────────────────────────────────
 exports.recalculateTrustScores = functions.pubsub
-  .schedule("0 0 * * *")
-  .timeZone("Asia/Kolkata")
+  .schedule('0 0 * * *')
+  .timeZone('Asia/Kolkata')
   .onRun(async () => {
-    console.info("[recalculateTrustScores] Starting...");
+    console.info('[recalculateTrustScores] Starting...');
 
-    const issuesSnap = await db.collection("issues").get();
+    const issuesSnap = await db.collection('issues').get();
     const userScores = {};
 
     issuesSnap.forEach((doc) => {
       const issue = doc.data();
       const reporter = issue.authorId;
-      if (reporter && reporter !== "anonymous") {
+      if (reporter && reporter !== 'anonymous') {
         if (!userScores[reporter])
           userScores[reporter] = { reported: 0, solved: 0, score: 0 };
         userScores[reporter].reported += 1;
@@ -264,7 +264,7 @@ exports.recalculateTrustScores = functions.pubsub
         if (!userScores[solverId])
           userScores[solverId] = { reported: 0, solved: 0, score: 0 };
         userScores[solverId].score += 30;
-        if (issue.status === "Solved") {
+        if (issue.status === 'Solved') {
           userScores[solverId].solved += 1;
           userScores[solverId].score += 100;
         }
@@ -286,13 +286,22 @@ exports.recalculateTrustScores = functions.pubsub
       const batch = db.batch();
       chunk.forEach(([uid, data]) => {
         const index = sorted.findIndex(([id]) => id === uid);
-        const ref = db.collection("users").doc(uid);
+        const ref = db.collection('users').doc(uid);
         batch.set(
           ref,
           {
             trustScore: data.score,
             reported: data.reported,
             solved: data.solved,
+            rank: index + 1,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true },
+        );
+        batch.set(
+          ref.collection('publicProfile').doc('profile'),
+          {
+            trustScore: data.score,
             rank: index + 1,
             updatedAt: new Date().toISOString(),
           },
@@ -310,24 +319,24 @@ exports.recalculateTrustScores = functions.pubsub
 //    • Moves issues solved more than 30 days ago to 'archivedIssues'
 // ─────────────────────────────────────────────────────────────────────────────
 exports.archiveOldIssues = functions.pubsub
-  .schedule("0 0 * * 0") // Every Sunday midnight
-  .timeZone("Asia/Kolkata")
+  .schedule('0 0 * * 0') // Every Sunday midnight
+  .timeZone('Asia/Kolkata')
   .onRun(async () => {
-    console.info("[archiveOldIssues] Starting...");
+    console.info('[archiveOldIssues] Starting...');
 
     const thirtyDaysAgo = new Date();
     thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
     const cutoff = thirtyDaysAgo.toISOString();
 
     const snap = await db
-      .collection("issues")
-      .where("status", "==", "Solved")
-      .where("statusUpdatedAt", "<", cutoff)
+      .collection('issues')
+      .where('status', '==', 'Solved')
+      .where('statusUpdatedAt', '<', cutoff)
       .get();
 
     const batch = db.batch();
     snap.forEach((doc) => {
-      const archiveRef = db.collection("archivedIssues").doc(doc.id);
+      const archiveRef = db.collection('archivedIssues').doc(doc.id);
       batch.set(archiveRef, {
         ...doc.data(),
         archivedAt: new Date().toISOString(),
@@ -345,19 +354,19 @@ exports.archiveOldIssues = functions.pubsub
 //    • Deletes read notifications older than 7 days
 // ─────────────────────────────────────────────────────────────────────────────
 exports.cleanupNotifications = functions.pubsub
-  .schedule("0 1 * * *") // 1am every day
-  .timeZone("Asia/Kolkata")
+  .schedule('0 1 * * *') // 1am every day
+  .timeZone('Asia/Kolkata')
   .onRun(async () => {
-    console.info("[cleanupNotifications] Starting...");
+    console.info('[cleanupNotifications] Starting...');
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const cutoff = sevenDaysAgo.toISOString();
 
     const snap = await db
-      .collection("notifications")
-      .where("read", "==", true)
-      .where("createdAt", "<", cutoff)
+      .collection('notifications')
+      .where('read', '==', true)
+      .where('createdAt', '<', cutoff)
       .get();
 
     const batch = db.batch();
@@ -377,23 +386,23 @@ exports.cleanupNotifications = functions.pubsub
 exports.saveFcmToken = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Must be signed in.",
+      'unauthenticated',
+      'Must be signed in.',
     );
   }
   const { token } = data;
-  if (!token || typeof token !== "string") {
+  if (!token || typeof token !== 'string') {
     throw new functions.https.HttpsError(
-      "invalid-argument",
-      "A valid FCM token is required.",
+      'invalid-argument',
+      'A valid FCM token is required.',
     );
   }
 
   await db
-    .collection("users")
+    .collection('users')
     .doc(context.auth.uid)
-    .collection("private")
-    .doc("data")
+    .collection('private')
+    .doc('data')
     .set(
       { fcmToken: token, fcmUpdatedAt: new Date().toISOString() },
       { merge: true },
@@ -409,14 +418,14 @@ exports.saveFcmToken = functions.https.onCall(async (data, context) => {
 exports.getLeaderboard = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Must be signed in.",
+      'unauthenticated',
+      'Must be signed in.',
     );
   }
 
   const snap = await db
-    .collection("users")
-    .orderBy("trustScore", "desc")
+    .collection('users')
+    .orderBy('trustScore', 'desc')
     .limit(20)
     .get();
 
@@ -436,8 +445,8 @@ exports.getLeaderboard = functions.https.onCall(async (data, context) => {
 exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Must be signed in.",
+      'unauthenticated',
+      'Must be signed in.',
     );
   }
   return { isAdmin: context.auth.token.admin === true };
@@ -451,22 +460,22 @@ exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
 exports.setAdminRole = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
-      "unauthenticated",
-      "Must be signed in.",
+      'unauthenticated',
+      'Must be signed in.',
     );
   }
   if (context.auth.token.admin !== true) {
     throw new functions.https.HttpsError(
-      "permission-denied",
-      "Only admins can grant admin role.",
+      'permission-denied',
+      'Only admins can grant admin role.',
     );
   }
 
   const { targetUid } = data;
-  if (!targetUid || typeof targetUid !== "string") {
+  if (!targetUid || typeof targetUid !== 'string') {
     throw new functions.https.HttpsError(
-      "invalid-argument",
-      "A valid targetUid is required.",
+      'invalid-argument',
+      'A valid targetUid is required.',
     );
   }
 
@@ -474,7 +483,7 @@ exports.setAdminRole = functions.https.onCall(async (data, context) => {
 
   // Also mark in Firestore for easy querying
   await db
-    .collection("users")
+    .collection('users')
     .doc(targetUid)
     .set(
       { isAdmin: true, adminGrantedAt: new Date().toISOString() },
@@ -495,34 +504,34 @@ exports.adminUpdateIssueStatus = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
       throw new functions.https.HttpsError(
-        "unauthenticated",
-        "Must be signed in.",
+        'unauthenticated',
+        'Must be signed in.',
       );
     }
     if (context.auth.token.admin !== true) {
       throw new functions.https.HttpsError(
-        "permission-denied",
-        "Only admins can update issue status.",
+        'permission-denied',
+        'Only admins can update issue status.',
       );
     }
 
     const { issueId, newStatus } = data;
     if (!issueId || !newStatus) {
       throw new functions.https.HttpsError(
-        "invalid-argument",
-        "issueId and newStatus are required.",
+        'invalid-argument',
+        'issueId and newStatus are required.',
       );
     }
 
-    const validStatuses = ["Open", "In Progress", "Solved", "Failed"];
+    const validStatuses = ['Open', 'In Progress', 'Solved', 'Failed'];
     if (!validStatuses.includes(newStatus)) {
       throw new functions.https.HttpsError(
-        "invalid-argument",
-        `Status must be one of: ${validStatuses.join(", ")}`,
+        'invalid-argument',
+        `Status must be one of: ${validStatuses.join(', ')}`,
       );
     }
 
-    await db.collection("issues").doc(issueId).update({ status: newStatus });
+    await db.collection('issues').doc(issueId).update({ status: newStatus });
     console.info(
       `[adminUpdateIssueStatus] Issue ${issueId} → ${newStatus} by admin ${context.auth.uid}`,
     );
@@ -531,42 +540,42 @@ exports.adminUpdateIssueStatus = functions.https.onCall(
 );
 
 exports.logAppCrash = functions.https.onRequest(async (req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
     return;
   }
   try {
     const errorData = req.body;
     console.error(
-      "[logAppCrash] CLIENT CRASH DETECTED:",
+      '[logAppCrash] CLIENT CRASH DETECTED:',
       JSON.stringify(errorData, null, 2),
     );
-    await db.collection("client_crashes").add({
+    await db.collection('client_crashes').add({
       ...errorData,
       timestamp: new Date().toISOString(),
     });
     res.status(200).send({ success: true });
   } catch (err) {
-    console.error("Failed to log crash:", err);
+    console.error('Failed to log crash:', err);
     res.status(500).send({ error: err.message });
   }
 });
 
 exports.getClientCrashes = functions.https.onRequest(async (req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type');
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
     return;
   }
   try {
     const snapshot = await db
-      .collection("client_crashes")
-      .orderBy("timestamp", "desc")
+      .collection('client_crashes')
+      .orderBy('timestamp', 'desc')
       .limit(10)
       .get();
     const crashes = [];
@@ -575,7 +584,7 @@ exports.getClientCrashes = functions.https.onRequest(async (req, res) => {
     });
     res.status(200).send({ crashes });
   } catch (err) {
-    console.error("Failed to get crashes:", err);
+    console.error('Failed to get crashes:', err);
     res.status(500).send({ error: err.message });
   }
 });
@@ -584,19 +593,19 @@ exports.getClientCrashes = functions.https.onRequest(async (req, res) => {
 // 14. CALCULATE TRUST SCORE (on issue created)
 // ─────────────────────────────────────────────────────────────────────────────
 exports.calculateTrustScore = functions.firestore
-  .document("issues/{issueId}")
+  .document('issues/{issueId}')
   .onCreate(async (snap, context) => {
     const newIssue = snap.data();
     const authorId = newIssue.authorId || newIssue.userId;
 
     if (!authorId) {
       console.info(
-        "[WARNING] No authorId found on issue. Skipping trust score calculation.",
+        '[WARNING] No authorId found on issue. Skipping trust score calculation.',
       );
       return null;
     }
 
-    const userRef = db.collection("users").doc(authorId);
+    const userRef = db.collection('users').doc(authorId);
 
     try {
       await userRef.set(
@@ -608,7 +617,421 @@ exports.calculateTrustScore = functions.firestore
       console.info(`[SUCCESS] Trust score incremented for user: ${authorId}`);
       return null;
     } catch (error) {
-      console.error("[ERROR] Failed to update trust score:", error);
+      console.error('[ERROR] Failed to update trust score:', error);
       return null;
     }
   });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 15. ON ISSUE REPORTED
+//     • When a user reports an issue, count reports
+//     • If reports >= REPORT_THRESHOLD, auto-hide and add to admin queue
+// ─────────────────────────────────────────────────────────────────────────────
+const REPORT_THRESHOLD = 3;
+
+exports.onIssueReported = functions.firestore
+  .document('issues/{issueId}/reports/{reportId}')
+  .onCreate(async (snap, context) => {
+    const { issueId, reportId } = context.params;
+    const reportData = snap.data();
+
+    try {
+      // Count total reports on this issue
+      const reportsSnap = await db
+        .collection('issues')
+        .doc(issueId)
+        .collection('reports')
+        .get();
+      const reportCount = reportsSnap.size;
+
+      console.info(
+        `[onIssueReported] Issue ${issueId} now has ${reportCount} report(s).`,
+      );
+
+      if (reportCount >= REPORT_THRESHOLD) {
+        // Fetch the issue data
+        const issueDoc = await db.collection('issues').doc(issueId).get();
+        if (!issueDoc.exists) return null;
+        const issueData = issueDoc.data();
+
+        // Collect all report reasons
+        const reasons = [];
+        reportsSnap.forEach((doc) => {
+          reasons.push({
+            reporterId: doc.data().reporterId,
+            reason: doc.data().reason,
+            createdAt: doc.data().createdAt,
+          });
+        });
+
+        const batch = db.batch();
+
+        // 1. Hide the issue
+        batch.update(db.collection('issues').doc(issueId), { hidden: true });
+
+        // 2. Add to reportedContent queue for admin review
+        batch.set(db.collection('reportedContent').doc(issueId), {
+          type: 'issue',
+          issueId,
+          title: issueData.title,
+          description: issueData.description,
+          category: issueData.category,
+          authorId: issueData.authorId,
+          authorName: issueData.authorName,
+          reportCount,
+          reports: reasons,
+          hiddenAt: new Date().toISOString(),
+          status: 'pending', // pending | dismissed | removed
+        });
+
+        await batch.commit();
+        console.info(
+          `[onIssueReported] Issue ${issueId} auto-hidden (${reportCount} reports) and queued for admin review.`,
+        );
+      }
+
+      return null;
+    } catch (err) {
+      console.error('[onIssueReported] Error:', err);
+      return null;
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 16. ON COMMENT REPORTED
+//     • Same auto-hide logic for reported comments
+// ─────────────────────────────────────────────────────────────────────────────
+exports.onCommentReported = functions.firestore
+  .document('issues/{issueId}/comments/{commentId}/reports/{reportId}')
+  .onCreate(async (snap, context) => {
+    const { issueId, commentId } = context.params;
+
+    try {
+      const reportsSnap = await db
+        .collection('issues')
+        .doc(issueId)
+        .collection('comments')
+        .doc(commentId)
+        .collection('reports')
+        .get();
+      const reportCount = reportsSnap.size;
+
+      console.info(
+        `[onCommentReported] Comment ${commentId} on issue ${issueId} now has ${reportCount} report(s).`,
+      );
+
+      if (reportCount >= REPORT_THRESHOLD) {
+        const commentDoc = await db
+          .collection('issues')
+          .doc(issueId)
+          .collection('comments')
+          .doc(commentId)
+          .get();
+        if (!commentDoc.exists) return null;
+        const commentData = commentDoc.data();
+
+        const reasons = [];
+        reportsSnap.forEach((doc) => {
+          reasons.push({
+            reporterId: doc.data().reporterId,
+            reason: doc.data().reason,
+            createdAt: doc.data().createdAt,
+          });
+        });
+
+        const batch = db.batch();
+
+        // 1. Mark comment as hidden
+        batch.update(
+          db
+            .collection('issues')
+            .doc(issueId)
+            .collection('comments')
+            .doc(commentId),
+          { hidden: true },
+        );
+
+        // 2. Add to admin queue
+        const queueId = `${issueId}_${commentId}`;
+        batch.set(db.collection('reportedContent').doc(queueId), {
+          type: 'comment',
+          issueId,
+          commentId,
+          text: commentData.text,
+          authorId: commentData.authorId,
+          authorName: commentData.authorName,
+          reportCount,
+          reports: reasons,
+          hiddenAt: new Date().toISOString(),
+          status: 'pending',
+        });
+
+        await batch.commit();
+        console.info(
+          `[onCommentReported] Comment ${commentId} auto-hidden and queued.`,
+        );
+      }
+
+      return null;
+    } catch (err) {
+      console.error('[onCommentReported] Error:', err);
+      return null;
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 17. RATE LIMIT – TRACK ISSUE CREATION
+//     • On each new issue, increment the author's hourly counter
+//     • If over limit, hide the issue and notify the user
+// ─────────────────────────────────────────────────────────────────────────────
+const ISSUES_PER_HOUR = 5;
+const COMMENTS_PER_HOUR = 20;
+
+exports.trackIssueRate = functions.firestore
+  .document('issues/{issueId}')
+  .onCreate(async (snap, context) => {
+    const issue = snap.data();
+    const authorId = issue.authorId;
+    if (!authorId || authorId === 'anonymous') return null;
+
+    const rateLimitRef = db.collection('userRateLimits').doc(authorId);
+
+    try {
+      const rateLimitDoc = await rateLimitRef.get();
+      const currentCount = rateLimitDoc.exists
+        ? rateLimitDoc.data().issuesThisHour || 0
+        : 0;
+
+      if (currentCount >= ISSUES_PER_HOUR) {
+        // Over the limit — hide the issue and notify user
+        console.warn(
+          `[trackIssueRate] User ${authorId} exceeded rate limit (${currentCount}/${ISSUES_PER_HOUR}). Hiding issue ${context.params.issueId}.`,
+        );
+
+        await db
+          .collection('issues')
+          .doc(context.params.issueId)
+          .update({ hidden: true, rateLimited: true });
+
+        await createNotification({
+          userId: authorId,
+          title: '⏳ Posting Limit Reached',
+          body: `You've reached the limit of ${ISSUES_PER_HOUR} reports per hour. Please wait before posting again.`,
+          type: 'RATE_LIMITED',
+          issueId: context.params.issueId,
+        });
+
+        return null;
+      }
+
+      // Increment counter
+      await rateLimitRef.set(
+        {
+          issuesThisHour: admin.firestore.FieldValue.increment(1),
+          lastIssueAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+
+      return null;
+    } catch (err) {
+      console.error('[trackIssueRate] Error:', err);
+      return null;
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 18. RATE LIMIT – TRACK COMMENT CREATION
+// ─────────────────────────────────────────────────────────────────────────────
+exports.trackCommentRate = functions.firestore
+  .document('issues/{issueId}/comments/{commentId}')
+  .onCreate(async (snap, context) => {
+    const comment = snap.data();
+    const authorId = comment.authorId;
+    if (!authorId || authorId === 'anonymous') return null;
+
+    const rateLimitRef = db.collection('userRateLimits').doc(authorId);
+
+    try {
+      const rateLimitDoc = await rateLimitRef.get();
+      const currentCount = rateLimitDoc.exists
+        ? rateLimitDoc.data().commentsThisHour || 0
+        : 0;
+
+      if (currentCount >= COMMENTS_PER_HOUR) {
+        console.warn(
+          `[trackCommentRate] User ${authorId} exceeded comment rate limit.`,
+        );
+
+        // Delete the comment that exceeded the limit
+        await db
+          .collection('issues')
+          .doc(context.params.issueId)
+          .collection('comments')
+          .doc(context.params.commentId)
+          .delete();
+
+        await createNotification({
+          userId: authorId,
+          title: '⏳ Comment Limit Reached',
+          body: `You've reached the limit of ${COMMENTS_PER_HOUR} comments per hour. Please wait before commenting again.`,
+          type: 'RATE_LIMITED',
+        });
+
+        return null;
+      }
+
+      await rateLimitRef.set(
+        {
+          commentsThisHour: admin.firestore.FieldValue.increment(1),
+          lastCommentAt: new Date().toISOString(),
+        },
+        { merge: true },
+      );
+
+      return null;
+    } catch (err) {
+      console.error('[trackCommentRate] Error:', err);
+      return null;
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 19. RESET RATE LIMITS (Scheduled – runs every hour)
+//     • Clears all hourly counters in userRateLimits
+// ─────────────────────────────────────────────────────────────────────────────
+exports.resetRateLimits = functions.pubsub
+  .schedule('0 * * * *') // top of every hour
+  .timeZone('Asia/Kolkata')
+  .onRun(async () => {
+    console.info('[resetRateLimits] Starting hourly reset...');
+
+    try {
+      const snap = await db.collection('userRateLimits').get();
+
+      if (snap.empty) {
+        console.info('[resetRateLimits] No rate limit docs to reset.');
+        return null;
+      }
+
+      // Batch delete / reset in chunks of 500
+      const chunks = [];
+      const docs = snap.docs;
+      for (let i = 0; i < docs.length; i += 500) {
+        chunks.push(docs.slice(i, i + 500));
+      }
+
+      for (const chunk of chunks) {
+        const batch = db.batch();
+        chunk.forEach((doc) => {
+          batch.set(doc.ref, {
+            issuesThisHour: 0,
+            commentsThisHour: 0,
+            resetAt: new Date().toISOString(),
+          });
+        });
+        await batch.commit();
+      }
+
+      console.info(
+        `[resetRateLimits] Reset ${snap.size} user rate limit docs.`,
+      );
+      return null;
+    } catch (err) {
+      console.error('[resetRateLimits] Error:', err);
+      return null;
+    }
+  });
+
+// ─────────────────────────────────────────────────────────────────────────────
+// 20. ADMIN RESOLVE REPORT (HTTPS callable)
+//     • Admin can dismiss reports (unhide content) or remove content entirely
+//     • Pass { contentId, action: "dismiss" | "remove" }
+// ─────────────────────────────────────────────────────────────────────────────
+exports.adminResolveReport = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      'unauthenticated',
+      'Must be signed in.',
+    );
+  }
+  if (context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError(
+      'permission-denied',
+      'Only admins can resolve reports.',
+    );
+  }
+
+  const { contentId, action } = data;
+  if (!contentId || !action) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      'contentId and action are required.',
+    );
+  }
+  if (!['dismiss', 'remove'].includes(action)) {
+    throw new functions.https.HttpsError(
+      'invalid-argument',
+      "action must be 'dismiss' or 'remove'.",
+    );
+  }
+
+  const reportDoc = await db.collection('reportedContent').doc(contentId).get();
+  if (!reportDoc.exists) {
+    throw new functions.https.HttpsError('not-found', 'Report not found.');
+  }
+
+  const report = reportDoc.data();
+  const batch = db.batch();
+
+  if (action === 'dismiss') {
+    // Unhide the content
+    if (report.type === 'issue') {
+      batch.update(db.collection('issues').doc(report.issueId), {
+        hidden: false,
+      });
+    } else if (report.type === 'comment') {
+      batch.update(
+        db
+          .collection('issues')
+          .doc(report.issueId)
+          .collection('comments')
+          .doc(report.commentId),
+        { hidden: false },
+      );
+    }
+
+    // Mark report as dismissed
+    batch.update(db.collection('reportedContent').doc(contentId), {
+      status: 'dismissed',
+      resolvedBy: context.auth.uid,
+      resolvedAt: new Date().toISOString(),
+    });
+  } else if (action === 'remove') {
+    // Delete the content permanently
+    if (report.type === 'issue') {
+      batch.delete(db.collection('issues').doc(report.issueId));
+    } else if (report.type === 'comment') {
+      batch.delete(
+        db
+          .collection('issues')
+          .doc(report.issueId)
+          .collection('comments')
+          .doc(report.commentId),
+      );
+    }
+
+    // Mark report as removed
+    batch.update(db.collection('reportedContent').doc(contentId), {
+      status: 'removed',
+      resolvedBy: context.auth.uid,
+      resolvedAt: new Date().toISOString(),
+    });
+  }
+
+  await batch.commit();
+  console.info(
+    `[adminResolveReport] Report ${contentId} ${action}ed by admin ${context.auth.uid}`,
+  );
+  return { success: true };
+});

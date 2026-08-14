@@ -1,8 +1,8 @@
 export default ({ config }) => {
   const existingPlugins = config.plugins || [];
-  const plugins = existingPlugins.includes("expo-mail-composer")
+  const plugins = existingPlugins.includes('expo-mail-composer')
     ? existingPlugins
-    : [...existingPlugins, "expo-mail-composer"];
+    : [...existingPlugins, 'expo-mail-composer'];
 
   return {
     ...config,
@@ -12,7 +12,7 @@ export default ({ config }) => {
       googleServicesFile:
         process.env.GOOGLE_SERVICES_FILE ||
         config.android?.googleServicesFile ||
-        "./google-services.json",
+        './google-services.json',
       config: {
         ...config.android?.config,
         googleMaps: {

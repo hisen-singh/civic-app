@@ -16,18 +16,18 @@ import {
   serverTimestamp,
   onSnapshot,
   getCountFromServer,
-} from "firebase/firestore";
+} from 'firebase/firestore';
 import {
   ref,
   uploadBytes,
   uploadString,
   getDownloadURL,
-} from "firebase/storage";
-import { db, storage, auth } from "../config/firebaseConfig";
-import * as ImageManipulator from "expo-image-manipulator";
-import * as FileSystem from "expo-file-system";
+} from 'firebase/storage';
+import { db, storage, auth } from '../config/firebaseConfig';
+import * as ImageManipulator from 'expo-image-manipulator';
+import * as FileSystem from 'expo-file-system';
 
-const ISSUES_COLLECTION = "issues";
+const ISSUES_COLLECTION = 'issues';
 
 // In-memory cache to reduce redundant Firestore reads
 let _issueCache = [];
@@ -65,7 +65,7 @@ export const IssueService = {
       try {
         const q = query(
           collection(db, ISSUES_COLLECTION),
-          orderBy("createdAt", "desc"),
+          orderBy('createdAt', 'desc'),
         );
         const snapshot = await getDocs(q);
 
@@ -84,7 +84,7 @@ export const IssueService = {
         _lastFetchTime = Date.now();
         return _issueCache;
       } catch (error) {
-        console.error("Error fetching issues from Firestore:", error);
+        console.error('Error fetching issues from Firestore:', error);
         // Return stale cache if available, empty array otherwise
         return _issueCache.length > 0 ? _issueCache : [];
       } finally {
@@ -103,19 +103,19 @@ export const IssueService = {
       const solvedSnap = await getCountFromServer(
         query(
           collection(db, ISSUES_COLLECTION),
-          where("status", "==", "Solved"),
+          where('status', '==', 'Solved'),
         ),
       );
       const inProgressSnap = await getCountFromServer(
         query(
           collection(db, ISSUES_COLLECTION),
-          where("status", "==", "In Progress"),
+          where('status', '==', 'In Progress'),
         ),
       );
       const criticalSnap = await getCountFromServer(
         query(
           collection(db, ISSUES_COLLECTION),
-          where("urgency", "in", ["critical", "high"]),
+          where('urgency', 'in', ['critical', 'high']),
         ),
       );
 
@@ -127,7 +127,7 @@ export const IssueService = {
         categories: [], // Categories require full scan or cloud function, leaving empty for now
       };
     } catch (e) {
-      console.error("Error fetching app stats:", e);
+      console.error('Error fetching app stats:', e);
       return {
         total: 0,
         solved: 0,
@@ -149,12 +149,12 @@ export const IssueService = {
       };
     try {
       const reportedSnap = await getCountFromServer(
-        query(collection(db, ISSUES_COLLECTION), where("authorId", "==", uid)),
+        query(collection(db, ISSUES_COLLECTION), where('authorId', '==', uid)),
       );
       const supportedSnap = await getCountFromServer(
         query(
           collection(db, ISSUES_COLLECTION),
-          where("solvers", "array-contains", uid),
+          where('solvers', 'array-contains', uid),
         ),
       );
 
@@ -167,13 +167,13 @@ export const IssueService = {
         const solvedSnap = await getCountFromServer(
           query(
             collection(db, ISSUES_COLLECTION),
-            where("solvers", "array-contains", uid),
-            where("status", "==", "Solved"),
+            where('solvers', 'array-contains', uid),
+            where('status', '==', 'Solved'),
           ),
         );
         solved = solvedSnap.data().count;
       } catch (err) {
-        console.warn("Missing index for solved stats", err.message);
+        console.warn('Missing index for solved stats', err.message);
       }
 
       return {
@@ -184,7 +184,7 @@ export const IssueService = {
         ecoSolved,
       };
     } catch (e) {
-      console.error("Error fetching user stats:", e);
+      console.error('Error fetching user stats:', e);
       return {
         reported: 0,
         supported: 0,
@@ -215,7 +215,7 @@ export const IssueService = {
       }
       return null;
     } catch (error) {
-      console.error("Error fetching issue by ID:", error);
+      console.error('Error fetching issue by ID:', error);
       // Fallback: check cache
       const cached = _issueCache.find((i) => i.id === issueId);
       return cached || null;
@@ -229,24 +229,24 @@ export const IssueService = {
   getIssuesPaginated: async (
     pageSize = 10,
     lastDocSnap = null,
-    category = "All",
+    category = 'All',
     userId = null,
   ) => {
     try {
       let constraints = [];
 
-      if (category === "Solved") {
-        constraints.push(where("status", "==", "Solved"));
-      } else if (category === "My Reports" && userId) {
-        constraints.push(where("authorId", "==", userId));
-      } else if (category === "Urgent") {
-        constraints.push(where("urgency", "in", ["critical", "high"]));
+      if (category === 'Solved') {
+        constraints.push(where('status', '==', 'Solved'));
+      } else if (category === 'My Reports' && userId) {
+        constraints.push(where('authorId', '==', userId));
+      } else if (category === 'Urgent') {
+        constraints.push(where('urgency', 'in', ['critical', 'high']));
       }
 
       // "Nearby" requires Geo-queries, so we skip adding a 'where' clause here
       // and rely on client-side filtering if they select Nearby, or we just fetch 'All'.
 
-      constraints.push(orderBy("createdAt", "desc"));
+      constraints.push(orderBy('createdAt', 'desc'));
 
       if (lastDocSnap) {
         constraints.push(startAfter(lastDocSnap));
@@ -271,7 +271,7 @@ export const IssueService = {
       };
     } catch (error) {
       console.error(
-        "Error fetching paginated issues. You may need to create a Firestore index. Check console for the link:",
+        'Error fetching paginated issues. You may need to create a Firestore index. Check console for the link:',
         error.message,
       );
       throw error;
@@ -293,15 +293,17 @@ export const IssueService = {
       const base64 = await FileSystem.readAsStringAsync(manipResult.uri, {
         encoding: FileSystem.EncodingType.Base64,
       });
-      const filename = `issues/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Must be signed in to upload images.');
+      const filename = `users/${uid}/issues/${Date.now()}_${Math.random().toString(36).substring(7)}.jpg`;
       const storageRef = ref(storage, filename);
-      await uploadString(storageRef, base64, "base64", {
-        contentType: "image/jpeg",
+      await uploadString(storageRef, base64, 'base64', {
+        contentType: 'image/jpeg',
       });
       return await getDownloadURL(storageRef);
     } catch (error) {
-      console.error("Error uploading image:", error);
-      throw new Error("Failed to upload image.");
+      console.error('Error uploading image:', error);
+      throw new Error('Failed to upload image.');
     }
   },
 
@@ -311,51 +313,51 @@ export const IssueService = {
    */
   addIssue: async (issueData) => {
     // Input validation
-    if (!issueData || typeof issueData !== "object") {
-      throw new Error("Invalid issue data.");
+    if (!issueData || typeof issueData !== 'object') {
+      throw new Error('Invalid issue data.');
     }
     if (
       !issueData.title ||
-      typeof issueData.title !== "string" ||
+      typeof issueData.title !== 'string' ||
       issueData.title.trim().length < 5
     ) {
-      throw new Error("Title must be at least 5 characters.");
+      throw new Error('Title must be at least 5 characters.');
     }
     if (
       !issueData.description ||
-      typeof issueData.description !== "string" ||
+      typeof issueData.description !== 'string' ||
       issueData.description.trim().length < 10
     ) {
-      throw new Error("Description must be at least 10 characters.");
+      throw new Error('Description must be at least 10 characters.');
     }
     if (issueData.title.length > 200) {
-      throw new Error("Title must not exceed 200 characters.");
+      throw new Error('Title must not exceed 200 characters.');
     }
     if (issueData.description.length > 5000) {
-      throw new Error("Description must not exceed 5000 characters.");
+      throw new Error('Description must not exceed 5000 characters.');
     }
-    const validStatuses = ["Open", "In Progress", "Solved", "Failed"];
+    const validStatuses = ['Open', 'In Progress', 'Solved', 'Failed'];
     if (issueData.status && !validStatuses.includes(issueData.status)) {
-      throw new Error("Invalid status value.");
+      throw new Error('Invalid status value.');
     }
-    const validUrgencies = ["low", "medium", "high", "critical"];
+    const validUrgencies = ['low', 'medium', 'high', 'critical'];
     if (issueData.urgency && !validUrgencies.includes(issueData.urgency)) {
-      throw new Error("Invalid urgency level.");
+      throw new Error('Invalid urgency level.');
     }
 
     try {
       const newIssue = {
         title: issueData.title.trim(),
         description: issueData.description.trim(),
-        category: issueData.category || "Other",
-        status: issueData.status || "Open",
-        urgency: issueData.urgency || "medium",
-        location: issueData.location || "",
+        category: issueData.category || 'Other',
+        status: issueData.status || 'Open',
+        urgency: issueData.urgency || 'medium',
+        location: issueData.location || '',
         latitude: issueData.latitude || null,
         longitude: issueData.longitude || null,
         authorId: issueData.authorId || auth?.currentUser?.uid || null,
-        authorName: issueData.authorName || "Citizen",
-        youtubeUrl: issueData.youtubeUrl || "",
+        authorName: issueData.authorName || 'Citizen',
+        youtubeUrl: issueData.youtubeUrl || '',
         photo: issueData.photo || null,
         votes: 0,
         voters: [],
@@ -372,8 +374,8 @@ export const IssueService = {
       IssueService.invalidateCache();
       return { id: docRef.id, ...newIssue };
     } catch (error) {
-      console.error("Error adding issue to Firestore:", error);
-      throw new Error("Failed to save issue. Please try again.");
+      console.error('Error adding issue to Firestore:', error);
+      throw new Error('Failed to save issue. Please try again.');
     }
   },
 
@@ -401,7 +403,7 @@ export const IssueService = {
       IssueService.invalidateCache();
       return true;
     } catch (error) {
-      console.error("Error upvoting issue:", error);
+      console.error('Error upvoting issue:', error);
       throw error;
     }
   },
@@ -415,13 +417,13 @@ export const IssueService = {
       const issueRef = doc(db, ISSUES_COLLECTION, id);
       await updateDoc(issueRef, {
         solvers: arrayUnion(userId),
-        status: "In Progress",
+        status: 'In Progress',
         statusUpdatedAt: new Date().toISOString(),
       });
       IssueService.invalidateCache();
       return { success: true };
     } catch (error) {
-      console.error("Error joining issue:", error);
+      console.error('Error joining issue:', error);
       throw error;
     }
   },
@@ -439,7 +441,7 @@ export const IssueService = {
       IssueService.invalidateCache();
       return { success: true };
     } catch (error) {
-      console.error("Error updating issue status:", error);
+      console.error('Error updating issue status:', error);
       throw error;
     }
   },
@@ -453,17 +455,17 @@ export const IssueService = {
    */
   getComments: async (id, pageSize = 50, lastDocSnap = null) => {
     try {
-      const commentsRef = collection(db, ISSUES_COLLECTION, id, "comments");
+      const commentsRef = collection(db, ISSUES_COLLECTION, id, 'comments');
       let q;
       if (lastDocSnap) {
         q = query(
           commentsRef,
-          orderBy("createdAt", "asc"),
+          orderBy('createdAt', 'asc'),
           startAfter(lastDocSnap),
           limit(pageSize),
         );
       } else {
-        q = query(commentsRef, orderBy("createdAt", "asc"), limit(pageSize));
+        q = query(commentsRef, orderBy('createdAt', 'asc'), limit(pageSize));
       }
       const snapshot = await getDocs(q);
       const comments = snapshot.docs.map((d) => ({
@@ -480,7 +482,7 @@ export const IssueService = {
         hasMore: snapshot.docs.length === pageSize,
       };
     } catch (error) {
-      console.error("Error fetching comments:", error);
+      console.error('Error fetching comments:', error);
       return { comments: [], lastDoc: null, hasMore: false };
     }
   },
@@ -489,23 +491,23 @@ export const IssueService = {
    * Add a comment to an issue's subcollection.
    */
   addComment: async (id, commentData) => {
-    if (!commentData || typeof commentData.text !== "string") {
-      throw new Error("Comment text is required.");
+    if (!commentData || typeof commentData.text !== 'string') {
+      throw new Error('Comment text is required.');
     }
     const text = commentData.text.trim();
     if (text.length < 1 || text.length > 1000) {
-      throw new Error("Comment must be between 1 and 1000 characters.");
+      throw new Error('Comment must be between 1 and 1000 characters.');
     }
 
     try {
       const newComment = {
         text,
-        authorId: commentData.authorId || "anonymous",
-        authorName: commentData.authorName || "Citizen",
+        authorId: commentData.authorId || 'anonymous',
+        authorName: commentData.authorName || 'Citizen',
         createdAt: new Date().toISOString(),
         timestamp: serverTimestamp(),
       };
-      const commentsRef = collection(db, ISSUES_COLLECTION, id, "comments");
+      const commentsRef = collection(db, ISSUES_COLLECTION, id, 'comments');
       const docRef = await addDoc(commentsRef, newComment);
 
       const issueRef = doc(db, ISSUES_COLLECTION, id);
@@ -516,7 +518,7 @@ export const IssueService = {
       IssueService.invalidateCache();
       return { id: docRef.id, ...newComment };
     } catch (error) {
-      console.error("Error adding comment:", error);
+      console.error('Error adding comment:', error);
       throw error;
     }
   },
@@ -531,7 +533,7 @@ export const IssueService = {
       IssueService.invalidateCache();
       return true;
     } catch (error) {
-      console.error("Error deleting issue:", error);
+      console.error('Error deleting issue:', error);
       throw error;
     }
   },
@@ -544,7 +546,7 @@ export const IssueService = {
   subscribeToIssues: (onUpdate, onError) => {
     const q = query(
       collection(db, ISSUES_COLLECTION),
-      orderBy("createdAt", "desc"),
+      orderBy('createdAt', 'desc'),
       limit(50),
     );
     return onSnapshot(
@@ -560,7 +562,7 @@ export const IssueService = {
         onUpdate(issues, snapshot.docChanges());
       },
       (error) => {
-        console.error("[IssueService] Real-time feed error:", error);
+        console.error('[IssueService] Real-time feed error:', error);
         if (onError) onError(error);
       },
     );
@@ -580,7 +582,9 @@ export const IssueService = {
 
       const response = await fetch(manipResult.uri);
       const blob = await response.blob();
-      const filename = `issues/after_${issueId}_${Date.now()}.jpg`;
+      const uid = auth.currentUser?.uid;
+      if (!uid) throw new Error('Must be signed in to upload images.');
+      const filename = `users/${uid}/issues/after_${issueId}_${Date.now()}.jpg`;
       const storageRef = ref(storage, filename);
       await uploadBytes(storageRef, blob);
       const url = await getDownloadURL(storageRef);
@@ -589,7 +593,7 @@ export const IssueService = {
       IssueService.invalidateCache();
       return url;
     } catch (error) {
-      console.error("Error adding after photo:", error);
+      console.error('Error adding after photo:', error);
       throw error;
     }
   },

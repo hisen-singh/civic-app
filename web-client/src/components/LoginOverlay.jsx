@@ -1,27 +1,27 @@
-import React, { useState } from "react";
+import React, { useState } from 'react';
 import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
-} from "firebase/auth";
-import { auth } from "../lib/firebase";
-import { useCivicStore } from "../store/useCivicStore";
-import { X } from "lucide-react";
+} from 'firebase/auth';
+import { auth } from '../lib/firebase';
+import { useCivicStore } from '../store/useCivicStore';
+import { X } from 'lucide-react';
 
 export default function LoginOverlay({ onClose }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const loginStore = useCivicStore((state) => state.login);
 
   const handleAuth = async (isSignUp) => {
     if (!email || !password) {
-      setError("EMAIL AND PASSWORD REQUIRED");
+      setError('EMAIL AND PASSWORD REQUIRED');
       return;
     }
 
     setIsLoading(true);
-    setError("");
+    setError('');
 
     try {
       let userCredential;
@@ -45,8 +45,8 @@ export default function LoginOverlay({ onClose }) {
       });
       onClose();
     } catch (err) {
-      console.error("Auth error:", err);
-      setError(err.message.replace("Firebase: ", "").toUpperCase());
+      console.error('Auth error:', err);
+      setError(err.message.replace('Firebase: ', '').toUpperCase());
     } finally {
       setIsLoading(false);
     }
@@ -96,27 +96,27 @@ export default function LoginOverlay({ onClose }) {
               className="font-bold uppercase"
               style={{
                 ...styles.actionBtn,
-                background: "var(--color-accent-brand)",
-                color: "#fff",
-                border: "none",
+                background: 'var(--color-accent-brand)',
+                color: '#fff',
+                border: 'none',
               }}
               onClick={() => handleAuth(false)}
               disabled={isLoading}
             >
-              {isLoading ? "WORKING..." : "SIGN IN"}
+              {isLoading ? 'WORKING...' : 'SIGN IN'}
             </button>
             <button
               className="font-bold uppercase"
               style={{
                 ...styles.actionBtn,
-                background: "var(--color-surface)",
-                color: "var(--color-text-primary)",
-                border: "2px solid var(--color-border)",
+                background: 'var(--color-surface)',
+                color: 'var(--color-text-primary)',
+                border: '2px solid var(--color-border)',
               }}
               onClick={() => handleAuth(true)}
               disabled={isLoading}
             >
-              {isLoading ? "WORKING..." : "CREATE ACCOUNT"}
+              {isLoading ? 'WORKING...' : 'CREATE ACCOUNT'}
             </button>
           </div>
         </div>
@@ -127,102 +127,102 @@ export default function LoginOverlay({ onClose }) {
 
 const styles = {
   backdrop: {
-    position: "fixed",
+    position: 'fixed',
     inset: 0,
     zIndex: 300,
-    background: "rgba(0, 0, 0, 0.85)",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    padding: "1rem",
+    background: 'rgba(0, 0, 0, 0.85)',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: '1rem',
   },
   container: {
-    background: "var(--color-surface)",
-    border: "3px solid var(--color-border)",
-    boxShadow: "8px 8px 0px var(--color-accent-brand)",
-    width: "100%",
-    maxWidth: "460px",
-    padding: "2.5rem 2rem",
-    position: "relative",
-    borderRadius: "0px",
+    background: 'var(--color-surface)',
+    border: '3px solid var(--color-border)',
+    boxShadow: '8px 8px 0px var(--color-accent-brand)',
+    width: '100%',
+    maxWidth: '460px',
+    padding: '2.5rem 2rem',
+    position: 'relative',
+    borderRadius: '0px',
   },
   closeBtn: {
-    position: "absolute",
-    top: "1rem",
-    right: "1rem",
-    background: "transparent",
-    border: "none",
-    color: "var(--color-text-primary)",
-    cursor: "pointer",
-    padding: "0.25rem",
+    position: 'absolute',
+    top: '1rem',
+    right: '1rem',
+    background: 'transparent',
+    border: 'none',
+    color: 'var(--color-text-primary)',
+    cursor: 'pointer',
+    padding: '0.25rem',
   },
   header: {
-    marginBottom: "2rem",
+    marginBottom: '2rem',
   },
   title: {
-    color: "var(--color-text-primary)",
-    margin: "0 0 0.25rem 0",
+    color: 'var(--color-text-primary)',
+    margin: '0 0 0.25rem 0',
     lineHeight: 1,
   },
   subtitle: {
-    color: "var(--color-accent-brand)",
-    fontSize: "0.85rem",
+    color: 'var(--color-accent-brand)',
+    fontSize: '0.85rem',
     fontWeight: 800,
     margin: 0,
-    textTransform: "uppercase",
-    letterSpacing: "0.1em",
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
   },
   errorBox: {
-    background: "var(--color-surface)",
-    border: "2px solid var(--color-accent-brand)",
-    color: "var(--color-accent-brand)",
-    padding: "1rem",
-    marginBottom: "1.5rem",
-    fontSize: "0.75rem",
+    background: 'var(--color-surface)',
+    border: '2px solid var(--color-accent-brand)',
+    color: 'var(--color-accent-brand)',
+    padding: '1rem',
+    marginBottom: '1.5rem',
+    fontSize: '0.75rem',
     fontWeight: 800,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1.5rem",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1.5rem',
   },
   inputGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "0.5rem",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.5rem',
   },
   label: {
-    color: "var(--color-text-primary)",
-    fontSize: "0.85rem",
+    color: 'var(--color-text-primary)',
+    fontSize: '0.85rem',
     fontWeight: 800,
-    textTransform: "uppercase",
-    letterSpacing: "0.1em",
+    textTransform: 'uppercase',
+    letterSpacing: '0.1em',
   },
   input: {
-    background: "var(--color-surface)",
-    border: "2px solid var(--color-border)",
-    color: "var(--color-text-primary)",
-    padding: "1rem",
-    fontSize: "1.25rem",
+    background: 'var(--color-surface)',
+    border: '2px solid var(--color-border)',
+    color: 'var(--color-text-primary)',
+    padding: '1rem',
+    fontSize: '1.25rem',
     fontWeight: 600,
-    outline: "none",
-    borderRadius: "0px",
+    outline: 'none',
+    borderRadius: '0px',
   },
   actions: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "1rem",
-    marginTop: "1rem",
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '1rem',
+    marginTop: '1rem',
   },
   actionBtn: {
-    width: "100%",
-    padding: "1.25rem",
-    fontSize: "1.2rem",
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    borderRadius: "0px",
-    cursor: "pointer",
+    width: '100%',
+    padding: '1.25rem',
+    fontSize: '1.2rem',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: '0px',
+    cursor: 'pointer',
   },
 };

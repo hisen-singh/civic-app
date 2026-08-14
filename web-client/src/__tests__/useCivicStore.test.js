@@ -11,7 +11,7 @@
  * We mock the Firebase SDK entirely — no real network calls.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // ─── Firebase Mocks ──────────────────────────────────────────────────────────
 // These mocks simulate the Firestore SDK. The implementation must import from
@@ -19,16 +19,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 const mockGetDocs = vi.fn();
 const mockAddDoc = vi.fn();
-const mockCollection = vi.fn(() => "issues-collection-ref");
-const mockOrderBy = vi.fn(() => "order-constraint");
-const mockQuery = vi.fn(() => "query-ref");
-const mockServerTimestamp = vi.fn(() => ({ _type: "serverTimestamp" }));
+const mockCollection = vi.fn(() => 'issues-collection-ref');
+const mockOrderBy = vi.fn(() => 'order-constraint');
+const mockQuery = vi.fn(() => 'query-ref');
+const mockServerTimestamp = vi.fn(() => ({ _type: 'serverTimestamp' }));
 
-vi.mock("../lib/firebase", () => ({
-  db: { type: "mock-firestore-db" },
+vi.mock('../lib/firebase', () => ({
+  db: { type: 'mock-firestore-db' },
 }));
 
-vi.mock("firebase/firestore", () => ({
+vi.mock('firebase/firestore', () => ({
   collection: (...args) => mockCollection(...args),
   getDocs: (...args) => mockGetDocs(...args),
   addDoc: (...args) => mockAddDoc(...args),
@@ -47,13 +47,13 @@ beforeEach(async () => {
   vi.resetModules();
   mockGetDocs.mockReset();
   mockAddDoc.mockReset();
-  mockCollection.mockReset().mockReturnValue("issues-collection-ref");
-  mockOrderBy.mockReset().mockReturnValue("order-constraint");
-  mockQuery.mockReset().mockReturnValue("query-ref");
-  mockServerTimestamp.mockReset().mockReturnValue({ _type: "serverTimestamp" });
+  mockCollection.mockReset().mockReturnValue('issues-collection-ref');
+  mockOrderBy.mockReset().mockReturnValue('order-constraint');
+  mockQuery.mockReset().mockReturnValue('query-ref');
+  mockServerTimestamp.mockReset().mockReturnValue({ _type: 'serverTimestamp' });
 
   // Re-import to get a fresh Zustand store for each test
-  const mod = await import("../store/useCivicStore.js");
+  const mod = await import('../store/useCivicStore.js');
   useCivicStore = mod.useCivicStore;
 });
 
@@ -61,28 +61,28 @@ beforeEach(async () => {
 // TEST GROUP 1: Fetching issues from Firestore
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("fetchIssues — loading real data from Firestore", () => {
-  it("should populate issues[] with documents from Firestore", async () => {
+describe('fetchIssues — loading real data from Firestore', () => {
+  it('should populate issues[] with documents from Firestore', async () => {
     const firestoreIssues = [
       {
-        id: "fs-1",
+        id: 'fs-1',
         data: () => ({
-          title: "Broken pipe on 5th Ave",
-          category: "Sanitation",
+          title: 'Broken pipe on 5th Ave',
+          category: 'Sanitation',
           latitude: 40.71,
           longitude: -74.01,
-          status: "Open",
+          status: 'Open',
           createdAt: Date.now(),
         }),
       },
       {
-        id: "fs-2",
+        id: 'fs-2',
         data: () => ({
-          title: "Pothole near school",
-          category: "Pothole",
+          title: 'Pothole near school',
+          category: 'Pothole',
           latitude: 40.72,
           longitude: -74.0,
-          status: "Open",
+          status: 'Open',
           createdAt: Date.now(),
         }),
       },
@@ -93,12 +93,12 @@ describe("fetchIssues — loading real data from Firestore", () => {
 
     const state = useCivicStore.getState();
     expect(state.issues).toHaveLength(2);
-    expect(state.issues[0].id).toBe("fs-1");
-    expect(state.issues[0].title).toBe("Broken pipe on 5th Ave");
-    expect(state.issues[1].id).toBe("fs-2");
+    expect(state.issues[0].id).toBe('fs-1');
+    expect(state.issues[0].title).toBe('Broken pipe on 5th Ave');
+    expect(state.issues[1].id).toBe('fs-2');
   });
 
-  it("should set isLoading to true while fetching, then false when done", async () => {
+  it('should set isLoading to true while fetching, then false when done', async () => {
     let resolvePromise;
     const pendingPromise = new Promise((resolve) => {
       resolvePromise = resolve;
@@ -122,8 +122,8 @@ describe("fetchIssues — loading real data from Firestore", () => {
 
     await useCivicStore.getState().fetchIssues();
 
-    expect(mockCollection).toHaveBeenCalledWith(expect.anything(), "issues");
-    expect(mockOrderBy).toHaveBeenCalledWith("createdAt", "desc");
+    expect(mockCollection).toHaveBeenCalledWith(expect.anything(), 'issues');
+    expect(mockOrderBy).toHaveBeenCalledWith('createdAt', 'desc');
     expect(mockQuery).toHaveBeenCalled();
     expect(mockGetDocs).toHaveBeenCalled();
   });
@@ -133,8 +133,8 @@ describe("fetchIssues — loading real data from Firestore", () => {
 // TEST GROUP 2: Fallback to seed data
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("fetchIssues — fallback to seedMap() when Firestore is empty or fails", () => {
-  it("should call seedMap() and populate with dummy data when Firestore returns 0 documents", async () => {
+describe('fetchIssues — fallback to seedMap() when Firestore is empty or fails', () => {
+  it('should call seedMap() and populate with dummy data when Firestore returns 0 documents', async () => {
     mockGetDocs.mockResolvedValueOnce({ docs: [], empty: true });
 
     await useCivicStore.getState().fetchIssues(40.7128, -74.006);
@@ -149,9 +149,9 @@ describe("fetchIssues — fallback to seedMap() when Firestore is empty or fails
     });
   });
 
-  it("should call seedMap() when Firestore throws a network error", async () => {
+  it('should call seedMap() when Firestore throws a network error', async () => {
     mockGetDocs.mockRejectedValueOnce(
-      new Error("FirebaseError: Failed to get documents"),
+      new Error('FirebaseError: Failed to get documents'),
     );
 
     await useCivicStore.getState().fetchIssues(40.7128, -74.006);
@@ -162,16 +162,16 @@ describe("fetchIssues — fallback to seedMap() when Firestore is empty or fails
     expect(state.error).toBeTruthy();
   });
 
-  it("should NOT call seedMap() when Firestore returns real documents", async () => {
+  it('should NOT call seedMap() when Firestore returns real documents', async () => {
     const firestoreIssues = [
       {
-        id: "fs-1",
+        id: 'fs-1',
         data: () => ({
-          title: "Real issue",
-          category: "Pothole",
+          title: 'Real issue',
+          category: 'Pothole',
           latitude: 40.71,
           longitude: -74.01,
-          status: "Open",
+          status: 'Open',
           createdAt: Date.now(),
         }),
       },
@@ -183,7 +183,7 @@ describe("fetchIssues — fallback to seedMap() when Firestore is empty or fails
     const state = useCivicStore.getState();
     expect(state.isSeeded).toBe(false);
     expect(state.issues).toHaveLength(1);
-    expect(state.issues[0].id).toBe("fs-1");
+    expect(state.issues[0].id).toBe('fs-1');
   });
 });
 
@@ -191,18 +191,18 @@ describe("fetchIssues — fallback to seedMap() when Firestore is empty or fails
 // TEST GROUP 3: Reporting (pushing issues to Firestore)
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("addIssue — pushing reported issues to Firestore", () => {
-  it("should add the issue to local state immediately (optimistic update)", async () => {
+describe('addIssue — pushing reported issues to Firestore', () => {
+  it('should add the issue to local state immediately (optimistic update)', async () => {
     // Make addDoc hang so we can test the optimistic local update
     mockAddDoc.mockReturnValueOnce(new Promise(() => {}));
 
     const newIssue = {
-      title: "Giant sinkhole",
-      category: "Pothole",
+      title: 'Giant sinkhole',
+      category: 'Pothole',
       latitude: 40.71,
       longitude: -74.01,
-      imageUrl: "data:image/jpeg;base64,abc123",
-      status: "Open",
+      imageUrl: 'data:image/jpeg;base64,abc123',
+      status: 'Open',
     };
 
     // Don't await — we want to check local state before Firestore resolves
@@ -211,21 +211,21 @@ describe("addIssue — pushing reported issues to Firestore", () => {
     const state = useCivicStore.getState();
     expect(state.issues.length).toBeGreaterThanOrEqual(1);
 
-    const added = state.issues.find((i) => i.title === "Giant sinkhole");
+    const added = state.issues.find((i) => i.title === 'Giant sinkhole');
     expect(added).toBeDefined();
-    expect(added.status).toBe("Open");
+    expect(added.status).toBe('Open');
   });
 
-  it("should call addDoc to persist the issue to Firestore", async () => {
-    mockAddDoc.mockResolvedValueOnce({ id: "fs-new-1" });
+  it('should call addDoc to persist the issue to Firestore', async () => {
+    mockAddDoc.mockResolvedValueOnce({ id: 'fs-new-1' });
 
     const newIssue = {
-      title: "Broken streetlight",
-      category: "Streetlight",
+      title: 'Broken streetlight',
+      category: 'Streetlight',
       latitude: 40.72,
       longitude: -74.0,
       imageUrl: null,
-      status: "Open",
+      status: 'Open',
     };
 
     await useCivicStore.getState().addIssue(newIssue);
@@ -235,63 +235,63 @@ describe("addIssue — pushing reported issues to Firestore", () => {
     expect(mockAddDoc).toHaveBeenCalledWith(
       expect.anything(), // collection ref
       expect.objectContaining({
-        title: "Broken streetlight",
-        category: "Streetlight",
+        title: 'Broken streetlight',
+        category: 'Streetlight',
         latitude: 40.72,
         longitude: -74.0,
-        status: "Open",
+        status: 'Open',
       }),
     );
   });
 
-  it("should include a serverTimestamp in the Firestore document", async () => {
-    mockAddDoc.mockResolvedValueOnce({ id: "fs-new-2" });
+  it('should include a serverTimestamp in the Firestore document', async () => {
+    mockAddDoc.mockResolvedValueOnce({ id: 'fs-new-2' });
 
     await useCivicStore.getState().addIssue({
-      title: "Graffiti",
-      category: "Vandalism",
+      title: 'Graffiti',
+      category: 'Vandalism',
       latitude: 40.73,
       longitude: -73.99,
-      status: "Open",
+      status: 'Open',
     });
 
     const writtenDoc = mockAddDoc.mock.calls[0][1];
-    expect(writtenDoc.createdAt).toEqual({ _type: "serverTimestamp" });
+    expect(writtenDoc.createdAt).toEqual({ _type: 'serverTimestamp' });
   });
 
-  it("should update the local issue ID with the Firestore document ID after write", async () => {
-    mockAddDoc.mockResolvedValueOnce({ id: "fs-persisted-id" });
+  it('should update the local issue ID with the Firestore document ID after write', async () => {
+    mockAddDoc.mockResolvedValueOnce({ id: 'fs-persisted-id' });
 
     await useCivicStore.getState().addIssue({
-      title: "Water main break",
-      category: "Sanitation",
+      title: 'Water main break',
+      category: 'Sanitation',
       latitude: 40.74,
       longitude: -73.98,
-      status: "Open",
+      status: 'Open',
     });
 
     const state = useCivicStore.getState();
-    const persisted = state.issues.find((i) => i.title === "Water main break");
+    const persisted = state.issues.find((i) => i.title === 'Water main break');
     expect(persisted).toBeDefined();
-    expect(persisted.id).toBe("fs-persisted-id");
+    expect(persisted.id).toBe('fs-persisted-id');
   });
 
-  it("should keep the issue in local state but set an error flag if Firestore write fails", async () => {
+  it('should keep the issue in local state but set an error flag if Firestore write fails', async () => {
     mockAddDoc.mockRejectedValueOnce(
-      new Error("FirebaseError: Permission denied"),
+      new Error('FirebaseError: Permission denied'),
     );
 
     await useCivicStore.getState().addIssue({
-      title: "Unsafe building",
-      category: "Safety",
+      title: 'Unsafe building',
+      category: 'Safety',
       latitude: 40.75,
       longitude: -73.97,
-      status: "Open",
+      status: 'Open',
     });
 
     const state = useCivicStore.getState();
     // Issue should still be in local state (offline-first)
-    const local = state.issues.find((i) => i.title === "Unsafe building");
+    const local = state.issues.find((i) => i.title === 'Unsafe building');
     expect(local).toBeDefined();
     // Store should surface the error
     expect(state.error).toBeTruthy();
@@ -302,17 +302,17 @@ describe("addIssue — pushing reported issues to Firestore", () => {
 // TEST GROUP 4: Edge cases & data integrity
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("data integrity and edge cases", () => {
-  it("should not duplicate issues if fetchIssues is called twice rapidly", async () => {
+describe('data integrity and edge cases', () => {
+  it('should not duplicate issues if fetchIssues is called twice rapidly', async () => {
     const firestoreIssues = [
       {
-        id: "fs-1",
+        id: 'fs-1',
         data: () => ({
-          title: "Issue A",
-          category: "Pothole",
+          title: 'Issue A',
+          category: 'Pothole',
           latitude: 40.71,
           longitude: -74.01,
-          status: "Open",
+          status: 'Open',
           createdAt: Date.now(),
         }),
       },
@@ -329,38 +329,38 @@ describe("data integrity and edge cases", () => {
     expect(state.issues).toHaveLength(1);
   });
 
-  it("should preserve existing user-reported issues when fetching from Firestore", async () => {
+  it('should preserve existing user-reported issues when fetching from Firestore', async () => {
     // First, user reports an issue locally
-    mockAddDoc.mockResolvedValueOnce({ id: "local-report-1" });
+    mockAddDoc.mockResolvedValueOnce({ id: 'local-report-1' });
     await useCivicStore.getState().addIssue({
-      title: "My local report",
-      category: "Pothole",
+      title: 'My local report',
+      category: 'Pothole',
       latitude: 40.71,
       longitude: -74.01,
-      status: "Open",
+      status: 'Open',
     });
 
     // Then a fetch from Firestore should include that issue (since it was persisted)
     const firestoreIssues = [
       {
-        id: "local-report-1",
+        id: 'local-report-1',
         data: () => ({
-          title: "My local report",
-          category: "Pothole",
+          title: 'My local report',
+          category: 'Pothole',
           latitude: 40.71,
           longitude: -74.01,
-          status: "Open",
+          status: 'Open',
           createdAt: Date.now(),
         }),
       },
       {
-        id: "fs-other",
+        id: 'fs-other',
         data: () => ({
-          title: "Other issue",
-          category: "Sanitation",
+          title: 'Other issue',
+          category: 'Sanitation',
           latitude: 40.72,
           longitude: -74.0,
-          status: "Open",
+          status: 'Open',
           createdAt: Date.now(),
         }),
       },
@@ -378,9 +378,9 @@ describe("data integrity and edge cases", () => {
 // TEST GROUP 5: Authentication
 // ═══════════════════════════════════════════════════════════════════════════════
 
-describe("Authentication", () => {
-  it("should store the user object in state when logging in", () => {
-    const mockUser = { uid: "user-123", email: "hero@civic.app" };
+describe('Authentication', () => {
+  it('should store the user object in state when logging in', () => {
+    const mockUser = { uid: 'user-123', email: 'hero@civic.app' };
 
     useCivicStore.getState().login(mockUser);
 
@@ -388,8 +388,8 @@ describe("Authentication", () => {
     expect(state.user).toEqual(mockUser);
   });
 
-  it("should clear the user object from state when logging out", () => {
-    const mockUser = { uid: "user-123", email: "hero@civic.app" };
+  it('should clear the user object from state when logging out', () => {
+    const mockUser = { uid: 'user-123', email: 'hero@civic.app' };
     useCivicStore.getState().login(mockUser);
 
     useCivicStore.getState().logout();
@@ -398,18 +398,18 @@ describe("Authentication", () => {
     expect(state.user).toBeNull();
   });
 
-  it("should attach userId to the Firestore document when adding a new issue", async () => {
-    mockAddDoc.mockResolvedValueOnce({ id: "fs-auth-issue" });
+  it('should attach userId to the Firestore document when adding a new issue', async () => {
+    mockAddDoc.mockResolvedValueOnce({ id: 'fs-auth-issue' });
 
-    const mockUser = { uid: "user-456", email: "citizen@civic.app" };
+    const mockUser = { uid: 'user-456', email: 'citizen@civic.app' };
     useCivicStore.getState().login(mockUser);
 
     const newIssue = {
-      title: "Pothole on Main St",
-      category: "Pothole",
+      title: 'Pothole on Main St',
+      category: 'Pothole',
       latitude: 40.71,
       longitude: -74.01,
-      status: "Open",
+      status: 'Open',
     };
 
     await useCivicStore.getState().addIssue(newIssue);
@@ -417,20 +417,20 @@ describe("Authentication", () => {
     expect(mockAddDoc).toHaveBeenCalledTimes(1);
 
     const writtenDoc = mockAddDoc.mock.calls[0][1];
-    expect(writtenDoc.userId).toBe("user-456");
+    expect(writtenDoc.userId).toBe('user-456');
   });
 
-  it("should not attach userId if the user is not logged in", async () => {
-    mockAddDoc.mockResolvedValueOnce({ id: "fs-anon-issue" });
+  it('should not attach userId if the user is not logged in', async () => {
+    mockAddDoc.mockResolvedValueOnce({ id: 'fs-anon-issue' });
 
     useCivicStore.getState().logout(); // Ensure not logged in
 
     const newIssue = {
-      title: "Anonymous report",
-      category: "Sanitation",
+      title: 'Anonymous report',
+      category: 'Sanitation',
       latitude: 40.71,
       longitude: -74.01,
-      status: "Open",
+      status: 'Open',
     };
 
     await useCivicStore.getState().addIssue(newIssue);

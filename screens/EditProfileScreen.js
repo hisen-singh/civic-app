@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from "react";
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -8,27 +8,27 @@ import {
   Animated,
   KeyboardAvoidingView,
   Platform,
-} from "react-native";
-import { Text, TextInput, ActivityIndicator } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useAuth } from "../contexts/AuthContext";
-import { AuthService } from "../services/AuthService";
-import { updateProfile } from "firebase/auth";
-import { auth, db, storage } from "../config/firebaseConfig";
-import { doc, setDoc } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-import * as ImagePicker from "expo-image-picker";
-import { Spacing, theme } from "../theme";
+} from 'react-native';
+import { Text, TextInput, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+import { AuthService } from '../services/AuthService';
+import { updateProfile } from 'firebase/auth';
+import { auth, db, storage } from '../config/firebaseConfig';
+import { doc, setDoc } from 'firebase/firestore';
+import { ref, uploadBytes, getDownloadURL } from 'firebase/storage';
+import * as ImagePicker from 'expo-image-picker';
+import { Spacing, theme } from '../theme';
 
 export default function EditProfileScreen({ navigation }) {
   const { user, reloadUser } = useAuth();
-  const [displayName, setDisplayName] = useState(user?.displayName || "");
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [photoURL, setPhotoURL] = useState(user?.photoURL || null);
   const [localPhoto, setLocalPhoto] = useState(null);
   const [saving, setSaving] = useState(false);
   const [resendingEmail, setResendingEmail] = useState(false);
-  const [successMsg, setSuccessMsg] = useState("");
-  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState('');
+  const [errorMsg, setErrorMsg] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const successAnim = useRef(new Animated.Value(0)).current;
 
@@ -55,17 +55,17 @@ export default function EditProfileScreen({ navigation }) {
         duration: 300,
         useNativeDriver: true,
       }),
-    ]).start(() => setSuccessMsg(""));
+    ]).start(() => setSuccessMsg(''));
   };
 
   const pickAvatar = () => {
-    Alert.alert("Change Photo", "Choose your profile photo", [
+    Alert.alert('Change Photo', 'Choose your profile photo', [
       {
-        text: "Camera",
+        text: 'Camera',
         onPress: async () => {
           const { status } = await ImagePicker.requestCameraPermissionsAsync();
-          if (status !== "granted") {
-            Alert.alert("Permission Required", "Camera access is needed.");
+          if (status !== 'granted') {
+            Alert.alert('Permission Required', 'Camera access is needed.');
             return;
           }
           const result = await ImagePicker.launchCameraAsync({
@@ -77,10 +77,10 @@ export default function EditProfileScreen({ navigation }) {
         },
       },
       {
-        text: "Gallery",
+        text: 'Gallery',
         onPress: async () => {
           const result = await ImagePicker.launchImageLibraryAsync({
-            mediaTypes: ["images"],
+            mediaTypes: ['images'],
             allowsEditing: true,
             aspect: [1, 1],
             quality: 0.5,
@@ -88,17 +88,17 @@ export default function EditProfileScreen({ navigation }) {
           if (!result.canceled) setLocalPhoto(result.assets[0]);
         },
       },
-      { text: "Cancel", style: "cancel" },
+      { text: 'Cancel', style: 'cancel' },
     ]);
   };
 
   const handleSave = async () => {
     if (!displayName.trim() || displayName.trim().length < 2) {
-      setErrorMsg("Name must be at least 2 characters.");
+      setErrorMsg('Name must be at least 2 characters.');
       return;
     }
     setSaving(true);
-    setErrorMsg("");
+    setErrorMsg('');
     try {
       let newPhotoURL = photoURL;
       if (localPhoto?.uri) {
@@ -112,22 +112,24 @@ export default function EditProfileScreen({ navigation }) {
         displayName: displayName.trim(),
         photoURL: newPhotoURL,
       });
+      const profilePayload = {
+        displayName: displayName.trim(),
+        photoURL: newPhotoURL,
+        updatedAt: new Date().toISOString(),
+      };
+      await setDoc(doc(db, 'users', user.uid), profilePayload, { merge: true });
       await setDoc(
-        doc(db, "users", user.uid),
-        {
-          displayName: displayName.trim(),
-          photoURL: newPhotoURL,
-          updatedAt: new Date().toISOString(),
-        },
+        doc(db, 'users', user.uid, 'publicProfile', 'profile'),
+        profilePayload,
         { merge: true },
       );
       setPhotoURL(newPhotoURL);
       setLocalPhoto(null);
       if (reloadUser) await reloadUser();
-      showSuccess("Profile updated!");
+      showSuccess('Profile updated!');
     } catch (error) {
-      console.error("[EditProfile] Save failed:", error);
-      setErrorMsg(error.message || "Failed to save.");
+      console.error('[EditProfile] Save failed:', error);
+      setErrorMsg(error.message || 'Failed to save.');
     } finally {
       setSaving(false);
     }
@@ -137,21 +139,21 @@ export default function EditProfileScreen({ navigation }) {
     setResendingEmail(true);
     try {
       await AuthService.resendVerificationEmail();
-      showSuccess("Verification email sent!");
+      showSuccess('Verification email sent!');
     } catch (error) {
-      setErrorMsg(error.message || "Failed to send verification email.");
+      setErrorMsg(error.message || 'Failed to send verification email.');
     } finally {
       setResendingEmail(false);
     }
   };
 
   const avatarSource = localPhoto?.uri || photoURL;
-  const initials = (displayName || user?.email || "U")
+  const initials = (displayName || user?.email || 'U')
     .substring(0, 2)
     .toUpperCase();
   const isVerified = user?.emailVerified;
   const hasChanges =
-    displayName.trim() !== (user?.displayName || "") || localPhoto !== null;
+    displayName.trim() !== (user?.displayName || '') || localPhoto !== null;
 
   return (
     <Animated.View
@@ -173,7 +175,7 @@ export default function EditProfileScreen({ navigation }) {
             color={theme.colors.textPrimary}
           />
         </TouchableOpacity>
-        <View style={{ flex: 1, alignItems: "center" }}>
+        <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={styles.headerTitle}>EDIT PROFILE</Text>
         </View>
         <TouchableOpacity
@@ -188,7 +190,7 @@ export default function EditProfileScreen({ navigation }) {
               (!hasChanges || saving) && { opacity: 0.35 },
             ]}
           >
-            {saving ? "SAVING..." : "SAVE"}
+            {saving ? 'SAVING...' : 'SAVE'}
           </Text>
         </TouchableOpacity>
       </View>
@@ -220,8 +222,8 @@ export default function EditProfileScreen({ navigation }) {
             style={{
               color: theme.colors.accentBrand,
               fontSize: 13,
-              fontWeight: "800",
-              textTransform: "uppercase",
+              fontWeight: '800',
+              textTransform: 'uppercase',
             }}
           >
             {successMsg}
@@ -231,7 +233,7 @@ export default function EditProfileScreen({ navigation }) {
 
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           contentContainerStyle={{ padding: Spacing.xl, paddingBottom: 60 }}
@@ -268,7 +270,7 @@ export default function EditProfileScreen({ navigation }) {
               value={displayName}
               onChangeText={(t) => {
                 setDisplayName(t);
-                setErrorMsg("");
+                setErrorMsg('');
               }}
               mode="outlined"
               style={styles.input}
@@ -301,7 +303,7 @@ export default function EditProfileScreen({ navigation }) {
                 style={{ marginRight: 12 }}
               />
               <Text style={styles.readOnlyText} numberOfLines={1}>
-                {user?.email || ""}
+                {user?.email || ''}
               </Text>
               <View
                 style={[
@@ -310,7 +312,7 @@ export default function EditProfileScreen({ navigation }) {
                 ]}
               >
                 <MaterialCommunityIcons
-                  name={isVerified ? "check-decagram" : "alert-circle-outline"}
+                  name={isVerified ? 'check-decagram' : 'alert-circle-outline'}
                   size={12}
                   color={
                     isVerified
@@ -322,14 +324,14 @@ export default function EditProfileScreen({ navigation }) {
                 <Text
                   style={{
                     fontSize: 10,
-                    fontWeight: "800",
+                    fontWeight: '800',
                     color: isVerified
                       ? theme.colors.accentBrand
                       : theme.colors.textMuted,
-                    textTransform: "uppercase",
+                    textTransform: 'uppercase',
                   }}
                 >
-                  {isVerified ? "VERIFIED" : "UNVERIFIED"}
+                  {isVerified ? 'VERIFIED' : 'UNVERIFIED'}
                 </Text>
               </View>
             </View>
@@ -355,7 +357,7 @@ export default function EditProfileScreen({ navigation }) {
                   />
                 )}
                 <Text style={styles.resendText}>
-                  {resendingEmail ? "SENDING..." : "RESEND VERIFICATION EMAIL"}
+                  {resendingEmail ? 'SENDING...' : 'RESEND VERIFICATION EMAIL'}
                 </Text>
               </TouchableOpacity>
             )}
@@ -375,10 +377,10 @@ export default function EditProfileScreen({ navigation }) {
                 <Text style={styles.infoValue}>
                   {user?.metadata?.creationTime
                     ? new Date(user.metadata.creationTime).toLocaleDateString(
-                        "en-US",
-                        { month: "long", day: "numeric", year: "numeric" },
+                        'en-US',
+                        { month: 'long', day: 'numeric', year: 'numeric' },
                       )
-                    : "Unknown"}
+                    : 'Unknown'}
                 </Text>
               </View>
               <View style={styles.infoDivider} />
@@ -394,7 +396,7 @@ export default function EditProfileScreen({ navigation }) {
                     styles.infoValue,
                     {
                       fontSize: 11,
-                      fontFamily: Platform.OS === "ios" ? "Menlo" : "monospace",
+                      fontFamily: Platform.OS === 'ios' ? 'Menlo' : 'monospace',
                     },
                   ]}
                   numberOfLines={1}
@@ -418,7 +420,7 @@ export default function EditProfileScreen({ navigation }) {
                   color: theme.colors.accentBrand,
                   fontSize: 13,
                   flex: 1,
-                  fontWeight: "700",
+                  fontWeight: '700',
                 }}
               >
                 {errorMsg}
@@ -433,8 +435,8 @@ export default function EditProfileScreen({ navigation }) {
 
 const styles = {
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.md,
@@ -444,21 +446,21 @@ const styles = {
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: 1,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   saveBtn: {
     fontSize: 15,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.accentBrand,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   successToast: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     backgroundColor: theme.colors.surface,
     borderWidth: 2,
     borderColor: theme.colors.accentBrand,
@@ -468,8 +470,8 @@ const styles = {
     marginTop: Spacing.sm,
     borderRadius: 0,
   },
-  avatarSection: { alignItems: "center", marginBottom: 32, marginTop: 8 },
-  avatarWrap: { position: "relative", marginBottom: 12 },
+  avatarSection: { alignItems: 'center', marginBottom: 32, marginTop: 8 },
+  avatarWrap: { position: 'relative', marginBottom: 12 },
   avatar: {
     width: 100,
     height: 100,
@@ -479,43 +481,43 @@ const styles = {
     backgroundColor: theme.colors.surfaceSubtle,
   },
   avatarPlaceholder: {
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     backgroundColor: theme.colors.accentBrand,
   },
-  avatarInitials: { fontSize: 36, fontWeight: "900", color: "#FFF" },
+  avatarInitials: { fontSize: 36, fontWeight: '900', color: '#FFF' },
   cameraIcon: {
-    position: "absolute",
+    position: 'absolute',
     bottom: -4,
     right: -4,
     width: 32,
     height: 32,
     borderRadius: 0,
     backgroundColor: theme.colors.textPrimary,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderWidth: 2,
     borderColor: theme.colors.surface,
   },
   changePhotoText: {
     color: theme.colors.accentBrand,
     fontSize: 14,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   fieldSection: { marginBottom: 28 },
   fieldLabel: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textMuted,
     letterSpacing: 1,
     marginBottom: 10,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   input: { backgroundColor: theme.colors.surface, borderRadius: 0 },
   readOnlyField: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     padding: 16,
     borderRadius: 0,
@@ -524,8 +526,8 @@ const styles = {
   },
   readOnlyText: { flex: 1, color: theme.colors.textPrimary, fontSize: 14 },
   verifiedBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 0,
@@ -535,8 +537,8 @@ const styles = {
   verifiedActive: { backgroundColor: theme.colors.surface },
   verifiedInactive: { backgroundColor: theme.colors.surface },
   resendBtn: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginTop: 10,
     backgroundColor: theme.colors.surface,
     borderWidth: 2,
@@ -548,8 +550,8 @@ const styles = {
   resendText: {
     color: theme.colors.accentBrand,
     fontSize: 13,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   infoCard: {
     backgroundColor: theme.colors.surface,
@@ -558,19 +560,19 @@ const styles = {
     borderColor: theme.colors.border,
     padding: Spacing.lg,
   },
-  infoRow: { flexDirection: "row", alignItems: "center", paddingVertical: 4 },
+  infoRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 4 },
   infoLabel: {
     color: theme.colors.textMuted,
     fontSize: 13,
     marginLeft: 10,
     flex: 1,
-    fontWeight: "700",
-    textTransform: "uppercase",
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   infoValue: {
     color: theme.colors.textPrimary,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   infoDivider: {
     height: 2,
@@ -578,8 +580,8 @@ const styles = {
     marginVertical: 12,
   },
   errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     borderWidth: 2,
     borderColor: theme.colors.accentBrand,

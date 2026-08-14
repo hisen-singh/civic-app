@@ -1,28 +1,28 @@
-import React, { useState } from "react";
-import { View, KeyboardAvoidingView, Platform, ScrollView } from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { AuthService } from "../services/AuthService";
-import { auth } from "../config/firebaseConfig";
-import { useAuth } from "../contexts/AuthContext";
-import GradientButton from "../components/ui/GradientButton";
-import { Colors, Gradients, Radius, Spacing } from "../theme";
+import React, { useState } from 'react';
+import { View, KeyboardAvoidingView, Platform, ScrollView } from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { AuthService } from '../services/AuthService';
+import { auth } from '../config/firebaseConfig';
+import { useAuth } from '../contexts/AuthContext';
+import GradientButton from '../components/ui/GradientButton';
+import { Colors, Gradients, Radius, Spacing } from '../theme';
 
 export default function VerifyEmailScreen() {
   const { user, reloadUser } = useAuth();
   const [loading, setLoading] = useState(false);
   const [resendLoading, setResendLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [successMsg, setSuccessMsg] = useState("");
+  const [errorMsg, setErrorMsg] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
 
   const handleCheckVerification = async () => {
     setLoading(true);
-    setErrorMsg("");
+    setErrorMsg('');
     try {
       await reloadUser();
       if (!auth.currentUser?.emailVerified) {
-        setErrorMsg("Your email is not yet verified. Please check your inbox.");
+        setErrorMsg('Your email is not yet verified. Please check your inbox.');
       }
       // If verified, AuthContext's onAuthStateChanged or a re-render will catch the updated user state
       // Actually, we might need to force a context update or just let the app state handle it.
@@ -38,11 +38,11 @@ export default function VerifyEmailScreen() {
 
   const handleResend = async () => {
     setResendLoading(true);
-    setErrorMsg("");
-    setSuccessMsg("");
+    setErrorMsg('');
+    setSuccessMsg('');
     try {
       await AuthService.resendVerificationEmail();
-      setSuccessMsg("Verification email sent! Check your inbox.");
+      setSuccessMsg('Verification email sent! Check your inbox.');
     } catch (error) {
       setErrorMsg(error.message);
     } finally {
@@ -59,16 +59,16 @@ export default function VerifyEmailScreen() {
       <View style={styles.bgOrbTop} />
       <KeyboardAvoidingView
         style={{ flex: 1 }}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       >
         <ScrollView
           contentContainerStyle={{
             flexGrow: 1,
-            justifyContent: "center",
+            justifyContent: 'center',
             padding: Spacing.xl,
           }}
         >
-          <View style={{ alignItems: "center", marginBottom: 40 }}>
+          <View style={{ alignItems: 'center', marginBottom: 40 }}>
             <MaterialCommunityIcons
               name="email-check-outline"
               size={64}
@@ -77,8 +77,8 @@ export default function VerifyEmailScreen() {
             />
             <Text style={styles.title}>Verify your email</Text>
             <Text style={styles.subtitle}>
-              We sent a verification link to{" "}
-              <Text style={{ color: Colors.accent, fontWeight: "700" }}>
+              We sent a verification link to{' '}
+              <Text style={{ color: Colors.accent, fontWeight: '700' }}>
                 {user?.email}
               </Text>
               . Please check your inbox (and spam folder) and click the link to
@@ -128,26 +128,26 @@ export default function VerifyEmailScreen() {
 
 const styles = {
   bgOrbTop: {
-    position: "absolute",
+    position: 'absolute',
     top: -80,
     right: -60,
     width: 200,
     height: 200,
     borderRadius: 100,
-    backgroundColor: "rgba(99, 102, 241, 0.12)",
+    backgroundColor: 'rgba(99, 102, 241, 0.12)',
   },
   title: {
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: '800',
     color: Colors.textPrimary,
     letterSpacing: -0.5,
     marginBottom: 12,
-    textAlign: "center",
+    textAlign: 'center',
   },
   subtitle: {
     fontSize: 15,
     color: Colors.textSecondary,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 22,
     paddingHorizontal: 16,
   },

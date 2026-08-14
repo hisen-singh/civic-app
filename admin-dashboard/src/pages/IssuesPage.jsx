@@ -18,14 +18,17 @@ export default function IssuesPage() {
 
   const filteredIssues = useMemo(() => {
     const term = deferredSearch.toLowerCase();
-    const filtered = issues.filter(issue => {
-      const matchesSearch = !term ||
+    const filtered = issues.filter((issue) => {
+      const matchesSearch =
+        !term ||
         issue.title?.toLowerCase().includes(term) ||
         issue.category?.toLowerCase().includes(term) ||
         issue.location?.toLowerCase().includes(term) ||
         issue.authorName?.toLowerCase().includes(term);
-      const matchesStatus = statusFilter === 'All' || issue.status === statusFilter;
-      const matchesUrgency = urgencyFilter === 'All' || issue.urgency === urgencyFilter;
+      const matchesStatus =
+        statusFilter === 'All' || issue.status === statusFilter;
+      const matchesUrgency =
+        urgencyFilter === 'All' || issue.urgency === urgencyFilter;
       return matchesSearch && matchesStatus && matchesUrgency;
     });
     return filtered.toSorted((a, b) => {
@@ -37,7 +40,8 @@ export default function IssuesPage() {
     });
   }, [issues, deferredSearch, statusFilter, urgencyFilter, sortBy]);
 
-  const hasActiveFilters = searchTerm || statusFilter !== 'All' || urgencyFilter !== 'All';
+  const hasActiveFilters =
+    searchTerm || statusFilter !== 'All' || urgencyFilter !== 'All';
 
   const clearFilters = () => {
     setSearchTerm('');
@@ -48,7 +52,10 @@ export default function IssuesPage() {
   const handleStatusChange = async (issueId, newStatus) => {
     setUpdatingId(issueId);
     try {
-      const adminUpdateIssueStatus = httpsCallable(functions, 'adminUpdateIssueStatus');
+      const adminUpdateIssueStatus = httpsCallable(
+        functions,
+        'adminUpdateIssueStatus',
+      );
       await adminUpdateIssueStatus({ issueId, newStatus });
       showToast(`Issue marked as ${newStatus}`, 'success');
     } catch (error) {
@@ -86,27 +93,35 @@ export default function IssuesPage() {
     <div>
       <div className="page-header">
         <h2>All Issues</h2>
-        <p>{filteredIssues.length} of {issues.length} issues shown</p>
+        <p>
+          {filteredIssues.length} of {issues.length} issues shown
+        </p>
       </div>
 
       {/* Toolbar */}
       <div className="issues-toolbar">
         <div className="search-wrap">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-            <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
+          <svg
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+          >
+            <circle cx="11" cy="11" r="8" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
           </svg>
           <input
             type="text"
             className="search-input"
             placeholder="Search issues by title, category, location..."
             value={searchTerm}
-            onChange={e => setSearchTerm(e.target.value)}
+            onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <select
           className="filter-select"
           value={statusFilter}
-          onChange={e => setStatusFilter(e.target.value)}
+          onChange={(e) => setStatusFilter(e.target.value)}
         >
           <option value="All">All Statuses</option>
           <option value="Open">Open</option>
@@ -117,7 +132,7 @@ export default function IssuesPage() {
         <select
           className="filter-select"
           value={urgencyFilter}
-          onChange={e => setUrgencyFilter(e.target.value)}
+          onChange={(e) => setUrgencyFilter(e.target.value)}
         >
           <option value="All">All Urgencies</option>
           <option value="critical">Critical</option>
@@ -128,7 +143,7 @@ export default function IssuesPage() {
         <select
           className="filter-select"
           value={sortBy}
-          onChange={e => setSortBy(e.target.value)}
+          onChange={(e) => setSortBy(e.target.value)}
         >
           <option value="newest">Newest first</option>
           <option value="votes">Most votes</option>
@@ -151,14 +166,23 @@ export default function IssuesPage() {
             </tr>
           </thead>
           <tbody>
-            {filteredIssues.map(issue => (
+            {filteredIssues.map((issue) => (
               <tr key={issue.id}>
                 <td className="issue-title-cell">
                   <div className="issue-title">{issue.title}</div>
-                  <div className="issue-author">{issue.authorName || 'Anonymous'} · {issue.location || 'No location'}</div>
+                  <div className="issue-author">
+                    {issue.authorName || 'Anonymous'} ·{' '}
+                    {issue.location || 'No location'}
+                  </div>
                 </td>
                 <td>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: 'var(--text-secondary)' }}>
+                  <span
+                    style={{
+                      fontSize: 13,
+                      fontWeight: 600,
+                      color: 'var(--text-secondary)',
+                    }}
+                  >
                     {issue.category || '—'}
                   </span>
                 </td>
@@ -187,15 +211,18 @@ export default function IssuesPage() {
                         {updatingId === issue.id ? '...' : '✓ Solve'}
                       </button>
                     )}
-                    {issue.status !== 'In Progress' && issue.status !== 'Solved' && (
-                      <button
-                        className="btn-status"
-                        onClick={() => handleStatusChange(issue.id, 'In Progress')}
-                        disabled={updatingId === issue.id}
-                      >
-                        In Progress
-                      </button>
-                    )}
+                    {issue.status !== 'In Progress' &&
+                      issue.status !== 'Solved' && (
+                        <button
+                          className="btn-status"
+                          onClick={() =>
+                            handleStatusChange(issue.id, 'In Progress')
+                          }
+                          disabled={updatingId === issue.id}
+                        >
+                          In Progress
+                        </button>
+                      )}
                     {issue.status !== 'Failed' && issue.status !== 'Solved' && (
                       <button
                         className="btn-status btn-fail"
@@ -237,10 +264,10 @@ export default function IssuesPage() {
 
 function StatusBadge({ status }) {
   const classMap = {
-    'Open': 'badge-open',
+    Open: 'badge-open',
     'In Progress': 'badge-in-progress',
-    'Solved': 'badge-solved',
-    'Failed': 'badge-failed',
+    Solved: 'badge-solved',
+    Failed: 'badge-failed',
   };
   return (
     <span className={`badge ${classMap[status] || 'badge-open'}`}>
@@ -251,8 +278,18 @@ function StatusBadge({ status }) {
 }
 
 function UrgencyBadge({ urgency }) {
-  const classMap = { critical: 'badge-critical', high: 'badge-high', medium: 'badge-medium', low: 'badge-low' };
-  const labels = { critical: 'Critical', high: 'High', medium: 'Medium', low: 'Low' };
+  const classMap = {
+    critical: 'badge-critical',
+    high: 'badge-high',
+    medium: 'badge-medium',
+    low: 'badge-low',
+  };
+  const labels = {
+    critical: 'Critical',
+    high: 'High',
+    medium: 'Medium',
+    low: 'Low',
+  };
   return (
     <span className={`badge ${classMap[urgency] || 'badge-medium'}`}>
       {labels[urgency] || 'Medium'}

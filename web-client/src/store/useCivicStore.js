@@ -1,4 +1,4 @@
-import { create } from "zustand";
+import { create } from 'zustand';
 import {
   collection,
   getDocs,
@@ -6,9 +6,9 @@ import {
   query,
   orderBy,
   serverTimestamp,
-} from "firebase/firestore";
-import { db } from "../lib/firebase";
-import { io } from "socket.io-client";
+} from 'firebase/firestore';
+import { db } from '../lib/firebase';
+import { io } from 'socket.io-client';
 
 // ─── Seed Data Generator ─────────────────────────────────────────────────────
 // Pre-generates realistic civic issues around a coordinate for the "Cold Start"
@@ -16,12 +16,12 @@ import { io } from "socket.io-client";
 
 const generateDummyIssues = (baseLat, baseLng) => {
   const issues = [];
-  const categories = ["Pothole", "Streetlight", "Sanitation", "Vandalism"];
+  const categories = ['Pothole', 'Streetlight', 'Sanitation', 'Vandalism'];
   const titles = [
-    "Massive Crater on Main St",
-    "Streetlight out for 3 weeks",
-    "Illegal dumping site",
-    "Graffiti on stop sign",
+    'Massive Crater on Main St',
+    'Streetlight out for 3 weeks',
+    'Illegal dumping site',
+    'Graffiti on stop sign',
   ];
 
   for (let i = 0; i < 20; i++) {
@@ -34,7 +34,7 @@ const generateDummyIssues = (baseLat, baseLng) => {
       category: categories[Math.floor(Math.random() * categories.length)],
       latitude: baseLat + latOffset,
       longitude: baseLng + lngOffset,
-      status: Math.random() > 0.8 ? "Solved" : "Open",
+      status: Math.random() > 0.8 ? 'Solved' : 'Open',
       createdAt: Date.now() - Math.floor(Math.random() * 10000000000),
       daysOpen: Math.floor(Math.random() * 180),
       reports: Math.floor(Math.random() * 50) + 1,
@@ -70,7 +70,7 @@ export const useCivicStore = create((set, get) => ({
 
     _pendingFetch = (async () => {
       try {
-        const q = query(collection(db, "issues"), orderBy("createdAt", "desc"));
+        const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
         const snapshot = await getDocs(q);
 
         if (snapshot.empty) {
@@ -88,7 +88,7 @@ export const useCivicStore = create((set, get) => ({
           set({ issues, isLoading: false });
         }
       } catch (err) {
-        console.error("Failed to fetch issues from Firestore:", err);
+        console.error('Failed to fetch issues from Firestore:', err);
         // Network failure — seed locally so the user still sees a populated map
         const fallbackLat = lat ?? 40.7128;
         const fallbackLng = lng ?? -74.006;
@@ -137,7 +137,7 @@ export const useCivicStore = create((set, get) => ({
           payload.authorId = currentUser.uid;
         }
 
-        const docRef = await addDoc(collection(db, "issues"), payload);
+        const docRef = await addDoc(collection(db, 'issues'), payload);
         // Step 3: Swap the temp ID with the real Firestore document ID
         set((state) => ({
           issues: state.issues.map((i) =>
@@ -145,7 +145,7 @@ export const useCivicStore = create((set, get) => ({
           ),
         }));
       } catch (err) {
-        console.error("Failed to persist issue to Firestore:", err);
+        console.error('Failed to persist issue to Firestore:', err);
         // Keep the issue in local state (offline-first), but surface the error
         set({ error: err.message });
       }
@@ -156,13 +156,13 @@ export const useCivicStore = create((set, get) => ({
 
   // ── Deep Binding: Real-Time Infrastructure ────────────────────────────────
   initializeRealtimeFeed: () => {
-    const socket = io(import.meta.env.VITE_API_URL || "http://localhost:3000");
+    const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:3000');
 
-    socket.on("connect", () => {
-      console.info("WebSocket feed connected:", socket.id);
+    socket.on('connect', () => {
+      console.info('WebSocket feed connected:', socket.id);
     });
 
-    socket.on("issue_created", (newIssue) => {
+    socket.on('issue_created', (newIssue) => {
       set((state) => {
         // Prevent duplicate issues if we already added it optimistically
         if (state.issues.some((i) => i.id === newIssue.id)) return state;
@@ -170,8 +170,8 @@ export const useCivicStore = create((set, get) => ({
       });
     });
 
-    socket.on("disconnect", () => {
-      console.info("WebSocket feed disconnected");
+    socket.on('disconnect', () => {
+      console.info('WebSocket feed disconnected');
     });
   },
 }));

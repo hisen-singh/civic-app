@@ -14,14 +14,21 @@ export function IssuesProvider({ children }) {
 
   useEffect(() => {
     const q = query(collection(db, 'issues'), orderBy('createdAt', 'desc'));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const data = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-      setIssues(data);
-      setLoading(false);
-    }, (error) => {
-      console.error('[IssuesContext] Firestore subscription error:', error);
-      setLoading(false);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const data = snapshot.docs.map((doc) => ({
+          id: doc.id,
+          ...doc.data(),
+        }));
+        setIssues(data);
+        setLoading(false);
+      },
+      (error) => {
+        console.error('[IssuesContext] Firestore subscription error:', error);
+        setLoading(false);
+      },
+    );
     return () => unsubscribe();
   }, []);
 

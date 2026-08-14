@@ -7,17 +7,17 @@ import { BackendService } from '../services/BackendService';
 // Mock Dependencies
 jest.mock('firebase/auth', () => ({
   __esModule: true,
-  onAuthStateChanged: jest.fn()
+  onAuthStateChanged: jest.fn(),
 }));
 
 jest.mock('../config/firebaseConfig', () => ({
-  auth: {}
+  auth: {},
 }));
 
 jest.mock('../services/BackendService', () => ({
   BackendService: {
-    registerPushToken: jest.fn().mockResolvedValue()
-  }
+    registerPushToken: jest.fn().mockResolvedValue(),
+  },
 }));
 
 // A dummy component to consume the context
@@ -50,11 +50,12 @@ describe('AuthContext', () => {
       tree = renderer.create(
         <AuthProvider>
           <AuthConsumer />
-        </AuthProvider>
+        </AuthProvider>,
       );
     });
 
-    const loadingText = tree.root.findByProps({ testID: 'loading' }).props.children;
+    const loadingText = tree.root.findByProps({ testID: 'loading' }).props
+      .children;
     const userText = tree.root.findByProps({ testID: 'user' }).props.children;
 
     expect(loadingText).toBe('true');
@@ -73,7 +74,7 @@ describe('AuthContext', () => {
       tree = renderer.create(
         <AuthProvider>
           <AuthConsumer />
-        </AuthProvider>
+        </AuthProvider>,
       );
     });
 
@@ -82,12 +83,13 @@ describe('AuthContext', () => {
       authCallback({ uid: 'user123' });
     });
 
-    const loadingText = tree.root.findByProps({ testID: 'loading' }).props.children;
+    const loadingText = tree.root.findByProps({ testID: 'loading' }).props
+      .children;
     const userText = tree.root.findByProps({ testID: 'user' }).props.children;
 
     expect(loadingText).toBe('false');
     expect(userText).toBe('user123');
-    
+
     // Ensure push token is registered when user logs in
     expect(BackendService.registerPushToken).toHaveBeenCalled();
   });
@@ -101,7 +103,7 @@ describe('AuthContext', () => {
       tree = renderer.create(
         <AuthProvider>
           <AuthConsumer />
-        </AuthProvider>
+        </AuthProvider>,
       );
     });
 
@@ -111,7 +113,8 @@ describe('AuthContext', () => {
     });
 
     // The context should have forced loading to false so the app doesn't hang forever
-    const loadingText = tree.root.findByProps({ testID: 'loading' }).props.children;
+    const loadingText = tree.root.findByProps({ testID: 'loading' }).props
+      .children;
     expect(loadingText).toBe('false');
   });
 });

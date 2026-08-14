@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   StyleSheet,
@@ -7,7 +7,7 @@ import {
   Alert,
   Platform,
   Animated,
-} from "react-native";
+} from 'react-native';
 import {
   Text,
   Card,
@@ -16,9 +16,9 @@ import {
   Switch,
   ActivityIndicator,
   Snackbar,
-} from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation } from "@react-navigation/native";
+} from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation } from '@react-navigation/native';
 import {
   collection,
   query,
@@ -28,11 +28,11 @@ import {
   deleteDoc,
   doc,
   updateDoc,
-} from "firebase/firestore";
-import { db } from "../config/firebaseConfig";
-import { useAuth } from "../contexts/AuthContext";
-import MapView, { Circle, PROVIDER_GOOGLE } from "react-native-maps";
-import { Spacing, theme } from "../theme";
+} from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
+import { useAuth } from '../contexts/AuthContext';
+import MapView, { Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import { Spacing, theme } from '../theme';
 
 export default function WatchAreaScreen() {
   const { user } = useAuth();
@@ -49,7 +49,7 @@ export default function WatchAreaScreen() {
   });
   const [radius, setRadius] = useState(2000);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
-  const [snackbarMsg, setSnackbarMsg] = useState("");
+  const [snackbarMsg, setSnackbarMsg] = useState('');
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
@@ -69,14 +69,14 @@ export default function WatchAreaScreen() {
   const fetchWatchAreas = async () => {
     try {
       const q = query(
-        collection(db, "watchAreas"),
-        where("userId", "==", user.uid),
+        collection(db, 'watchAreas'),
+        where('userId', '==', user.uid),
       );
       const snapshot = await getDocs(q);
       const areas = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
       setWatchAreas(areas);
     } catch (error) {
-      console.error("Error fetching watch areas:", error);
+      console.error('Error fetching watch areas:', error);
     } finally {
       setLoading(false);
     }
@@ -86,7 +86,7 @@ export default function WatchAreaScreen() {
     if (!user?.uid) return;
     setLoading(true);
     try {
-      await addDoc(collection(db, "watchAreas"), {
+      await addDoc(collection(db, 'watchAreas'), {
         userId: user.uid,
         latitude: newAreaCoords.latitude,
         longitude: newAreaCoords.longitude,
@@ -95,32 +95,32 @@ export default function WatchAreaScreen() {
         createdAt: new Date().toISOString(),
       });
       setIsCreating(false);
-      setSnackbarMsg("Watch area saved successfully");
+      setSnackbarMsg('Watch area saved successfully');
       setSnackbarVisible(true);
       fetchWatchAreas();
     } catch (error) {
-      console.error("Error saving area:", error);
+      console.error('Error saving area:', error);
       setLoading(false);
     }
   };
 
   const handleDeleteArea = async (id) => {
     Alert.alert(
-      "Remove Watch Area",
+      'Remove Watch Area',
       "You'll stop receiving alerts for this area.",
       [
-        { text: "Cancel", style: "cancel" },
+        { text: 'Cancel', style: 'cancel' },
         {
-          text: "Remove",
-          style: "destructive",
+          text: 'Remove',
+          style: 'destructive',
           onPress: async () => {
             try {
-              await deleteDoc(doc(db, "watchAreas", id));
-              setSnackbarMsg("Watch area removed");
+              await deleteDoc(doc(db, 'watchAreas', id));
+              setSnackbarMsg('Watch area removed');
               setSnackbarVisible(true);
               setWatchAreas((prev) => prev.filter((a) => a.id !== id));
             } catch (error) {
-              console.error("Error deleting area:", error);
+              console.error('Error deleting area:', error);
             }
           },
         },
@@ -134,9 +134,9 @@ export default function WatchAreaScreen() {
       prev.map((a) => (a.id === id ? { ...a, active: newStatus } : a)),
     );
     try {
-      await updateDoc(doc(db, "watchAreas", id), { active: newStatus });
+      await updateDoc(doc(db, 'watchAreas', id), { active: newStatus });
     } catch (error) {
-      console.error("Error toggling watch area:", error);
+      console.error('Error toggling watch area:', error);
       setWatchAreas((prev) =>
         prev.map((a) => (a.id === id ? { ...a, active: currentStatus } : a)),
       );
@@ -148,7 +148,7 @@ export default function WatchAreaScreen() {
       <View
         style={[
           styles.container,
-          { justifyContent: "center", alignItems: "center" },
+          { justifyContent: 'center', alignItems: 'center' },
         ]}
       >
         <ActivityIndicator size="large" color={theme.colors.accentBrand} />
@@ -175,13 +175,13 @@ export default function WatchAreaScreen() {
         </Text>
 
         <View style={styles.mapContainer}>
-          {Platform.OS === "web" ? (
+          {Platform.OS === 'web' ? (
             <View
               style={{
                 flex: 1,
                 backgroundColor: theme.colors.surface,
-                justifyContent: "center",
-                alignItems: "center",
+                justifyContent: 'center',
+                alignItems: 'center',
               }}
             >
               <MaterialCommunityIcons
@@ -193,7 +193,7 @@ export default function WatchAreaScreen() {
                 style={{
                   color: theme.colors.textPrimary,
                   marginTop: 12,
-                  fontWeight: "700",
+                  fontWeight: '700',
                 }}
               >
                 Map preview not available on web.
@@ -358,7 +358,7 @@ export default function WatchAreaScreen() {
                   <View style={styles.areaInfo}>
                     <Text style={styles.areaTitle}>TRACKED AREA</Text>
                     <Text style={styles.areaSub}>
-                      {(area.radius / 1000).toFixed(1)} KM RADIUS ·{" "}
+                      {(area.radius / 1000).toFixed(1)} KM RADIUS ·{' '}
                       {area.latitude.toFixed(3)}°, {area.longitude.toFixed(3)}°
                     </Text>
                   </View>
@@ -422,8 +422,8 @@ export default function WatchAreaScreen() {
         <Text
           style={{
             color: theme.colors.textPrimary,
-            fontWeight: "700",
-            textTransform: "uppercase",
+            fontWeight: '700',
+            textTransform: 'uppercase',
           }}
         >
           {snackbarMsg}
@@ -439,9 +439,9 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
   },
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: Spacing.headerTop,
     paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.sm,
@@ -451,7 +451,7 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: 0.5,
   },
@@ -460,8 +460,8 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
   },
   infoBanner: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
     borderRadius: 0,
@@ -472,13 +472,13 @@ const styles = StyleSheet.create({
   description: {
     color: theme.colors.textPrimary,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
     flex: 1,
     lineHeight: 18,
   },
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 56,
     backgroundColor: theme.colors.surface,
     borderRadius: 0,
@@ -493,39 +493,39 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.surface,
     borderWidth: 2,
     borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   emptyDesc: {
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
     color: theme.colors.textMuted,
-    textAlign: "center",
+    textAlign: 'center',
     paddingHorizontal: 40,
     lineHeight: 20,
   },
   addBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 0,
     borderWidth: 2,
     borderColor: theme.colors.accentBrand,
-    borderStyle: "dashed",
+    borderStyle: 'dashed',
     marginTop: Spacing.sm,
   },
   addBtnText: {
     color: theme.colors.accentBrand,
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: '900',
   },
   areaCard: {
     backgroundColor: theme.colors.surface,
@@ -533,14 +533,14 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     borderWidth: 2,
     borderColor: theme.colors.border,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   areaCardInactive: {
     opacity: 0.6,
   },
   areaContent: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     padding: Spacing.lg,
   },
   areaIconWrap: {
@@ -550,8 +550,8 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: Spacing.md,
   },
   areaInfo: {
@@ -559,18 +559,18 @@ const styles = StyleSheet.create({
   },
   areaTitle: {
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   areaSub: {
     fontSize: 12,
-    fontWeight: "700",
+    fontWeight: '700',
     color: theme.colors.textMuted,
   },
   areaActions: {
-    alignItems: "center",
-    flexDirection: "row",
+    alignItems: 'center',
+    flexDirection: 'row',
   },
   deleteBtn: {
     padding: 8,
@@ -578,9 +578,9 @@ const styles = StyleSheet.create({
   },
   mapContainer: {
     flex: 1,
-    position: "relative",
+    position: 'relative',
     borderRadius: 0,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
     borderWidth: 2,
@@ -590,9 +590,9 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   mapCenterMarker: {
-    position: "absolute",
-    top: "50%",
-    left: "50%",
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
     marginLeft: -16,
     marginTop: -16,
   },
@@ -602,9 +602,9 @@ const styles = StyleSheet.create({
     borderRadius: 0,
     borderWidth: 2,
     borderColor: theme.colors.accentBrand,
-    justifyContent: "center",
-    alignItems: "center",
-    backgroundColor: "rgba(255, 69, 0, 0.1)",
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(255, 69, 0, 0.1)',
   },
   crosshairInner: {
     width: 8,
@@ -615,10 +615,10 @@ const styles = StyleSheet.create({
   helperText: {
     color: theme.colors.textMuted,
     fontSize: 13,
-    fontWeight: "700",
-    textAlign: "center",
+    fontWeight: '700',
+    textAlign: 'center',
     padding: Spacing.lg,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   controlsContainer: {
     padding: Spacing.xxl,
@@ -629,20 +629,20 @@ const styles = StyleSheet.create({
   label: {
     color: theme.colors.textMuted,
     fontSize: 12,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   radiusValue: {
     color: theme.colors.textPrimary,
     fontSize: 28,
-    fontWeight: "900",
+    fontWeight: '900',
     marginBottom: Spacing.lg,
   },
   radiusButtons: {
-    flexDirection: "row",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     marginBottom: Spacing.xxl,
   },
   radiusChip: {
@@ -660,22 +660,22 @@ const styles = StyleSheet.create({
   radiusChipText: {
     color: theme.colors.textPrimary,
     fontSize: 13,
-    fontWeight: "800",
+    fontWeight: '800',
   },
   radiusChipTextActive: {
-    color: "#FFF",
+    color: '#FFF',
   },
   confirmBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 16,
     borderRadius: 0,
     backgroundColor: theme.colors.accentBrand,
   },
   confirmBtnText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: '900',
   },
 });

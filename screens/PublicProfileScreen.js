@@ -1,38 +1,38 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect, useRef } from 'react';
 import {
   View,
   ScrollView,
   TouchableOpacity,
   Animated,
   Image,
-} from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useNavigation, useRoute } from "@react-navigation/native";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../config/firebaseConfig";
-import { IssueService } from "../services/IssueService";
-import { theme, Spacing } from "../theme";
-import IssueCard from "../components/IssueCard";
+} from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useNavigation, useRoute } from '@react-navigation/native';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
+import { IssueService } from '../services/IssueService';
+import { theme, Spacing } from '../theme';
+import IssueCard from '../components/IssueCard';
 
 // Deterministic avatar color from name
 const getAvatarColor = (name) => {
   const colors = [
-    "#E53935",
-    "#D81B60",
-    "#8E24AA",
-    "#5E35B1",
-    "#3949AB",
-    "#1E88E5",
-    "#00ACC1",
-    "#00897B",
-    "#43A047",
-    "#7CB342",
-    "#F4511E",
-    "#6D4C41",
+    '#E53935',
+    '#D81B60',
+    '#8E24AA',
+    '#5E35B1',
+    '#3949AB',
+    '#1E88E5',
+    '#00ACC1',
+    '#00897B',
+    '#43A047',
+    '#7CB342',
+    '#F4511E',
+    '#6D4C41',
   ];
   let hash = 0;
-  for (let i = 0; i < (name || "").length; i++) {
+  for (let i = 0; i < (name || '').length; i++) {
     hash = name.charCodeAt(i) + ((hash << 5) - hash);
   }
   return colors[Math.abs(hash) % colors.length];
@@ -74,11 +74,13 @@ export default function PublicProfileScreen() {
   const loadProfile = async () => {
     try {
       // Fetch user document
-      let userProfile = { displayName: userName || "User" };
+      let userProfile = { displayName: userName || 'User' };
       if (userId) {
-        const userDoc = await getDoc(doc(db, "users", userId));
-        if (userDoc.exists()) {
-          userProfile = { ...userProfile, ...userDoc.data() };
+        const publicDoc = await getDoc(
+          doc(db, 'users', userId, 'publicProfile', 'profile'),
+        );
+        if (publicDoc.exists()) {
+          userProfile = { ...userProfile, ...publicDoc.data() };
         }
       }
       setProfile(userProfile);
@@ -94,7 +96,7 @@ export default function PublicProfileScreen() {
         setUserIssues(filtered);
       }
     } catch (e) {
-      console.error("Failed to load public profile:", e);
+      console.error('Failed to load public profile:', e);
     } finally {
       setLoading(false);
     }
@@ -106,8 +108,8 @@ export default function PublicProfileScreen() {
         style={{
           flex: 1,
           backgroundColor: theme.colors.surface,
-          justifyContent: "center",
-          alignItems: "center",
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         <ActivityIndicator size="large" color={theme.colors.accentBrand} />
@@ -115,19 +117,19 @@ export default function PublicProfileScreen() {
     );
   }
 
-  const displayName = profile?.displayName || userName || "User";
+  const displayName = profile?.displayName || userName || 'User';
   const initials = displayName.substring(0, 2).toUpperCase();
   const avatarBg = getAvatarColor(displayName);
   const reported = stats?.reported || 0;
   const solved = stats?.solved || 0;
   const supported = stats?.supported || 0;
   const trustScore = reported * 50 + supported * 30 + solved * 100;
-  const rank = profile?.rank || "-";
+  const rank = profile?.rank || '-';
   const joinDate = profile?.createdAt?.toDate
     ? profile.createdAt
         .toDate()
-        .toLocaleDateString("en-US", { month: "short", year: "numeric" })
-    : "";
+        .toLocaleDateString('en-US', { month: 'short', year: 'numeric' })
+    : '';
 
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
@@ -155,8 +157,8 @@ export default function PublicProfileScreen() {
         contentContainerStyle={{
           paddingBottom: 100,
           maxWidth: 800,
-          alignSelf: "center",
-          width: "100%",
+          alignSelf: 'center',
+          width: '100%',
         }}
       >
         {/* Avatar + Name */}
@@ -224,7 +226,7 @@ export default function PublicProfileScreen() {
           }}
         >
           <Text style={styles.sectionTitle}>Activity</Text>
-          <View style={{ flexDirection: "row" }}>
+          <View style={{ flexDirection: 'row' }}>
             <TouchableOpacity
               style={[styles.activityCard, { marginRight: Spacing.md }]}
               activeOpacity={0.7}
@@ -271,7 +273,7 @@ export default function PublicProfileScreen() {
           {userIssues.length === 0 ? (
             <View
               style={{
-                alignItems: "center",
+                alignItems: 'center',
                 paddingVertical: Spacing.xl,
                 backgroundColor: theme.colors.surfaceSubtle,
                 borderRadius: theme.radius.inner,
@@ -289,7 +291,7 @@ export default function PublicProfileScreen() {
                 style={{
                   color: theme.colors.textMuted,
                   fontSize: 13,
-                  fontWeight: "700",
+                  fontWeight: '700',
                 }}
               >
                 No reports filed yet
@@ -308,9 +310,9 @@ export default function PublicProfileScreen() {
 
 const styles = {
   header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
     paddingTop: Spacing.headerTop,
     paddingBottom: Spacing.md,
     paddingHorizontal: Spacing.lg,
@@ -323,18 +325,18 @@ const styles = {
     height: 40,
     borderRadius: 9999,
     backgroundColor: theme.colors.surfaceSubtle,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 14,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: 1,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   profileSection: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingVertical: Spacing.xxl,
     paddingHorizontal: Spacing.xl,
   },
@@ -342,8 +344,8 @@ const styles = {
     width: 88,
     height: 88,
     borderRadius: 9999,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     marginBottom: Spacing.lg,
     borderWidth: 3,
     borderColor: theme.colors.border,
@@ -355,15 +357,15 @@ const styles = {
   },
   avatarInitials: {
     fontSize: 32,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    fontWeight: '900',
+    color: '#FFFFFF',
   },
   displayName: {
     fontSize: 24,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: -0.5,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     marginBottom: 4,
   },
   email: {
@@ -376,7 +378,7 @@ const styles = {
     color: theme.colors.textMuted,
   },
   trustCard: {
-    alignItems: "center",
+    alignItems: 'center',
     marginHorizontal: Spacing.xl,
     backgroundColor: theme.colors.surfaceSubtle,
     borderRadius: theme.radius.outer,
@@ -387,20 +389,20 @@ const styles = {
   },
   trustScore: {
     fontSize: 48,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    fontWeight: '900',
+    color: '#FFFFFF',
     letterSpacing: -2,
     lineHeight: 52,
   },
   trustLabel: {
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.accentBrand,
     letterSpacing: 1,
     marginTop: 4,
   },
   statsRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     marginHorizontal: Spacing.xl,
     backgroundColor: theme.colors.surfaceSubtle,
     borderRadius: theme.radius.inner,
@@ -410,19 +412,19 @@ const styles = {
   },
   statItem: {
     flex: 1,
-    alignItems: "center",
+    alignItems: 'center',
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    fontWeight: '900',
+    color: '#FFFFFF',
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 10,
     color: theme.colors.textMuted,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   statDivider: {
@@ -432,11 +434,11 @@ const styles = {
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textPrimary,
     marginBottom: Spacing.lg,
     letterSpacing: 1,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   activityCard: {
     flex: 1,
@@ -445,20 +447,20 @@ const styles = {
     borderWidth: 1,
     borderColor: theme.colors.border,
     padding: Spacing.lg,
-    alignItems: "center",
+    alignItems: 'center',
   },
   activityValue: {
     fontSize: 20,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    fontWeight: '900',
+    color: '#FFFFFF',
     marginTop: Spacing.sm,
     marginBottom: 2,
   },
   activityLabel: {
     fontSize: 10,
     color: theme.colors.textMuted,
-    fontWeight: "700",
-    textAlign: "center",
-    textTransform: "uppercase",
+    fontWeight: '700',
+    textAlign: 'center',
+    textTransform: 'uppercase',
   },
 };

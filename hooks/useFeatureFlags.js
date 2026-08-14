@@ -1,6 +1,6 @@
-import { useState, useEffect } from "react";
-import { remoteConfig } from "../config/firebaseConfig";
-import { fetchAndActivate, getBoolean } from "firebase/remote-config";
+import { useState, useEffect } from 'react';
+import { remoteConfig } from '../config/firebaseConfig';
+import { fetchAndActivate, getBoolean } from 'firebase/remote-config';
 
 export const useFeatureFlags = () => {
   const [flags, setFlags] = useState({
@@ -18,11 +18,11 @@ export const useFeatureFlags = () => {
         setFlags({
           admin_dashboard_enabled: getBoolean(
             remoteConfig,
-            "admin_dashboard_enabled",
+            'admin_dashboard_enabled',
           ),
         });
       } catch (error) {
-        console.error("[RemoteConfig] Failed to fetch flags:", error);
+        console.error('[RemoteConfig] Failed to fetch flags:', error);
       } finally {
         setLoading(false);
       }

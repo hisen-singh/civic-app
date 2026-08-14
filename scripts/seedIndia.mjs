@@ -1,6 +1,10 @@
 import { initializeApp } from 'firebase/app';
 import { getFirestore, collection, addDoc } from 'firebase/firestore';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: 'AIzaSyCWFEouXZQHNYFZPCeqBE6q3VpokIWnJ4A',
@@ -17,7 +21,7 @@ const db = getFirestore(app);
 const auth = getAuth(app);
 
 const BASE_LAT = 28.6139;
-const BASE_LNG = 77.2090;
+const BASE_LNG = 77.209;
 const randomOffset = () => (Math.random() - 0.5) * 0.05;
 
 async function getOrCreateUser(email, password, displayName) {
@@ -36,66 +40,79 @@ async function getOrCreateUser(email, password, displayName) {
 async function seedDatabase() {
   console.log('Authenticating and seeding users...');
   try {
-    const aaravId = await getOrCreateUser('aarav@civic.app', 'CivicSeed123!', 'Aarav Patel');
+    const aaravId = await getOrCreateUser(
+      'aarav@civic.app',
+      'CivicSeed123!',
+      'Aarav Patel',
+    );
     const aaravIssue = {
-        title: 'Broken Streetlight near Metro',
-        category: 'Safety',
-        urgency: 'high',
-        status: 'Open',
-        location: 'Rajiv Chowk Metro Station',
-        description: 'The streetlights near gate 3 are completely off, making it very unsafe at night.',
-        authorName: 'Aarav Patel',
-        authorId: aaravId,
-        solvers: [],
-        latitude: BASE_LAT + randomOffset(),
-        longitude: BASE_LNG + randomOffset(),
-        createdAt: new Date().toISOString(),
-        voters: [],
-        votes: 0,
-        commentsCount: 0,
-        photo: null 
+      title: 'Broken Streetlight near Metro',
+      category: 'Safety',
+      urgency: 'high',
+      status: 'Open',
+      location: 'Rajiv Chowk Metro Station',
+      description:
+        'The streetlights near gate 3 are completely off, making it very unsafe at night.',
+      authorName: 'Aarav Patel',
+      authorId: aaravId,
+      solvers: [],
+      latitude: BASE_LAT + randomOffset(),
+      longitude: BASE_LNG + randomOffset(),
+      createdAt: new Date().toISOString(),
+      voters: [],
+      votes: 0,
+      commentsCount: 0,
+      photo: null,
     };
     await addDoc(collection(db, 'issues'), aaravIssue);
 
-    const priyaId = await getOrCreateUser('priya@civic.app', 'CivicSeed123!', 'Priya Sharma');
+    const priyaId = await getOrCreateUser(
+      'priya@civic.app',
+      'CivicSeed123!',
+      'Priya Sharma',
+    );
     const priyaIssue = {
-        title: 'Water pipe leaking',
-        category: 'Water Supply',
-        urgency: 'critical',
-        status: 'In Progress',
-        location: 'Connaught Place',
-        description: 'A major water pipe burst causing water logging.',
-        authorName: 'Priya Sharma',
-        authorId: priyaId,
-        solvers: [aaravId],
-        latitude: BASE_LAT + randomOffset(),
-        longitude: BASE_LNG + randomOffset(),
-        createdAt: new Date().toISOString(),
-        voters: [],
-        votes: 0,
-        commentsCount: 0,
-        photo: null 
+      title: 'Water pipe leaking',
+      category: 'Water Supply',
+      urgency: 'critical',
+      status: 'In Progress',
+      location: 'Connaught Place',
+      description: 'A major water pipe burst causing water logging.',
+      authorName: 'Priya Sharma',
+      authorId: priyaId,
+      solvers: [aaravId],
+      latitude: BASE_LAT + randomOffset(),
+      longitude: BASE_LNG + randomOffset(),
+      createdAt: new Date().toISOString(),
+      voters: [],
+      votes: 0,
+      commentsCount: 0,
+      photo: null,
     };
     await addDoc(collection(db, 'issues'), priyaIssue);
 
-    const vikramId = await getOrCreateUser('vikram@civic.app', 'CivicSeed123!', 'Vikram Singh');
+    const vikramId = await getOrCreateUser(
+      'vikram@civic.app',
+      'CivicSeed123!',
+      'Vikram Singh',
+    );
     const vikramIssue = {
-        title: 'Pothole on Main Road',
-        category: 'Infrastructure',
-        urgency: 'medium',
-        status: 'Open',
-        location: 'India Gate Circle',
-        description: 'Huge pothole damaging vehicles.',
-        authorName: 'Vikram Singh',
-        authorId: vikramId,
-        solvers: [],
-        latitude: BASE_LAT + randomOffset(),
-        longitude: BASE_LNG + randomOffset(),
-        createdAt: new Date().toISOString(),
-        voters: [],
-        votes: 0,
-        commentsCount: 0,
-        photo: null 
+      title: 'Pothole on Main Road',
+      category: 'Infrastructure',
+      urgency: 'medium',
+      status: 'Open',
+      location: 'India Gate Circle',
+      description: 'Huge pothole damaging vehicles.',
+      authorName: 'Vikram Singh',
+      authorId: vikramId,
+      solvers: [],
+      latitude: BASE_LAT + randomOffset(),
+      longitude: BASE_LNG + randomOffset(),
+      createdAt: new Date().toISOString(),
+      voters: [],
+      votes: 0,
+      commentsCount: 0,
+      photo: null,
     };
     await addDoc(collection(db, 'issues'), vikramIssue);
 

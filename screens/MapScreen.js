@@ -1,73 +1,73 @@
-import React, { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from 'react';
 import {
   View,
   StyleSheet,
   TouchableOpacity,
   Dimensions,
   Platform,
-} from "react-native";
-import { Text, Avatar } from "react-native-paper";
-import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
-import * as Location from "expo-location";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useAuth } from "../contexts/AuthContext";
-import { IssueService } from "../services/IssueService";
-import { useFocusEffect } from "@react-navigation/native";
-import { LinearGradient } from "expo-linear-gradient";
-import { Colors, Gradients, Spacing, Radius, Shadows, theme } from "../theme";
-import LoginOverlay from "../components/LoginOverlay";
+} from 'react-native';
+import { Text, Avatar } from 'react-native-paper';
+import MapView, { Marker, Circle, PROVIDER_GOOGLE } from 'react-native-maps';
+import * as Location from 'expo-location';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useAuth } from '../contexts/AuthContext';
+import { IssueService } from '../services/IssueService';
+import { useFocusEffect } from '@react-navigation/native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { Colors, Gradients, Spacing, Radius, Shadows, theme } from '../theme';
+import LoginOverlay from '../components/LoginOverlay';
 
-const { width, height } = Dimensions.get("window");
+const { width, height } = Dimensions.get('window');
 
 // Dark map theme matching our design system
 const darkMapStyle = [
-  { elementType: "geometry", stylers: [{ color: "#131925" }] },
-  { elementType: "labels.text.fill", stylers: [{ color: "#94A3B8" }] },
-  { elementType: "labels.text.stroke", stylers: [{ color: "#0A0E1A" }] },
+  { elementType: 'geometry', stylers: [{ color: '#131925' }] },
+  { elementType: 'labels.text.fill', stylers: [{ color: '#94A3B8' }] },
+  { elementType: 'labels.text.stroke', stylers: [{ color: '#0A0E1A' }] },
   {
-    featureType: "administrative.locality",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#CBD5E1" }],
+    featureType: 'administrative.locality',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#CBD5E1' }],
   },
   {
-    featureType: "poi",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#64748B" }],
+    featureType: 'poi',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#64748B' }],
   },
   {
-    featureType: "poi.park",
-    elementType: "geometry",
-    stylers: [{ color: "#0A0E1A" }],
+    featureType: 'poi.park',
+    elementType: 'geometry',
+    stylers: [{ color: '#0A0E1A' }],
   },
   {
-    featureType: "road",
-    elementType: "geometry",
-    stylers: [{ color: "#1A2133" }],
+    featureType: 'road',
+    elementType: 'geometry',
+    stylers: [{ color: '#1A2133' }],
   },
   {
-    featureType: "road",
-    elementType: "geometry.stroke",
-    stylers: [{ color: "#0A0E1A" }],
+    featureType: 'road',
+    elementType: 'geometry.stroke',
+    stylers: [{ color: '#0A0E1A' }],
   },
   {
-    featureType: "road",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#94A3B8" }],
+    featureType: 'road',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#94A3B8' }],
   },
   {
-    featureType: "water",
-    elementType: "geometry",
-    stylers: [{ color: "#0A0E1A" }],
+    featureType: 'water',
+    elementType: 'geometry',
+    stylers: [{ color: '#0A0E1A' }],
   },
   {
-    featureType: "water",
-    elementType: "labels.text.fill",
-    stylers: [{ color: "#475569" }],
+    featureType: 'water',
+    elementType: 'labels.text.fill',
+    stylers: [{ color: '#475569' }],
   },
   {
-    featureType: "water",
-    elementType: "labels.text.stroke",
-    stylers: [{ color: "#0A0E1A" }],
+    featureType: 'water',
+    elementType: 'labels.text.stroke',
+    stylers: [{ color: '#0A0E1A' }],
   },
 ];
 
@@ -100,19 +100,19 @@ export default function MapScreen({ navigation }) {
             } else if (issue.location) {
               const locLower = issue.location.toLowerCase();
               const isUS =
-                locLower.includes("ave") ||
-                locLower.includes("st") ||
-                locLower.includes("chicago") ||
-                locLower.includes("il");
+                locLower.includes('ave') ||
+                locLower.includes('st') ||
+                locLower.includes('chicago') ||
+                locLower.includes('il');
               if (!isUS) {
                 isIndia = true;
               }
             }
 
-            const authorName = issue.authorName || "";
+            const authorName = issue.authorName || '';
             if (
-              authorName.toLowerCase().includes("city") ||
-              authorName.toLowerCase().includes("open data")
+              authorName.toLowerCase().includes('city') ||
+              authorName.toLowerCase().includes('open data')
             ) {
               isIndia = false;
             }
@@ -144,7 +144,7 @@ export default function MapScreen({ navigation }) {
 
           setIssues(mapIssues);
         } catch (error) {
-          console.error("[MapScreen] Error fetching issues:", error);
+          console.error('[MapScreen] Error fetching issues:', error);
         }
       };
       fetchIssues();
@@ -157,7 +157,7 @@ export default function MapScreen({ navigation }) {
     const getLocation = async () => {
       try {
         let { status } = await Location.requestForegroundPermissionsAsync();
-        if (status !== "granted") {
+        if (status !== 'granted') {
           if (isMounted) {
             setLocation({ latitude: 28.4595, longitude: 77.0266 });
             setLocationLoaded(true);
@@ -170,7 +170,7 @@ export default function MapScreen({ navigation }) {
         try {
           loc = await Location.getLastKnownPositionAsync({});
         } catch (e) {
-          console.warn("[MapScreen] getLastKnownPosition failed:", e);
+          console.warn('[MapScreen] getLastKnownPosition failed:', e);
         }
 
         if (!loc) {
@@ -180,11 +180,11 @@ export default function MapScreen({ navigation }) {
               accuracy: Location.Accuracy.Balanced,
             });
             const timeoutPromise = new Promise((_, reject) =>
-              setTimeout(() => reject(new Error("Location timeout")), 10000),
+              setTimeout(() => reject(new Error('Location timeout')), 10000),
             );
             loc = await Promise.race([locationPromise, timeoutPromise]);
           } catch (e) {
-            console.warn("[MapScreen] getCurrentPosition failed/timed out:", e);
+            console.warn('[MapScreen] getCurrentPosition failed/timed out:', e);
           }
         }
 
@@ -201,7 +201,7 @@ export default function MapScreen({ navigation }) {
           setLocation({ latitude: 28.4595, longitude: 77.0266 });
         }
       } catch (error) {
-        console.error("[MapScreen] Location error:", error);
+        console.error('[MapScreen] Location error:', error);
         if (isMounted) {
           setLocation({ latitude: 28.4595, longitude: 77.0266 });
         }
@@ -221,20 +221,20 @@ export default function MapScreen({ navigation }) {
 
   const getCategoryIcon = (cat) => {
     const icons = {
-      Pothole: "road-variant",
-      Graffiti: "spray",
-      Litter: "trash-can-outline",
-      Lighting: "lightbulb-outline",
-      Safety: "shield-alert-outline",
-      Environment: "tree-outline",
-      Roads: "road-variant",
-      Infrastructure: "office-building-outline",
-      Sanitation: "broom",
-      "Water Supply": "water-outline",
-      Sewage: "pipe-leak",
-      "Women Safety": "shield-alert-outline",
+      Pothole: 'road-variant',
+      Graffiti: 'spray',
+      Litter: 'trash-can-outline',
+      Lighting: 'lightbulb-outline',
+      Safety: 'shield-alert-outline',
+      Environment: 'tree-outline',
+      Roads: 'road-variant',
+      Infrastructure: 'office-building-outline',
+      Sanitation: 'broom',
+      'Water Supply': 'water-outline',
+      Sewage: 'pipe-leak',
+      'Women Safety': 'shield-alert-outline',
     };
-    return icons[cat] || "map-marker";
+    return icons[cat] || 'map-marker';
   };
 
   // Filter out issues with invalid coordinates to prevent crashes
@@ -252,7 +252,7 @@ export default function MapScreen({ navigation }) {
       <View
         style={[
           styles.container,
-          { justifyContent: "center", alignItems: "center" },
+          { justifyContent: 'center', alignItems: 'center' },
         ]}
       >
         <MaterialCommunityIcons
@@ -265,7 +265,7 @@ export default function MapScreen({ navigation }) {
           style={{
             color: Colors.textSecondary,
             fontSize: 15,
-            fontWeight: "600",
+            fontWeight: '600',
           }}
         >
           Loading Map...
@@ -302,7 +302,7 @@ export default function MapScreen({ navigation }) {
               longitude: Number(issue.longitude),
             }}
             onPress={() =>
-              navigation.navigate("IssueDetail", { issueId: issue.id })
+              navigation.navigate('IssueDetail', { issueId: issue.id })
             }
             tracksViewChanges={false}
           >
@@ -312,7 +312,7 @@ export default function MapScreen({ navigation }) {
                   styles.bubble,
                   {
                     borderColor:
-                      issue.status === "Solved"
+                      issue.status === 'Solved'
                         ? Colors.success
                         : theme.colors.accentBrand,
                   },
@@ -322,7 +322,7 @@ export default function MapScreen({ navigation }) {
                   name={getCategoryIcon(issue.category)}
                   size={20}
                   color={
-                    issue.status === "Solved"
+                    issue.status === 'Solved'
                       ? Colors.success
                       : theme.colors.textPrimary
                   }
@@ -333,7 +333,7 @@ export default function MapScreen({ navigation }) {
                   styles.triangle,
                   {
                     borderTopColor:
-                      issue.status === "Solved"
+                      issue.status === 'Solved'
                         ? Colors.success
                         : theme.colors.accentBrand,
                   },
@@ -353,9 +353,9 @@ export default function MapScreen({ navigation }) {
             }}
             radius={500}
             fillColor={
-              issue.status === "Solved"
-                ? "rgba(16, 185, 129, 0.1)"
-                : "rgba(255, 69, 0, 0.1)"
+              issue.status === 'Solved'
+                ? 'rgba(16, 185, 129, 0.1)'
+                : 'rgba(255, 69, 0, 0.1)'
             }
             strokeWidth={0}
           />
@@ -436,7 +436,7 @@ const styles = StyleSheet.create({
     height: height,
   },
   headerOverlay: {
-    position: "absolute",
+    position: 'absolute',
     top: 0,
     left: 0,
     right: 0,
@@ -446,13 +446,13 @@ const styles = StyleSheet.create({
     paddingBottom: 60,
   },
   headerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: '800',
     color: Colors.textPrimary,
     marginBottom: 4,
     letterSpacing: -0.5,
@@ -465,8 +465,8 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.accentBrand,
     minHeight: 38,
     paddingHorizontal: Spacing.lg,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     borderRadius: 19,
     shadowColor: theme.colors.accentBrand,
     shadowOffset: { width: 0, height: 4 },
@@ -475,17 +475,17 @@ const styles = StyleSheet.create({
     elevation: 4,
   },
   signInText: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    color: '#FFFFFF',
+    fontWeight: '800',
     fontSize: 14,
     letterSpacing: 0.5,
   },
   countBadge: {
-    position: "absolute",
+    position: 'absolute',
     top: Spacing.headerTop + 60,
     left: Spacing.xl,
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: Colors.glass,
     paddingHorizontal: 12,
     paddingVertical: 6,
@@ -496,11 +496,11 @@ const styles = StyleSheet.create({
   countText: {
     color: Colors.textPrimary,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   markerContainer: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     width: 50,
     height: 60,
   },
@@ -510,25 +510,25 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     borderRadius: 14,
     borderWidth: 2.5,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Shadows.subtle,
   },
   triangle: {
     width: 0,
     height: 0,
-    backgroundColor: "transparent",
-    borderStyle: "solid",
+    backgroundColor: 'transparent',
+    borderStyle: 'solid',
     borderLeftWidth: 6,
     borderRightWidth: 6,
     borderBottomWidth: 0,
     borderTopWidth: 8,
-    borderLeftColor: "transparent",
-    borderRightColor: "transparent",
+    borderLeftColor: 'transparent',
+    borderRightColor: 'transparent',
     marginTop: -1,
   },
   recenterBtn: {
-    position: "absolute",
+    position: 'absolute',
     bottom: 100,
     right: 20,
     width: 48,
@@ -537,8 +537,8 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.glass,
     borderWidth: 1,
     borderColor: Colors.border,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     ...Shadows.subtle,
   },
 });

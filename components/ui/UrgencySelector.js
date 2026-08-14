@@ -1,8 +1,8 @@
-import React from "react";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { URGENCY_LEVELS } from "../../utils/urgencyDetector";
-import { Colors } from "../../theme";
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { URGENCY_LEVELS } from '../../utils/urgencyDetector';
+import { Colors } from '../../theme';
 
 export default function UrgencySelector({ urgency, setUrgency }) {
   return (
@@ -18,7 +18,7 @@ export default function UrgencySelector({ urgency, setUrgency }) {
               styles.urgencyRow,
               isActive && {
                 backgroundColor: level.color,
-                borderColor: "#FFFFFF",
+                borderColor: '#FFFFFF',
               },
             ]}
             accessibilityRole="button"
@@ -30,7 +30,7 @@ export default function UrgencySelector({ urgency, setUrgency }) {
                 styles.urgencyIconWrap,
                 {
                   backgroundColor: isActive
-                    ? "#000000"
+                    ? '#000000'
                     : Colors.surfaceElevated,
                 },
               ]}
@@ -43,19 +43,19 @@ export default function UrgencySelector({ urgency, setUrgency }) {
             </View>
             <View style={styles.textContainer}>
               <Text
-                style={[styles.urgencyLabel, isActive && { color: "#000000" }]}
+                style={[styles.urgencyLabel, isActive && { color: '#000000' }]}
               >
                 {level.label}
               </Text>
               <Text
-                style={[styles.urgencyDesc, isActive && { color: "#000000" }]}
+                style={[styles.urgencyDesc, isActive && { color: '#000000' }]}
               >
                 {level.desc}
               </Text>
             </View>
             {isActive && (
               <View
-                style={[styles.urgencyCheck, { backgroundColor: "#000000" }]}
+                style={[styles.urgencyCheck, { backgroundColor: '#000000' }]}
               >
                 <MaterialCommunityIcons
                   name="check"
@@ -76,23 +76,23 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   urgencyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#000000",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
     padding: 14,
     minHeight: 64, // Ensures touch target size
     borderRadius: 0, // Sharp brutalist corners
     marginBottom: 8,
     borderWidth: 2,
-    borderColor: "#FFFFFF", // High-contrast border
-    flexWrap: "wrap", // Allows text to flow to next line if scaled
+    borderColor: '#FFFFFF', // High-contrast border
+    flexWrap: 'wrap', // Allows text to flow to next line if scaled
   },
   urgencyIconWrap: {
     width: 32,
     height: 32,
     borderRadius: 0,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 12,
   },
   textContainer: {
@@ -100,21 +100,21 @@ const styles = StyleSheet.create({
   },
   urgencyLabel: {
     fontSize: 14,
-    fontWeight: "800", // Heavy font
-    color: "#FFFFFF",
+    fontWeight: '800', // Heavy font
+    color: '#FFFFFF',
     marginBottom: 4,
     flexShrink: 1,
   },
   urgencyDesc: {
     fontSize: 12,
-    color: "#A0AAB5",
+    color: '#A0AAB5',
     flexShrink: 1,
   },
   urgencyCheck: {
     width: 22,
     height: 22,
     borderRadius: 0, // Sharp
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
 });

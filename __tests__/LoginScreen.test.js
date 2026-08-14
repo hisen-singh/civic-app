@@ -1,6 +1,6 @@
 // __tests__/LoginScreen.test.js
 // LoginScreen relies on react-native-paper and complex Native animations
-// Due to React 19 test renderer incompatibilities with native animations, 
+// Due to React 19 test renderer incompatibilities with native animations,
 // we bypass deep render tests here to prevent false-positive crashes in CI.
 // The actual UI interactions are covered in end-to-end (E2E) testing.
 

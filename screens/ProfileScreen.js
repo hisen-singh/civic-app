@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   ScrollView,
@@ -6,21 +6,21 @@ import {
   Animated,
   RefreshControl,
   Image,
-} from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
-import { AuthService } from "../services/AuthService";
-import { useAuth } from "../contexts/AuthContext";
-import { IssueService } from "../services/IssueService";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import AnimatedPressable from "../components/ui/AnimatedPressable";
-import LoginOverlay from "../components/LoginOverlay";
-import { doc, getDoc } from "firebase/firestore";
-import { db } from "../config/firebaseConfig";
-import { theme, Colors, Radius, Spacing, Shadows, Gradients } from "../theme";
-import IssueCard from "../components/IssueCard";
+} from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import { useTranslation } from 'react-i18next';
+import { AuthService } from '../services/AuthService';
+import { useAuth } from '../contexts/AuthContext';
+import { IssueService } from '../services/IssueService';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import AnimatedPressable from '../components/ui/AnimatedPressable';
+import LoginOverlay from '../components/LoginOverlay';
+import { doc, getDoc } from 'firebase/firestore';
+import { db } from '../config/firebaseConfig';
+import { theme, Colors, Radius, Spacing, Shadows, Gradients } from '../theme';
+import IssueCard from '../components/IssueCard';
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
@@ -30,7 +30,7 @@ export default function ProfileScreen() {
     reported: 0,
     supported: 0,
     solved: 0,
-    rank: "-",
+    rank: '-',
     badges: [],
   });
   const [loading, setLoading] = useState(true);
@@ -55,7 +55,7 @@ export default function ProfileScreen() {
       const filtered = allIssues.filter((i) => i.authorId === user.uid);
       setMyIssues(filtered);
     } catch (e) {
-      console.warn("Failed to load user issues:", e);
+      console.warn('Failed to load user issues:', e);
     }
   };
 
@@ -95,51 +95,51 @@ export default function ProfileScreen() {
       const { reported, supported, solved, roadsSolved, ecoSolved } = userStats;
 
       // Get rank from user profile (updated via cron)
-      let rank = "-";
+      let rank = '-';
       try {
-        const userDocSnap = await getDoc(doc(db, "users", uid));
+        const userDocSnap = await getDoc(doc(db, 'users', uid));
         if (userDocSnap.exists()) {
-          rank = userDocSnap.data().rank || "-";
+          rank = userDocSnap.data().rank || '-';
         }
       } catch (e) {
-        console.warn("Failed to fetch rank", e);
+        console.warn('Failed to fetch rank', e);
       }
 
       const unlockedBadges = [
         {
-          id: "first_report",
-          name: "Verified Reporter",
-          icon: "bullhorn-outline",
+          id: 'first_report',
+          name: 'Verified Reporter',
+          icon: 'bullhorn-outline',
           unlocked: reported >= 1,
-          desc: "Filed your first report",
+          desc: 'Filed your first report',
         },
         {
-          id: "eco_warrior",
-          name: "Eco Guardian",
-          icon: "leaf",
+          id: 'eco_warrior',
+          name: 'Eco Guardian',
+          icon: 'leaf',
           unlocked: ecoSolved >= 1,
-          desc: "Solved an environment issue",
+          desc: 'Solved an environment issue',
         },
         {
-          id: "street_savior",
-          name: "Infrastructure Watch",
-          icon: "road",
+          id: 'street_savior',
+          name: 'Infrastructure Watch',
+          icon: 'road',
           unlocked: roadsSolved >= 1,
-          desc: "Fixed a road/pothole issue",
+          desc: 'Fixed a road/pothole issue',
         },
         {
-          id: "rising_star",
-          name: "Active Solver",
-          icon: "check-decagram",
+          id: 'rising_star',
+          name: 'Active Solver',
+          icon: 'check-decagram',
           unlocked: solved >= 1,
-          desc: "Resolved your first issue",
+          desc: 'Resolved your first issue',
         },
         {
-          id: "team_player",
-          name: "Community Builder",
-          icon: "account-group",
+          id: 'team_player',
+          name: 'Community Builder',
+          icon: 'account-group',
           unlocked: supported >= 3,
-          desc: "Helped on 3+ issues",
+          desc: 'Helped on 3+ issues',
         },
       ];
 
@@ -149,7 +149,7 @@ export default function ProfileScreen() {
 
       setStats({ reported, supported, solved, rank, badges });
     } catch (e) {
-      console.error("Profile stats error:", e);
+      console.error('Profile stats error:', e);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -179,16 +179,16 @@ export default function ProfileScreen() {
     }
   };
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
+  const displayName = user?.displayName || user?.email?.split('@')[0] || 'User';
   const initials = displayName.substring(0, 2).toUpperCase();
   const trustScore =
     stats.reported * 50 + stats.supported * 30 + stats.solved * 100;
   const joinDate = user?.metadata?.creationTime
-    ? new Date(user.metadata.creationTime).toLocaleDateString("en-US", {
-        month: "short",
-        year: "numeric",
+    ? new Date(user.metadata.creationTime).toLocaleDateString('en-US', {
+        month: 'short',
+        year: 'numeric',
       })
-    : "";
+    : '';
 
   if (loading) {
     return (
@@ -196,8 +196,8 @@ export default function ProfileScreen() {
         style={{
           flex: 1,
           backgroundColor: theme.colors.surface,
-          justifyContent: "center",
-          alignItems: "center",
+          justifyContent: 'center',
+          alignItems: 'center',
         }}
       >
         <ActivityIndicator size="large" color={theme.colors.accentBrand} />
@@ -211,8 +211,8 @@ export default function ProfileScreen() {
         style={{
           flex: 1,
           backgroundColor: theme.colors.surfaceSubtle,
-          justifyContent: "center",
-          alignItems: "center",
+          justifyContent: 'center',
+          alignItems: 'center',
           padding: 24,
         }}
       >
@@ -225,21 +225,21 @@ export default function ProfileScreen() {
         <Text
           style={{
             fontSize: 28,
-            fontWeight: "800",
+            fontWeight: '800',
             color: theme.colors.textPrimary,
             marginBottom: 12,
-            textAlign: "center",
-            textTransform: "uppercase",
+            textAlign: 'center',
+            textTransform: 'uppercase',
             letterSpacing: -0.5,
           }}
         >
-          {t("profile.guest_title", "Guest Profile")}
+          {t('profile.guest_title', 'Guest Profile')}
         </Text>
         <Text
           style={{
             fontSize: 14,
             color: theme.colors.textMuted,
-            textAlign: "center",
+            textAlign: 'center',
             marginBottom: 32,
             lineHeight: 20,
           }}
@@ -254,17 +254,17 @@ export default function ProfileScreen() {
             paddingVertical: 14,
             paddingHorizontal: 24,
             borderRadius: 0,
-            width: "100%",
-            alignItems: "center",
+            width: '100%',
+            alignItems: 'center',
           }}
           activeOpacity={0.8}
         >
           <Text
             style={{
-              color: "#FFFFFF",
+              color: '#FFFFFF',
               fontSize: 16,
-              fontWeight: "800",
-              textTransform: "uppercase",
+              fontWeight: '800',
+              textTransform: 'uppercase',
               letterSpacing: 0.5,
             }}
           >
@@ -282,47 +282,47 @@ export default function ProfileScreen() {
 
   const settingsItems = [
     {
-      title: "Community Impact",
-      desc: "Leaderboard, rankings & trending issues",
-      icon: "chart-timeline-variant-shimmer",
+      title: 'Community Impact',
+      desc: 'Leaderboard, rankings & trending issues',
+      icon: 'chart-timeline-variant-shimmer',
       iconBg: theme.colors.surfaceSubtle,
       iconColor: theme.colors.accentBrand,
-      onPress: () => navigation.navigate("Analytics"),
+      onPress: () => navigation.navigate('Analytics'),
     },
     {
-      title: "Edit Profile",
-      desc: "Photo, name & account settings",
-      icon: "account-edit-outline",
+      title: 'Edit Profile',
+      desc: 'Photo, name & account settings',
+      icon: 'account-edit-outline',
       iconBg: theme.colors.surfaceSubtle,
       iconColor: theme.colors.accentBrand,
-      onPress: () => navigation.navigate("EditProfile"),
+      onPress: () => navigation.navigate('EditProfile'),
     },
     {
-      title: "Watch Areas",
-      desc: "Neighborhood alerts & tracking",
-      icon: "map-marker-radius",
+      title: 'Watch Areas',
+      desc: 'Neighborhood alerts & tracking',
+      icon: 'map-marker-radius',
       iconBg: theme.colors.surfaceSubtle,
       iconColor: theme.colors.textPrimary,
-      onPress: () => navigation.navigate("WatchArea"),
+      onPress: () => navigation.navigate('WatchArea'),
     },
     {
-      title: "Notifications",
-      desc: "Manage your alert preferences",
-      icon: "bell-outline",
+      title: 'Notifications',
+      desc: 'Manage your alert preferences',
+      icon: 'bell-outline',
       iconBg: theme.colors.surfaceSubtle,
       iconColor: theme.colors.textPrimary,
-      onPress: () => navigation.navigate("Notifications"),
+      onPress: () => navigation.navigate('Notifications'),
     },
     {
-      title: t("profile.language", "Language"),
+      title: t('profile.language', 'Language'),
       desc:
-        i18n.language === "en"
-          ? "English (Switch to Hindi)"
-          : "हिन्दी (Switch to English)",
-      icon: "translate",
+        i18n.language === 'en'
+          ? 'English (Switch to Hindi)'
+          : 'हिन्दी (Switch to English)',
+      icon: 'translate',
       iconBg: theme.colors.surfaceSubtle,
       iconColor: theme.colors.textPrimary,
-      onPress: () => i18n.changeLanguage(i18n.language === "en" ? "hi" : "en"),
+      onPress: () => i18n.changeLanguage(i18n.language === 'en' ? 'hi' : 'en'),
     },
   ];
 
@@ -348,15 +348,15 @@ export default function ProfileScreen() {
       contentContainerStyle={{
         paddingBottom: 120,
         maxWidth: 800,
-        alignSelf: "center",
-        width: "100%",
+        alignSelf: 'center',
+        width: '100%',
       }}
     >
       {/* Profile Header */}
       <View style={styles.headerSection}>
         <View style={styles.avatarRow}>
           <AnimatedPressable
-            onPress={() => navigation.navigate("EditProfile")}
+            onPress={() => navigation.navigate('EditProfile')}
             activeScale={0.95}
           >
             <View style={styles.avatarRing}>
@@ -371,13 +371,13 @@ export default function ProfileScreen() {
           </AnimatedPressable>
           <View style={{ flex: 1, marginLeft: Spacing.lg }}>
             <Text style={styles.displayName}>{displayName}</Text>
-            <Text style={styles.email}>{user?.email || ""}</Text>
+            <Text style={styles.email}>{user?.email || ''}</Text>
             {joinDate ? (
               <Text style={styles.joinDate}>Member since {joinDate}</Text>
             ) : null}
           </View>
           <AnimatedPressable
-            onPress={() => navigation.navigate("EditProfile")}
+            onPress={() => navigation.navigate('EditProfile')}
             activeScale={0.92}
           >
             <View style={styles.editBtn}>
@@ -396,7 +396,7 @@ export default function ProfileScreen() {
             <Text
               style={{
                 fontSize: 64,
-                fontWeight: "900",
+                fontWeight: '900',
                 color: theme.colors.textPrimary,
                 letterSpacing: -2,
                 lineHeight: 68,
@@ -441,7 +441,7 @@ export default function ProfileScreen() {
       >
         {/* Activity Cards */}
         <Text style={styles.sectionTitle}>Activity Overview</Text>
-        <View style={{ flexDirection: "row", marginBottom: Spacing.xxxl }}>
+        <View style={{ flexDirection: 'row', marginBottom: Spacing.xxxl }}>
           <TouchableOpacity
             style={[styles.activityCard, { marginRight: Spacing.md }]}
             activeOpacity={0.7}
@@ -525,7 +525,7 @@ export default function ProfileScreen() {
               <View style={{ flex: 1 }}>
                 <Text style={styles.badgeName}>{badge.name}</Text>
                 <Text style={styles.badgeDesc}>
-                  {badge.unlocked ? badge.desc : "Locked — keep contributing"}
+                  {badge.unlocked ? badge.desc : 'Locked — keep contributing'}
                 </Text>
               </View>
               {badge.unlocked && (
@@ -589,7 +589,7 @@ export default function ProfileScreen() {
         {myIssues.length === 0 ? (
           <View
             style={{
-              alignItems: "center",
+              alignItems: 'center',
               paddingVertical: Spacing.xl,
               backgroundColor: theme.colors.surfaceSubtle,
               borderRadius: theme.radius.inner,
@@ -607,7 +607,7 @@ export default function ProfileScreen() {
               style={{
                 color: theme.colors.textMuted,
                 fontSize: 13,
-                fontWeight: "700",
+                fontWeight: '700',
               }}
             >
               No reports filed yet
@@ -632,7 +632,7 @@ export default function ProfileScreen() {
             style={{ marginRight: 8 }}
           />
           <Text style={styles.logoutText}>
-            {t("profile.sign_out", "SIGN OUT")}
+            {t('profile.sign_out', 'SIGN OUT')}
           </Text>
         </TouchableOpacity>
 
@@ -653,8 +653,8 @@ const styles = {
     backgroundColor: theme.colors.surface,
   },
   avatarRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.xxl,
   },
   avatarRing: {
@@ -668,21 +668,21 @@ const styles = {
     height: 68,
     borderRadius: 0,
     backgroundColor: theme.colors.accentBrand,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   avatarText: {
     fontSize: 24,
-    fontWeight: "900",
-    color: "#FFF",
+    fontWeight: '900',
+    color: '#FFF',
   },
   displayName: {
     fontSize: 22,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: -0.5,
     marginBottom: 2,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   email: {
     fontSize: 13,
@@ -700,12 +700,12 @@ const styles = {
     backgroundColor: theme.colors.surfaceSubtle,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   statsRow: {
-    width: "100%",
-    flexDirection: "row",
+    width: '100%',
+    flexDirection: 'row',
     backgroundColor: theme.colors.surfaceSubtle,
     borderRadius: 0,
     padding: Spacing.lg,
@@ -713,20 +713,20 @@ const styles = {
     borderColor: theme.colors.border,
   },
   statItem: {
-    alignItems: "center",
+    alignItems: 'center',
     flex: 1,
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 10,
     color: theme.colors.textMuted,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   statDivider: {
@@ -735,11 +735,11 @@ const styles = {
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textPrimary,
     marginBottom: Spacing.lg,
     letterSpacing: 1,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   activityCard: {
     flex: 1,
@@ -748,32 +748,32 @@ const styles = {
     borderWidth: 2,
     borderColor: theme.colors.border,
     padding: Spacing.lg,
-    alignItems: "center",
+    alignItems: 'center',
   },
   activityIcon: {
     width: 40,
     height: 40,
     borderRadius: 0,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.sm,
   },
   activityValue: {
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   activityLabel: {
     fontSize: 10,
     color: theme.colors.textMuted,
-    fontWeight: "700",
-    textAlign: "center",
-    textTransform: "uppercase",
+    fontWeight: '700',
+    textAlign: 'center',
+    textTransform: 'uppercase',
   },
   badgeRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
     borderRadius: 0,
@@ -786,13 +786,13 @@ const styles = {
     height: 40,
     borderRadius: 0,
     backgroundColor: theme.colors.surfaceSubtle,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: Spacing.md,
   },
   badgeName: {
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: '700',
     color: theme.colors.textPrimary,
     marginBottom: 2,
   },
@@ -807,12 +807,12 @@ const styles = {
     backgroundColor: theme.colors.surfaceSubtle,
     borderWidth: 1,
     borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   settingsRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
     borderRadius: 0,
@@ -823,23 +823,23 @@ const styles = {
     width: 40,
     height: 40,
     borderRadius: 0,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: Spacing.md,
   },
   settingsTitle: {
     color: theme.colors.textPrimary,
     fontSize: 15,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   settingsDesc: {
     color: theme.colors.textMuted,
     fontSize: 12,
   },
   logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 16,
     marginTop: Spacing.xxl,
     borderRadius: 0,
@@ -847,17 +847,17 @@ const styles = {
     backgroundColor: theme.colors.accentBrand,
   },
   logoutText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 15,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   versionText: {
     color: theme.colors.textMuted,
     fontSize: 11,
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: Spacing.xxl,
-    fontWeight: "500",
+    fontWeight: '500',
   },
 };

@@ -4,16 +4,16 @@ appId: com.civic.app
 - launchApp
 
 # Verify home screen loaded with feed
-- assertVisible: "COMMUNITY PULSE"
+- assertVisible: 'COMMUNITY PULSE'
 
 # Test filter pills
-- tapOn: "Critical"
+- tapOn: 'Critical'
 - waitForAnimationToEnd
 
-- tapOn: "Resolved"
+- tapOn: 'Resolved'
 - waitForAnimationToEnd
 
-- tapOn: "Feed"
+- tapOn: 'Feed'
 - waitForAnimationToEnd
 
 # Pull to refresh
@@ -23,4 +23,4 @@ appId: com.civic.app
 - waitForAnimationToEnd
 
 # Verify content loaded
-- assertVisible: "COMMUNITY PULSE"
+- assertVisible: 'COMMUNITY PULSE'

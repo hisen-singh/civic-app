@@ -15,9 +15,10 @@ export default function LoginPage({ accessDenied, user }) {
     try {
       await signInWithEmailAndPassword(auth, email, password);
     } catch (err) {
-      setError(err.code === 'auth/invalid-credential'
-        ? 'Invalid email or password.'
-        : err.message
+      setError(
+        err.code === 'auth/invalid-credential'
+          ? 'Invalid email or password.'
+          : err.message,
       );
     } finally {
       setLoading(false);
@@ -32,9 +33,9 @@ export default function LoginPage({ accessDenied, user }) {
             <div style={{ fontSize: 48, marginBottom: 16 }}>🔒</div>
             <h2>Access Denied</h2>
             <p>
-              You're signed in as <strong>{user?.email}</strong>, but this account
-              does not have admin privileges. Contact a project administrator to
-              get access.
+              You're signed in as <strong>{user?.email}</strong>, but this
+              account does not have admin privileges. Contact a project
+              administrator to get access.
             </p>
             <button className="btn-primary" onClick={() => signOut(auth)}>
               Sign Out
@@ -62,7 +63,7 @@ export default function LoginPage({ accessDenied, user }) {
             <input
               type="email"
               value={email}
-              onChange={e => setEmail(e.target.value)}
+              onChange={(e) => setEmail(e.target.value)}
               placeholder="admin@civichero.app"
               required
               autoFocus
@@ -73,7 +74,7 @@ export default function LoginPage({ accessDenied, user }) {
             <input
               type="password"
               value={password}
-              onChange={e => setPassword(e.target.value)}
+              onChange={(e) => setPassword(e.target.value)}
               placeholder="••••••••"
               required
             />

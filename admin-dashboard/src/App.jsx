@@ -10,6 +10,7 @@ import Sidebar from './components/Sidebar';
 
 const DashboardPage = lazy(() => import('./pages/DashboardPage'));
 const IssuesPage = lazy(() => import('./pages/IssuesPage'));
+const ModerationPage = lazy(() => import('./pages/ModerationPage'));
 
 function PageLoader() {
   return (
@@ -48,7 +49,9 @@ export default function App() {
     return (
       <div className="loading-screen">
         <div className="spinner" />
-        <p style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>Loading dashboard...</p>
+        <p style={{ color: 'var(--text-tertiary)', fontSize: 14 }}>
+          Loading dashboard...
+        </p>
       </div>
     );
   }
@@ -73,6 +76,7 @@ export default function App() {
                   <Routes>
                     <Route path="/" element={<DashboardPage />} />
                     <Route path="/issues" element={<IssuesPage />} />
+                    <Route path="/moderation" element={<ModerationPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
                   </Routes>
                 </Suspense>

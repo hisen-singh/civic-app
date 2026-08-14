@@ -1,8 +1,8 @@
-import React from "react";
-import { View, TouchableOpacity, Text, StyleSheet } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { CATEGORIES } from "../../data/categories";
-import { Colors } from "../../theme";
+import React from 'react';
+import { View, TouchableOpacity, Text, StyleSheet } from 'react-native';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { CATEGORIES } from '../../data/categories';
+import { Colors } from '../../theme';
 
 export default function CategoryGrid({ category, setCategory }) {
   return (
@@ -28,7 +28,7 @@ export default function CategoryGrid({ category, setCategory }) {
               <MaterialCommunityIcons
                 name={c.icon}
                 size={18}
-                color={isActive ? "#FFF" : Colors.textTertiary}
+                color={isActive ? '#FFF' : Colors.textTertiary}
               />
             </View>
             <Text
@@ -49,13 +49,13 @@ export default function CategoryGrid({ category, setCategory }) {
 
 const styles = StyleSheet.create({
   categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
+    flexDirection: 'row',
+    flexWrap: 'wrap',
   },
   categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#000000", // Absolute Black
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000', // Absolute Black
     paddingHorizontal: 12,
     paddingVertical: 12,
     minHeight: 48,
@@ -63,31 +63,31 @@ const styles = StyleSheet.create({
     marginRight: 8,
     marginBottom: 8,
     borderWidth: 2,
-    borderColor: "#FFFFFF", // High-contrast border
+    borderColor: '#FFFFFF', // High-contrast border
   },
   categoryChipActive: {
-    backgroundColor: "#FF4500", // Electric Orange
-    borderColor: "#FF4500",
+    backgroundColor: '#FF4500', // Electric Orange
+    borderColor: '#FF4500',
   },
   categoryIconWrap: {
     width: 28,
     height: 28,
     borderRadius: 0, // Sharp
     backgroundColor: Colors.surfaceElevated,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 8,
   },
   categoryIconWrapActive: {
-    backgroundColor: "#000000", // Inner black
+    backgroundColor: '#000000', // Inner black
   },
   categoryText: {
-    color: "#FFFFFF",
-    fontWeight: "600",
+    color: '#FFFFFF',
+    fontWeight: '600',
     fontSize: 13,
   },
   categoryTextActive: {
-    color: "#FFFFFF",
-    fontWeight: "800",
+    color: '#FFFFFF',
+    fontWeight: '800',
   },
 });

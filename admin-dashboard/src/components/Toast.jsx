@@ -9,9 +9,9 @@ export function ToastProvider({ children }) {
 
   const showToast = useCallback((message, type = 'info') => {
     const id = ++nextId;
-    setToasts(prev => [...prev, { id, message, type }]);
+    setToasts((prev) => [...prev, { id, message, type }]);
     setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+      setToasts((prev) => prev.filter((t) => t.id !== id));
     }, 4000);
   }, []);
 
@@ -19,8 +19,11 @@ export function ToastProvider({ children }) {
     <ToastContext.Provider value={showToast}>
       {children}
       <div style={containerStyle} role="status" aria-live="polite">
-        {toasts.map(toast => (
-          <div key={toast.id} style={{ ...toastStyle, ...typeStyles[toast.type] }}>
+        {toasts.map((toast) => (
+          <div
+            key={toast.id}
+            style={{ ...toastStyle, ...typeStyles[toast.type] }}
+          >
             <span style={dotStyle(toast.type)} />
             {toast.message}
           </div>
@@ -72,5 +75,6 @@ const dotStyle = (type) => ({
   height: 8,
   borderRadius: 4,
   flexShrink: 0,
-  backgroundColor: type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#6366F1',
+  backgroundColor:
+    type === 'success' ? '#10B981' : type === 'error' ? '#EF4444' : '#6366F1',
 });

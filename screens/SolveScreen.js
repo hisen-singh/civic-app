@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import React, { useState, useCallback, useRef, useEffect } from 'react';
 import {
   View,
   FlatList,
@@ -6,50 +6,50 @@ import {
   StatusBar,
   RefreshControl,
   Animated,
-} from "react-native";
-import { Text, ActivityIndicator } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
-import IssueCard from "../components/IssueCard";
-import FilterPills from "../components/ui/FilterPills";
-import AnimatedPressable from "../components/ui/AnimatedPressable";
-import { IssueService } from "../services/IssueService";
-import { useAuth } from "../contexts/AuthContext";
-import { Colors, Spacing, Radius, Shadows, Gradients, theme } from "../theme";
+} from 'react-native';
+import { Text, ActivityIndicator } from 'react-native-paper';
+import { LinearGradient } from 'expo-linear-gradient';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { useFocusEffect, useNavigation } from '@react-navigation/native';
+import IssueCard from '../components/IssueCard';
+import FilterPills from '../components/ui/FilterPills';
+import AnimatedPressable from '../components/ui/AnimatedPressable';
+import { IssueService } from '../services/IssueService';
+import { useAuth } from '../contexts/AuthContext';
+import { Colors, Spacing, Radius, Shadows, Gradients, theme } from '../theme';
 
 const DIFFICULTY_MAP = {
   critical: {
-    label: "Hard",
+    label: 'Hard',
     color: theme.colors.accentBrand,
     xp: 200,
-    icon: "fire",
+    icon: 'fire',
   },
   high: {
-    label: "Hard",
+    label: 'Hard',
     color: theme.colors.accentBrand,
     xp: 150,
-    icon: "alert-circle",
+    icon: 'alert-circle',
   },
   medium: {
-    label: "Medium",
+    label: 'Medium',
     color: theme.colors.textPrimary,
     xp: 100,
-    icon: "alert",
+    icon: 'alert',
   },
   low: {
-    label: "Easy",
+    label: 'Easy',
     color: theme.colors.textMuted,
     xp: 50,
-    icon: "check-circle",
+    icon: 'check-circle',
   },
 };
 
 const CATEGORY_FILTERS = [
-  { id: "All", label: "All Tasks", icon: "view-grid-outline" },
-  { id: "Nearby", label: "Nearby", icon: "map-marker-radius-outline" },
-  { id: "Easy", label: "Easy Wins", icon: "lightning-bolt" },
-  { id: "Critical", label: "Urgent", icon: "alert-octagon-outline" },
+  { id: 'All', label: 'All Tasks', icon: 'view-grid-outline' },
+  { id: 'Nearby', label: 'Nearby', icon: 'map-marker-radius-outline' },
+  { id: 'Easy', label: 'Easy Wins', icon: 'lightning-bolt' },
+  { id: 'Critical', label: 'Urgent', icon: 'alert-octagon-outline' },
 ];
 
 export default function SolveScreen() {
@@ -58,7 +58,7 @@ export default function SolveScreen() {
   const [issues, setIssues] = useState([]);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
-  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [selectedFilter, setSelectedFilter] = useState('All');
   const [solvedCount, setSolvedCount] = useState(0);
   const [activeStreak, setActiveStreak] = useState(0);
   const [totalXP, setTotalXP] = useState(0);
@@ -105,19 +105,19 @@ export default function SolveScreen() {
         } else if (issue.location) {
           const locLower = issue.location.toLowerCase();
           const isUS =
-            locLower.includes("ave") ||
-            locLower.includes("st") ||
-            locLower.includes("chicago") ||
-            locLower.includes("il");
+            locLower.includes('ave') ||
+            locLower.includes('st') ||
+            locLower.includes('chicago') ||
+            locLower.includes('il');
           if (!isUS) {
             isIndia = true;
           }
         }
 
-        const authorName = issue.authorName || "";
+        const authorName = issue.authorName || '';
         if (
-          authorName.toLowerCase().includes("city") ||
-          authorName.toLowerCase().includes("open data")
+          authorName.toLowerCase().includes('city') ||
+          authorName.toLowerCase().includes('open data')
         ) {
           isIndia = false;
         }
@@ -129,15 +129,15 @@ export default function SolveScreen() {
       // Issues available to solve: not authored by user, not solved/failed
       const solveable = allIssues.filter(
         (i) =>
-          i.authorId !== uid && i.status !== "Solved" && i.status !== "Failed",
+          i.authorId !== uid && i.status !== 'Solved' && i.status !== 'Failed',
       );
 
       // Compute user's solve stats
       const mySolves = allIssues.filter(
-        (i) => (i.solvers || []).includes(uid) && i.status === "Solved",
+        (i) => (i.solvers || []).includes(uid) && i.status === 'Solved',
       );
       const myActive = allIssues.filter(
-        (i) => (i.solvers || []).includes(uid) && i.status === "In Progress",
+        (i) => (i.solvers || []).includes(uid) && i.status === 'In Progress',
       );
 
       setSolvedCount(mySolves.length);
@@ -149,7 +149,7 @@ export default function SolveScreen() {
       for (let d = 0; d < 7; d++) {
         const checkDate = new Date(today);
         checkDate.setDate(checkDate.getDate() - d);
-        const dateStr = checkDate.toISOString().split("T")[0];
+        const dateStr = checkDate.toISOString().split('T')[0];
         const hasSolveOnDay = mySolves.some((i) => {
           if (!i.createdAt) return false;
           return i.createdAt.startsWith(dateStr);
@@ -164,7 +164,7 @@ export default function SolveScreen() {
 
       setIssues(solveable);
     } catch (e) {
-      console.error("SolveScreen fetch error:", e);
+      console.error('SolveScreen fetch error:', e);
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -188,13 +188,13 @@ export default function SolveScreen() {
 
   // Apply client-side filter
   const filteredIssues = issues.filter((issue) => {
-    if (selectedFilter === "Easy") {
-      return issue.urgency === "low" || issue.urgency === "medium";
+    if (selectedFilter === 'Easy') {
+      return issue.urgency === 'low' || issue.urgency === 'medium';
     }
-    if (selectedFilter === "Critical") {
-      return issue.urgency === "critical" || issue.urgency === "high";
+    if (selectedFilter === 'Critical') {
+      return issue.urgency === 'critical' || issue.urgency === 'high';
     }
-    if (selectedFilter === "Nearby") {
+    if (selectedFilter === 'Nearby') {
       return issue.latitude && issue.longitude;
     }
     return true;
@@ -213,12 +213,12 @@ export default function SolveScreen() {
     DIFFICULTY_MAP[urgency] || DIFFICULTY_MAP.medium;
 
   const urgentTaskCount = issues.filter(
-    (i) => i.urgency === "critical" || i.urgency === "high",
+    (i) => i.urgency === 'critical' || i.urgency === 'high',
   ).length;
 
   const filterItems = CATEGORY_FILTERS.map((f) => ({
     ...f,
-    badge: f.id === "Critical" ? urgentTaskCount : undefined,
+    badge: f.id === 'Critical' ? urgentTaskCount : undefined,
   }));
 
   const renderStatsHeader = () => (
@@ -278,7 +278,7 @@ export default function SolveScreen() {
       {/* Task count summary */}
       <View style={styles.taskCountRow}>
         <Text style={styles.taskCountText}>
-          {sortedIssues.length} {sortedIssues.length === 1 ? "task" : "tasks"}{" "}
+          {sortedIssues.length} {sortedIssues.length === 1 ? 'task' : 'tasks'}{' '}
           available
         </Text>
         <View style={styles.xpPreviewChip}>
@@ -288,11 +288,11 @@ export default function SolveScreen() {
             color={theme.colors.accentBrand}
           />
           <Text style={styles.xpPreviewText}>
-            Up to{" "}
+            Up to{' '}
             {sortedIssues.reduce(
               (sum, i) => sum + getDifficulty(i.urgency).xp,
               0,
-            )}{" "}
+            )}{' '}
             XP
           </Text>
         </View>
@@ -313,7 +313,7 @@ export default function SolveScreen() {
             <View
               style={[
                 styles.difficultyBadge,
-                { backgroundColor: difficulty.color + "20" },
+                { backgroundColor: difficulty.color + '20' },
               ]}
             >
               <MaterialCommunityIcons
@@ -377,13 +377,13 @@ export default function SolveScreen() {
         </View>
         <Text style={styles.emptyTitle}>All Clear! 🎉</Text>
         <Text style={styles.emptyDesc}>
-          {selectedFilter !== "All"
+          {selectedFilter !== 'All'
             ? `No ${CATEGORY_FILTERS.find((f) => f.id === selectedFilter)?.label.toLowerCase()} tasks right now. Try another filter.`
-            : "No open issues need solving right now. Your community is thriving!"}
+            : 'No open issues need solving right now. Your community is thriving!'}
         </Text>
-        {selectedFilter !== "All" && (
+        {selectedFilter !== 'All' && (
           <TouchableOpacity
-            onPress={() => setSelectedFilter("All")}
+            onPress={() => setSelectedFilter('All')}
             activeOpacity={0.7}
             style={styles.emptyAction}
           >
@@ -405,7 +405,7 @@ export default function SolveScreen() {
       <View
         style={[
           styles.header,
-          { maxWidth: 800, alignSelf: "center", width: "100%" },
+          { maxWidth: 800, alignSelf: 'center', width: '100%' },
         ]}
       >
         <View>
@@ -413,7 +413,7 @@ export default function SolveScreen() {
           <Text style={styles.headerSub}>Help your community, earn impact</Text>
         </View>
         <AnimatedPressable
-          onPress={() => navigation.navigate("Notifications")}
+          onPress={() => navigation.navigate('Notifications')}
           activeScale={0.92}
         >
           <View style={styles.headerBtn}>
@@ -434,8 +434,8 @@ export default function SolveScreen() {
         contentContainerStyle={{
           paddingBottom: 120,
           maxWidth: 800,
-          alignSelf: "center",
-          width: "100%",
+          alignSelf: 'center',
+          width: '100%',
         }}
         ListHeaderComponent={renderStatsHeader}
         ListEmptyComponent={renderEmptyState}
@@ -463,19 +463,19 @@ const styles = {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.lg,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     backgroundColor: theme.colors.surface,
     borderBottomWidth: 2,
     borderBottomColor: theme.colors.border,
   },
   headerTitle: {
     fontSize: 28,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     letterSpacing: -1,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   headerSub: {
     fontSize: 13,
@@ -496,7 +496,7 @@ const styles = {
     paddingBottom: Spacing.sm,
   },
   statsRow: {
-    flexDirection: "row",
+    flexDirection: 'row',
     paddingHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
   },
@@ -507,9 +507,9 @@ const styles = {
     borderWidth: 2,
     borderColor: theme.colors.border,
     padding: Spacing.lg,
-    alignItems: "center",
+    alignItems: 'center',
     marginHorizontal: 4,
-    overflow: "hidden",
+    overflow: 'hidden',
   },
   statCardAccent: {
     borderColor: theme.colors.accentBrand,
@@ -519,28 +519,28 @@ const styles = {
     height: 36,
     borderRadius: 0,
     backgroundColor: theme.colors.surfaceSubtle,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.sm,
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "900",
+    fontWeight: '900',
     color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 10,
     color: theme.colors.textMuted,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
 
   // Filter Chips
   filterChip: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginRight: 8,
     backgroundColor: theme.colors.surface,
     paddingHorizontal: 14,
@@ -554,10 +554,10 @@ const styles = {
   filterText: {
     color: theme.colors.textMuted,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   filterTextActive: {
-    color: "#FFF",
+    color: '#FFF',
   },
   filterBadge: {
     backgroundColor: theme.colors.accentBrand,
@@ -567,16 +567,16 @@ const styles = {
     marginLeft: 6,
   },
   filterBadgeText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 10,
-    fontWeight: "800",
+    fontWeight: '800',
   },
 
   // Task count
   taskCountRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.lg,
     paddingBottom: Spacing.sm,
@@ -584,12 +584,12 @@ const styles = {
   taskCountText: {
     fontSize: 13,
     color: theme.colors.textMuted,
-    fontWeight: "700",
-    textTransform: "uppercase",
+    fontWeight: '700',
+    textTransform: 'uppercase',
   },
   xpPreviewChip: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -600,51 +600,51 @@ const styles = {
   xpPreviewText: {
     fontSize: 11,
     color: theme.colors.accentBrand,
-    fontWeight: "800",
+    fontWeight: '800',
     marginLeft: 4,
   },
 
   // Reward Banner (per issue)
   rewardBanner: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.md,
     paddingBottom: 4,
   },
   rewardLeft: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   difficultyBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: 10,
     paddingVertical: 4,
     borderRadius: 0,
   },
   difficultyText: {
     fontSize: 11,
-    fontWeight: "800",
+    fontWeight: '800',
     marginLeft: 4,
     letterSpacing: 0.5,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   solversBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginLeft: 8,
   },
   solversText: {
     fontSize: 11,
     color: theme.colors.textMuted,
     marginLeft: 4,
-    fontWeight: "700",
+    fontWeight: '700',
   },
   xpBadge: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 4,
@@ -655,13 +655,13 @@ const styles = {
   xpText: {
     fontSize: 11,
     color: theme.colors.accentBrand,
-    fontWeight: "800",
+    fontWeight: '800',
     marginLeft: 4,
   },
 
   // Loading / Empty
   loadingContainer: {
-    alignItems: "center",
+    alignItems: 'center',
     paddingTop: 60,
   },
   loadingText: {
@@ -670,8 +670,8 @@ const styles = {
     marginTop: 12,
   },
   emptyState: {
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     paddingVertical: 60,
     paddingHorizontal: 40,
   },
@@ -682,22 +682,22 @@ const styles = {
     backgroundColor: theme.colors.surfaceSubtle,
     borderWidth: 2,
     borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
     marginBottom: Spacing.xl,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "800",
+    fontWeight: '800',
     color: theme.colors.textPrimary,
-    textAlign: "center",
+    textAlign: 'center',
     marginBottom: Spacing.sm,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   emptyDesc: {
     fontSize: 14,
     color: theme.colors.textMuted,
-    textAlign: "center",
+    textAlign: 'center',
     lineHeight: 20,
   },
   emptyAction: {
@@ -708,9 +708,9 @@ const styles = {
     borderRadius: 0,
   },
   emptyActionText: {
-    color: "#FFF",
+    color: '#FFF',
     fontSize: 14,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
 };

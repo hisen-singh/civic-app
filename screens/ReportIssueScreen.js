@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import React, { useState, useRef } from 'react';
 import {
   View,
   ScrollView,
@@ -8,44 +8,44 @@ import {
   KeyboardAvoidingView,
   Platform,
   Animated,
-} from "react-native";
-import { Text, TextInput, ActivityIndicator } from "react-native-paper";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { IssueService } from "../services/IssueService";
-import { SyncService } from "../services/SyncService";
-import { useAuth } from "../contexts/AuthContext";
-import * as Location from "expo-location";
-import NetInfo from "@react-native-community/netinfo";
-import { Colors, Spacing } from "../theme";
-import { detectUrgency } from "../utils/urgencyDetector";
-import CategoryGrid from "../components/ui/CategoryGrid";
-import UrgencySelector from "../components/ui/UrgencySelector";
-import MediaPicker from "../components/ui/MediaPicker";
+} from 'react-native';
+import { Text, TextInput, ActivityIndicator } from 'react-native-paper';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { IssueService } from '../services/IssueService';
+import { SyncService } from '../services/SyncService';
+import { useAuth } from '../contexts/AuthContext';
+import * as Location from 'expo-location';
+import NetInfo from '@react-native-community/netinfo';
+import { Colors, Spacing } from '../theme';
+import { detectUrgency } from '../utils/urgencyDetector';
+import CategoryGrid from '../components/ui/CategoryGrid';
+import UrgencySelector from '../components/ui/UrgencySelector';
+import MediaPicker from '../components/ui/MediaPicker';
 
 export default function ReportIssueScreen({ navigation }) {
   const { user } = useAuth();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [youtubeUrl, setYoutubeUrl] = useState("");
-  const [category, setCategory] = useState("Pothole");
+  const [title, setTitle] = useState('');
+  const [description, setDescription] = useState('');
+  const [youtubeUrl, setYoutubeUrl] = useState('');
+  const [category, setCategory] = useState('Pothole');
   const [loading, setLoading] = useState(false);
-  const [errorMsg, setErrorMsg] = useState("");
-  const [locationStr, setLocationStr] = useState("");
+  const [errorMsg, setErrorMsg] = useState('');
+  const [locationStr, setLocationStr] = useState('');
   const [isFetchingLocation, setIsFetchingLocation] = useState(false);
   const [coords, setCoords] = useState(null);
   const [photo, setPhoto] = useState(null);
-  const [urgency, setUrgency] = useState("medium");
+  const [urgency, setUrgency] = useState('medium');
   const [autoDetected, setAutoDetected] = useState(null);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const submitScale = useRef(new Animated.Value(1)).current;
-  const [expandedGroup, setExpandedGroup] = useState("infrastructure");
+  const [expandedGroup, setExpandedGroup] = useState('infrastructure');
 
   // Auto-detect urgency from title + description
   React.useEffect(() => {
     if (title.length >= 3 || description.length >= 5) {
       const result = detectUrgency(title, description);
       setAutoDetected(result);
-      if (result.confidence !== "low") {
+      if (result.confidence !== 'low') {
         setUrgency(result.urgency);
       }
     } else {
@@ -63,14 +63,14 @@ export default function ReportIssueScreen({ navigation }) {
 
   const fetchLocation = async () => {
     setIsFetchingLocation(true);
-    setLocationStr("Detecting...");
+    setLocationStr('Detecting...');
     try {
       let { status } = await Location.requestForegroundPermissionsAsync();
-      if (status !== "granted") {
-        setLocationStr("");
+      if (status !== 'granted') {
+        setLocationStr('');
         Alert.alert(
-          "Permission Required",
-          "Location access is needed to tag your report.",
+          'Permission Required',
+          'Location access is needed to tag your report.',
         );
         setIsFetchingLocation(false);
         return;
@@ -81,7 +81,7 @@ export default function ReportIssueScreen({ navigation }) {
       try {
         location = await Location.getLastKnownPositionAsync({});
       } catch (e) {
-        console.warn("[ReportIssue] getLastKnownPosition failed:", e);
+        console.warn('[ReportIssue] getLastKnownPosition failed:', e);
       }
 
       if (!location) {
@@ -91,15 +91,15 @@ export default function ReportIssueScreen({ navigation }) {
             accuracy: Location.Accuracy.Balanced,
           });
           const timeoutPromise = new Promise((_, reject) =>
-            setTimeout(() => reject(new Error("Location timeout")), 10000),
+            setTimeout(() => reject(new Error('Location timeout')), 10000),
           );
           location = await Promise.race([locationPromise, timeoutPromise]);
         } catch (e) {
-          console.warn("[ReportIssue] getCurrentPosition failed/timed out:", e);
-          setLocationStr("");
+          console.warn('[ReportIssue] getCurrentPosition failed/timed out:', e);
+          setLocationStr('');
           Alert.alert(
-            "Location Unavailable",
-            "Could not detect your location. You can type it manually.",
+            'Location Unavailable',
+            'Could not detect your location. You can type it manually.',
           );
           setIsFetchingLocation(false);
           return;
@@ -107,10 +107,10 @@ export default function ReportIssueScreen({ navigation }) {
       }
 
       if (!location) {
-        setLocationStr("");
+        setLocationStr('');
         Alert.alert(
-          "Location Unavailable",
-          "Could not detect your location. You can type it manually.",
+          'Location Unavailable',
+          'Could not detect your location. You can type it manually.',
         );
         setIsFetchingLocation(false);
         return;
@@ -137,8 +137,8 @@ export default function ReportIssueScreen({ navigation }) {
           const uniqueParts = [...new Set(parts)];
           setLocationStr(
             uniqueParts.length > 0
-              ? uniqueParts.join(", ")
-              : "Location detected",
+              ? uniqueParts.join(', ')
+              : 'Location detected',
           );
         } else {
           setLocationStr(
@@ -146,18 +146,18 @@ export default function ReportIssueScreen({ navigation }) {
           );
         }
       } catch (geocodeError) {
-        console.warn("[ReportIssue] Reverse geocode failed:", geocodeError);
+        console.warn('[ReportIssue] Reverse geocode failed:', geocodeError);
         // Still have coordinates, just show them directly
         setLocationStr(
           `${location.coords.latitude.toFixed(4)}, ${location.coords.longitude.toFixed(4)}`,
         );
       }
     } catch (error) {
-      console.error("[ReportIssue] Location error:", error);
-      setLocationStr("");
+      console.error('[ReportIssue] Location error:', error);
+      setLocationStr('');
       Alert.alert(
-        "Error",
-        "Unable to fetch location. You can type it manually.",
+        'Error',
+        'Unable to fetch location. You can type it manually.',
       );
     } finally {
       setIsFetchingLocation(false);
@@ -186,7 +186,7 @@ export default function ReportIssueScreen({ navigation }) {
     }
     if (title.trim().length < 5) {
       setErrorMsg(
-        "Title is too short. Please add more details to the title (minimum 5 characters).",
+        'Title is too short. Please add more details to the title (minimum 5 characters).',
       );
       return;
     }
@@ -198,7 +198,7 @@ export default function ReportIssueScreen({ navigation }) {
     }
     if (description.trim().length < 10) {
       setErrorMsg(
-        "Description is too brief. Please type at least 10 characters explaining what needs to be fixed.",
+        'Description is too brief. Please type at least 10 characters explaining what needs to be fixed.',
       );
       return;
     }
@@ -218,9 +218,36 @@ export default function ReportIssueScreen({ navigation }) {
     ]).start();
 
     setLoading(true);
-    setErrorMsg("");
+    setErrorMsg('');
 
     try {
+      // Rate limit pre-check
+      if (user?.uid) {
+        try {
+          const { doc: firestoreDoc, getDoc } = require('firebase/firestore');
+          const { db: firestoreDb } = require('../config/firebaseConfig');
+          const rateLimitDoc = await getDoc(
+            firestoreDoc(firestoreDb, 'userRateLimits', user.uid),
+          );
+          if (rateLimitDoc.exists()) {
+            const data = rateLimitDoc.data();
+            if ((data.issuesThisHour || 0) >= 5) {
+              setErrorMsg(
+                "You've reached the posting limit (5 reports per hour). Please wait before posting again.",
+              );
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (rateLimitError) {
+          // If rate limit check fails, proceed anyway — the backend will catch it
+          console.warn(
+            '[ReportIssue] Rate limit pre-check failed:',
+            rateLimitError,
+          );
+        }
+      }
+
       const netState = await NetInfo.fetch();
       const isOffline = !netState.isConnected;
 
@@ -228,13 +255,13 @@ export default function ReportIssueScreen({ navigation }) {
         title: title.trim(),
         description: description.trim(),
         category,
-        status: "Open",
+        status: 'Open',
         urgency: urgency,
         location: locationStr,
         latitude: coords ? coords.latitude : null,
         longitude: coords ? coords.longitude : null,
-        authorId: user?.uid || "anonymous",
-        authorName: user?.displayName || "Citizen",
+        authorId: user?.uid || 'anonymous',
+        authorName: user?.displayName || 'Citizen',
         youtubeUrl: youtubeUrl.trim(),
         photo: photo ? photo.uri : null,
       };
@@ -242,31 +269,31 @@ export default function ReportIssueScreen({ navigation }) {
       if (isOffline) {
         await SyncService.enqueueIssue(issueData);
         Alert.alert(
-          "Saved Offline",
-          "You appear to be offline. Your issue has been saved and will sync automatically when you reconnect.",
+          'Saved Offline',
+          'You appear to be offline. Your issue has been saved and will sync automatically when you reconnect.',
         );
         navigation.goBack();
         return;
       }
 
       try {
-        if (photo && photo.uri && !photo.uri.startsWith("http")) {
+        if (photo && photo.uri && !photo.uri.startsWith('http')) {
           issueData.photo = await IssueService.uploadImage(photo.uri);
         }
         await IssueService.addIssue(issueData);
       } catch (networkError) {
-        console.warn("Upload failed, queueing offline:", networkError);
+        console.warn('Upload failed, queueing offline:', networkError);
         issueData.photo = photo ? photo.uri : null;
         await SyncService.enqueueIssue(issueData);
         Alert.alert(
-          "Saved Offline",
+          'Saved Offline',
           "We couldn't reach the server right now. Your issue has been saved and will sync automatically when you reconnect.",
         );
       }
 
       navigation.goBack();
     } catch (error) {
-      setErrorMsg(error.message || "Failed to submit. Please try again.");
+      setErrorMsg(error.message || 'Failed to submit. Please try again.');
       setLoading(false);
     }
   };
@@ -274,7 +301,7 @@ export default function ReportIssueScreen({ navigation }) {
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: Colors.background }}
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       {/* Header */}
       <View style={styles.header}>
@@ -291,7 +318,7 @@ export default function ReportIssueScreen({ navigation }) {
             color={Colors.textPrimary}
           />
         </TouchableOpacity>
-        <View style={{ flex: 1, alignItems: "center" }}>
+        <View style={{ flex: 1, alignItems: 'center' }}>
           <Text style={styles.headerTitle} accessibilityRole="header">
             New Report
           </Text>
@@ -304,8 +331,8 @@ export default function ReportIssueScreen({ navigation }) {
             padding: 8,
             minHeight: 48,
             minWidth: 48,
-            justifyContent: "center",
-            alignItems: "center",
+            justifyContent: 'center',
+            alignItems: 'center',
           }}
           accessibilityRole="button"
           accessibilityLabel="Submit Report"
@@ -372,16 +399,16 @@ export default function ReportIssueScreen({ navigation }) {
             value={title}
             onChangeText={(t) => {
               setTitle(t);
-              setErrorMsg("");
+              setErrorMsg('');
             }}
             mode="outlined"
             style={styles.input}
             textColor="#000000"
             theme={{
               colors: {
-                primary: "#FF4500",
-                outline: "#000000",
-                background: "#FFFFFF",
+                primary: '#FF4500',
+                outline: '#000000',
+                background: '#FFFFFF',
               },
               roundness: 0,
             }}
@@ -395,21 +422,21 @@ export default function ReportIssueScreen({ navigation }) {
             value={description}
             onChangeText={(t) => {
               setDescription(t);
-              setErrorMsg("");
+              setErrorMsg('');
             }}
             mode="outlined"
             multiline
             numberOfLines={2}
             style={[
               styles.input,
-              { minHeight: 60, backgroundColor: "transparent" },
+              { minHeight: 60, backgroundColor: 'transparent' },
             ]}
             textColor="#000000"
             theme={{
               colors: {
-                primary: "#FF4500",
-                outline: "#000000",
-                background: "transparent",
+                primary: '#FF4500',
+                outline: '#000000',
+                background: 'transparent',
               },
               roundness: 0,
             }}
@@ -431,11 +458,11 @@ export default function ReportIssueScreen({ navigation }) {
             <View
               style={[
                 styles.sectionDot,
-                urgency !== "low" && styles.sectionDotActive,
+                urgency !== 'low' && styles.sectionDotActive,
               ]}
             />
             <Text style={styles.sectionLabel}>Urgency Level</Text>
-            {autoDetected && autoDetected.confidence !== "low" && (
+            {autoDetected && autoDetected.confidence !== 'low' && (
               <View style={styles.autoDetectBadge}>
                 <MaterialCommunityIcons
                   name="lightning-bolt"
@@ -482,9 +509,9 @@ export default function ReportIssueScreen({ navigation }) {
             textColor="#000000"
             theme={{
               colors: {
-                primary: "#FF4500",
-                outline: "#000000",
-                background: "#FFFFFF",
+                primary: '#FF4500',
+                outline: '#000000',
+                background: '#FFFFFF',
               },
               roundness: 0,
             }}
@@ -507,7 +534,7 @@ export default function ReportIssueScreen({ navigation }) {
               <MaterialCommunityIcons
                 name="crosshairs-gps"
                 size={16}
-                color={isFetchingLocation ? Colors.textTertiary : "#FFF"}
+                color={isFetchingLocation ? Colors.textTertiary : '#FFF'}
               />
             </View>
             <Text
@@ -517,8 +544,8 @@ export default function ReportIssueScreen({ navigation }) {
               ]}
             >
               {isFetchingLocation
-                ? "Detecting location..."
-                : "Use Current Location"}
+                ? 'Detecting location...'
+                : 'Use Current Location'}
             </Text>
             {isFetchingLocation && (
               <ActivityIndicator
@@ -559,9 +586,9 @@ export default function ReportIssueScreen({ navigation }) {
             textColor="#000000"
             theme={{
               colors: {
-                primary: "#FF4500",
-                outline: "#000000",
-                background: "#FFFFFF",
+                primary: '#FF4500',
+                outline: '#000000',
+                background: '#FFFFFF',
               },
               roundness: 0,
             }}
@@ -605,7 +632,7 @@ export default function ReportIssueScreen({ navigation }) {
               {loading ? (
                 <ActivityIndicator color="#FFF" size={20} />
               ) : (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center' }}>
                   <MaterialCommunityIcons
                     name="send"
                     size={18}
@@ -629,136 +656,136 @@ export default function ReportIssueScreen({ navigation }) {
 
 const styles = {
   header: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.md,
-    backgroundColor: "#000000",
+    backgroundColor: '#000000',
     borderBottomWidth: 2,
-    borderBottomColor: "#FFFFFF",
+    borderBottomColor: '#FFFFFF',
   },
   backBtn: {
     padding: 12,
     minWidth: 48,
     minHeight: 48,
-    justifyContent: "center",
-    alignItems: "center",
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontWeight: '800',
+    color: '#FFFFFF',
     letterSpacing: -0.2,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   submitHeaderText: {
     fontSize: 15,
-    fontWeight: "800",
-    color: "#FF4500",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    color: '#FF4500',
+    textTransform: 'uppercase',
   },
   progressContainer: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
-    backgroundColor: "#000000",
+    backgroundColor: '#000000',
     borderBottomWidth: 2,
-    borderBottomColor: "#FFFFFF",
+    borderBottomColor: '#FFFFFF',
   },
   progressTrack: {
     height: 6,
-    backgroundColor: "#222222",
+    backgroundColor: '#222222',
     borderRadius: 0,
-    overflow: "hidden",
+    overflow: 'hidden',
     marginBottom: 6,
     borderWidth: 1,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
   },
   progressFill: {
-    height: "100%",
-    backgroundColor: "#FF4500",
+    height: '100%',
+    backgroundColor: '#FF4500',
     borderRadius: 0,
   },
   progressText: {
     fontSize: 11,
-    color: "#A0AAB5",
-    fontWeight: "800",
-    textTransform: "uppercase",
+    color: '#A0AAB5',
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   section: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xxl,
     paddingBottom: Spacing.md,
     borderBottomWidth: 2,
-    borderBottomColor: "#FFFFFF",
-    backgroundColor: "#000000",
+    borderBottomColor: '#FFFFFF',
+    backgroundColor: '#000000',
   },
   sectionHeader: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginBottom: Spacing.lg,
-    flexWrap: "wrap", // Prevent clipping
+    flexWrap: 'wrap', // Prevent clipping
   },
   sectionDot: {
     width: 12,
     height: 12,
     borderRadius: 0,
-    backgroundColor: "#222222",
+    backgroundColor: '#222222',
     marginRight: 10,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
   },
   sectionDotActive: {
-    backgroundColor: "#FF4500",
-    borderColor: "#FF4500",
+    backgroundColor: '#FF4500',
+    borderColor: '#FF4500',
   },
   sectionLabel: {
     fontSize: 16,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontWeight: '800',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
   },
   optionalBadge: {
     fontSize: 11,
-    fontWeight: "800",
-    color: "#FFFFFF",
-    backgroundColor: "#FF4500", // Electric Orange
+    fontWeight: '800',
+    color: '#FFFFFF',
+    backgroundColor: '#FF4500', // Electric Orange
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginLeft: 8,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
     borderWidth: 1,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
   },
   input: {
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
     marginBottom: Spacing.md,
     borderWidth: 2,
-    borderColor: "#000000",
+    borderColor: '#000000',
   },
   charCount: {
-    alignItems: "flex-end",
+    alignItems: 'flex-end',
     marginTop: -4,
     marginBottom: 4,
   },
   charCountText: {
     fontSize: 11,
-    fontWeight: "800",
-    color: "#A0AAB5",
+    fontWeight: '800',
+    color: '#A0AAB5',
   },
   gpsBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#000000",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#000000',
     paddingHorizontal: 14,
     paddingVertical: 12,
     minHeight: 48,
     borderRadius: 0,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
-    shadowColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
@@ -768,106 +795,106 @@ const styles = {
     width: 28,
     height: 28,
     borderRadius: 0,
-    backgroundColor: "#FF4500",
-    justifyContent: "center",
-    alignItems: "center",
+    backgroundColor: '#FF4500',
+    justifyContent: 'center',
+    alignItems: 'center',
     marginRight: 10,
     borderWidth: 1,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
   },
   gpsBtnText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 14,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   dividerRow: {
-    flexDirection: "row",
-    alignItems: "center",
+    flexDirection: 'row',
+    alignItems: 'center',
     marginVertical: Spacing.lg,
   },
   dividerLine: {
     flex: 1,
     height: 2,
-    backgroundColor: "#FFFFFF",
+    backgroundColor: '#FFFFFF',
   },
   dividerText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 12,
-    fontWeight: "800",
+    fontWeight: '800',
     marginHorizontal: 12,
-    textTransform: "uppercase",
+    textTransform: 'uppercase',
     letterSpacing: 0.5,
   },
   errorBanner: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#FF4500",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#FF4500',
     padding: 12,
     borderRadius: 0,
     marginHorizontal: Spacing.xl,
     marginBottom: Spacing.lg,
     borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
   },
   submitBtn: {
-    backgroundColor: "#FF4500",
+    backgroundColor: '#FF4500',
     borderRadius: 0,
     paddingVertical: 16,
-    alignItems: "center",
-    justifyContent: "center",
+    alignItems: 'center',
+    justifyContent: 'center',
     borderWidth: 2,
-    borderColor: "#FFFFFF",
-    shadowColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
+    shadowColor: '#FFFFFF',
     shadowOffset: { width: 4, height: 4 },
     shadowOpacity: 1,
     shadowRadius: 0,
     elevation: 0,
   },
   submitBtnText: {
-    color: "#FFFFFF",
+    color: '#FFFFFF',
     fontSize: 16,
-    fontWeight: "800",
-    textTransform: "uppercase",
+    fontWeight: '800',
+    textTransform: 'uppercase',
   },
   disclaimer: {
-    color: "#A0AAB5",
+    color: '#A0AAB5',
     fontSize: 11,
-    textAlign: "center",
+    textAlign: 'center',
     marginTop: Spacing.lg,
     lineHeight: 16,
-    fontWeight: "600",
+    fontWeight: '600',
   },
   autoDetectBadge: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginLeft: "auto",
-    backgroundColor: "#FF4500",
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginLeft: 'auto',
+    backgroundColor: '#FF4500',
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 0,
     borderWidth: 1,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
   },
   autoDetectText: {
     fontSize: 10,
-    fontWeight: "800",
-    color: "#FFFFFF",
+    fontWeight: '800',
+    color: '#FFFFFF',
     letterSpacing: 0.5,
   },
   detectedHint: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#222222",
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#222222',
     padding: 10,
     borderRadius: 0,
     borderWidth: 1,
-    borderColor: "#FFFFFF",
+    borderColor: '#FFFFFF',
   },
   detectedHintText: {
     fontSize: 12,
-    color: "#FFFFFF",
-    fontStyle: "italic",
-    fontWeight: "600",
+    color: '#FFFFFF',
+    fontStyle: 'italic',
+    fontWeight: '600',
   },
 };

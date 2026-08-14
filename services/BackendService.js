@@ -1,8 +1,8 @@
-import { getFunctions, httpsCallable } from "firebase/functions";
-import { app } from "../config/firebaseConfig";
-import * as Notifications from "expo-notifications";
-import { Platform } from "react-native";
-import Constants from "expo-constants";
+import { getFunctions, httpsCallable } from 'firebase/functions';
+import { app } from '../config/firebaseConfig';
+import * as Notifications from 'expo-notifications';
+import { Platform } from 'react-native';
+import Constants from 'expo-constants';
 
 const functionsInstance = getFunctions(app);
 
@@ -12,18 +12,18 @@ export const BackendService = {
    * Should be called once after the user logs in.
    */
   registerPushToken: async () => {
-    if (Platform.OS === "web") {
-      console.info("[BackendService] Push notifications not supported on web.");
+    if (Platform.OS === 'web') {
+      console.info('[BackendService] Push notifications not supported on web.');
       return;
     }
 
     try {
-      if (Platform.OS === "android") {
-        await Notifications.setNotificationChannelAsync("default", {
-          name: "default",
+      if (Platform.OS === 'android') {
+        await Notifications.setNotificationChannelAsync('default', {
+          name: 'default',
           importance: Notifications.AndroidImportance.MAX,
           vibrationPattern: [0, 250, 250, 250],
-          lightColor: "#FF4500",
+          lightColor: '#FF4500',
         });
       }
 
@@ -32,13 +32,13 @@ export const BackendService = {
         await Notifications.getPermissionsAsync();
       let finalStatus = existingStatus;
 
-      if (existingStatus !== "granted") {
+      if (existingStatus !== 'granted') {
         const { status } = await Notifications.requestPermissionsAsync();
         finalStatus = status;
       }
 
-      if (finalStatus !== "granted") {
-        console.info("[BackendService] Push notification permission denied.");
+      if (finalStatus !== 'granted') {
+        console.info('[BackendService] Push notification permission denied.');
         return;
       }
 
@@ -49,12 +49,12 @@ export const BackendService = {
       const token = tokenData.data;
 
       // Send the token to the backend Cloud Function to store it
-      const saveFcmToken = httpsCallable(functionsInstance, "saveFcmToken");
+      const saveFcmToken = httpsCallable(functionsInstance, 'saveFcmToken');
       await saveFcmToken({ token });
 
-      console.info("[BackendService] Push token registered successfully.");
+      console.info('[BackendService] Push token registered successfully.');
     } catch (error) {
-      console.warn("[BackendService] Error registering push token:", error);
+      console.warn('[BackendService] Error registering push token:', error);
     }
   },
 
@@ -64,11 +64,11 @@ export const BackendService = {
    */
   getLeaderboard: async () => {
     try {
-      const getLeaderboard = httpsCallable(functionsInstance, "getLeaderboard");
+      const getLeaderboard = httpsCallable(functionsInstance, 'getLeaderboard');
       const result = await getLeaderboard();
       return result.data.leaderboard || [];
     } catch (error) {
-      console.error("[BackendService] Error fetching leaderboard:", error);
+      console.error('[BackendService] Error fetching leaderboard:', error);
       return [];
     }
   },

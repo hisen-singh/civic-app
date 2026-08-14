@@ -1,21 +1,21 @@
 @import url('https://fonts.googleapis.com/css2?family=Anton&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 :root {
-  --color-surface:              #121212;
-  --color-surface-subtle:       #121212;
-  --color-surface-card:         rgba(255, 255, 255, 0.08);
-  --color-text-primary:         #e0e0e0;
-  --color-text-muted:           #A0A0A0;
-  --color-action-default:       #e0e0e0;   
-  --color-action-hover:         #FF4500;
-  --color-accent-brand:         #FF4500;   
-  --color-accent-brand-subtle:  #121212;   
-  --color-border:               rgba(255, 255, 255, 0.1);
-  --color-status-low:           #008080;
-  --color-status-medium:        #8B5CF6;
-  --color-status-critical:      #E53935;
-  --radius-outer:               28px;
-  --radius-inner:               16px;
+  --color-surface: #121212;
+  --color-surface-subtle: #121212;
+  --color-surface-card: rgba(255, 255, 255, 0.08);
+  --color-text-primary: #e0e0e0;
+  --color-text-muted: #a0a0a0;
+  --color-action-default: #e0e0e0;
+  --color-action-hover: #ff4500;
+  --color-accent-brand: #ff4500;
+  --color-accent-brand-subtle: #121212;
+  --color-border: rgba(255, 255, 255, 0.1);
+  --color-status-low: #008080;
+  --color-status-medium: #8b5cf6;
+  --color-status-critical: #e53935;
+  --radius-outer: 28px;
+  --radius-inner: 16px;
 }
 
 * {
@@ -38,7 +38,10 @@ body {
   text-transform: uppercase;
 }
 
-input, textarea, button, select {
+input,
+textarea,
+button,
+select {
   font-family: inherit;
   background: transparent;
   color: inherit;

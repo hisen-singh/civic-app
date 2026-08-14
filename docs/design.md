@@ -93,6 +93,7 @@
 ---
 
 ## UX Flow Summary
+
 Onboarding → Feed → Post Problem / Solve → Profile / Leaderboard → Impact Map → Engagement loop
 
 ---

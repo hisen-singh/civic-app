@@ -1,7 +1,7 @@
-import "react-native-gesture-handler";
-import "./config/i18n";
-import React, { useCallback, useRef, useEffect, useState } from "react";
-import * as Notifications from "expo-notifications";
+import 'react-native-gesture-handler';
+import './config/i18n';
+import React, { useCallback, useRef, useEffect, useState } from 'react';
+import * as Notifications from 'expo-notifications';
 try {
   Notifications.setNotificationHandler({
     handleNotification: async () => ({
@@ -12,49 +12,49 @@ try {
   });
 } catch (e) {
   console.warn(
-    "Failed to set notification handler (likely missing google-services.json on native Android build):",
+    'Failed to set notification handler (likely missing google-services.json on native Android build):',
     e,
   );
 }
-import { View, Text, Animated, Image } from "react-native";
+import { View, Text, Animated, Image } from 'react-native';
 import {
   NavigationContainer,
   DarkTheme as NavDarkTheme,
-} from "@react-navigation/native";
-import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
-import { createStackNavigator } from "@react-navigation/stack";
+} from '@react-navigation/native';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import { createStackNavigator } from '@react-navigation/stack';
 import {
   Provider as PaperProvider,
   DefaultTheme,
   ActivityIndicator,
-} from "react-native-paper";
+} from 'react-native-paper';
 import {
   SafeAreaProvider,
   useSafeAreaInsets,
-} from "react-native-safe-area-context";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
-import * as Font from "expo-font";
-import { Colors, Radius, Shadows, theme } from "./theme";
+} from 'react-native-safe-area-context';
+import { MaterialCommunityIcons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import * as Font from 'expo-font';
+import { Colors, Radius, Shadows, theme } from './theme';
 
 // Screens
-import HomeScreen from "./screens/HomeScreen";
-import MapScreen from "./screens/MapScreen";
-import LeaderboardScreen from "./screens/LeaderboardScreen";
-import ProfileScreen from "./screens/ProfileScreen";
-import LoginScreen from "./screens/LoginScreen";
-import SignupScreen from "./screens/SignupScreen";
-import ReportIssueScreen from "./screens/ReportIssueScreen";
-import IssueDetailScreen from "./screens/IssueDetailScreen";
-import SolveScreen from "./screens/SolveScreen";
-import WatchAreaScreen from "./screens/WatchAreaScreen";
-import NotificationsScreen from "./screens/NotificationsScreen";
-import EditProfileScreen from "./screens/EditProfileScreen";
-import AnalyticsScreen from "./screens/AnalyticsScreen";
-import PublicProfileScreen from "./screens/PublicProfileScreen";
+import HomeScreen from './screens/HomeScreen';
+import MapScreen from './screens/MapScreen';
+import LeaderboardScreen from './screens/LeaderboardScreen';
+import ProfileScreen from './screens/ProfileScreen';
+import LoginScreen from './screens/LoginScreen';
+import SignupScreen from './screens/SignupScreen';
+import ReportIssueScreen from './screens/ReportIssueScreen';
+import IssueDetailScreen from './screens/IssueDetailScreen';
+import SolveScreen from './screens/SolveScreen';
+import WatchAreaScreen from './screens/WatchAreaScreen';
+import NotificationsScreen from './screens/NotificationsScreen';
+import EditProfileScreen from './screens/EditProfileScreen';
+import AnalyticsScreen from './screens/AnalyticsScreen';
+import PublicProfileScreen from './screens/PublicProfileScreen';
 
 // Auth
-import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -73,28 +73,28 @@ const navTheme = {
   },
 };
 
-import ErrorBoundary from "./components/ErrorBoundary";
-import NetworkBanner from "./components/NetworkBanner";
+import ErrorBoundary from './components/ErrorBoundary';
+import NetworkBanner from './components/NetworkBanner';
 
 // ─── Custom Tab Bar Icon with Active Indicator ────────────────────────────────
 function TabIcon({ name, color, focused }) {
   return (
     <View
-      style={{ alignItems: "center", justifyContent: "center", minWidth: 48 }}
+      style={{ alignItems: 'center', justifyContent: 'center', minWidth: 48 }}
     >
       <View
         style={{
           width: 40,
           height: 40,
           borderRadius: 9999,
-          backgroundColor: focused ? theme.colors.accentBrand : "transparent",
-          alignItems: "center",
-          justifyContent: "center",
+          backgroundColor: focused ? theme.colors.accentBrand : 'transparent',
+          alignItems: 'center',
+          justifyContent: 'center',
         }}
       >
         <MaterialCommunityIcons
           name={name}
-          color={focused ? "#FFFFFF" : theme.colors.textPrimary}
+          color={focused ? '#FFFFFF' : theme.colors.textPrimary}
           size={22}
         />
       </View>
@@ -113,7 +113,7 @@ function TabIcon({ name, color, focused }) {
   );
 }
 
-import { useNavigation } from "@react-navigation/native";
+import { useNavigation } from '@react-navigation/native';
 
 function MainTabs() {
   const navigation = useNavigation();
@@ -139,10 +139,10 @@ function MainTabs() {
           tabBarInactiveTintColor: theme.colors.textPrimary,
           tabBarLabelStyle: {
             fontSize: 10,
-            fontWeight: "800",
+            fontWeight: '800',
             marginTop: 2,
             letterSpacing: 0.5,
-            textTransform: "uppercase",
+            textTransform: 'uppercase',
           },
           tabBarHideOnKeyboard: true,
         }}
@@ -151,7 +151,7 @@ function MainTabs() {
           name="Home"
           component={HomeScreen}
           options={{
-            tabBarLabel: "Feed",
+            tabBarLabel: 'Feed',
             tabBarIcon: ({ color, focused }) => (
               <TabIcon name="home-variant" color={color} focused={focused} />
             ),
@@ -177,11 +177,11 @@ function MainTabs() {
           listeners={({ navigation }) => ({
             tabPress: (e) => {
               e.preventDefault();
-              navigation.navigate("ReportIssue");
+              navigation.navigate('ReportIssue');
             },
           })}
           options={{
-            tabBarLabel: "",
+            tabBarLabel: '',
             tabBarIcon: () => (
               <View
                 style={{
@@ -190,8 +190,8 @@ function MainTabs() {
                   borderRadius: 9999,
                   marginTop: -8,
                   backgroundColor: theme.colors.accentBrand,
-                  justifyContent: "center",
-                  alignItems: "center",
+                  justifyContent: 'center',
+                  alignItems: 'center',
                   borderWidth: 3,
                   borderColor: theme.colors.surface,
                 }}
@@ -249,7 +249,7 @@ function AppStack() {
       <Stack.Screen
         name="ReportIssue"
         component={ReportIssueScreen}
-        options={{ presentation: "modal" }}
+        options={{ presentation: 'modal' }}
       />
       <Stack.Screen name="IssueDetail" component={IssueDetailScreen} />
       <Stack.Screen name="PublicProfile" component={PublicProfileScreen} />
@@ -287,20 +287,20 @@ function SplashScreen() {
     <View
       style={{
         flex: 1,
-        justifyContent: "center",
-        alignItems: "center",
+        justifyContent: 'center',
+        alignItems: 'center',
         backgroundColor: Colors.background,
       }}
     >
-      <Animated.View style={{ opacity: pulseAnim, alignItems: "center" }}>
+      <Animated.View style={{ opacity: pulseAnim, alignItems: 'center' }}>
         <Image
-          source={require("./assets/logo.jpg")}
+          source={require('./assets/logo.jpg')}
           style={{ width: 90, height: 90, borderRadius: 45, marginBottom: 16 }}
         />
         <Text
           style={{
             fontSize: 42,
-            fontWeight: "800",
+            fontWeight: '800',
             color: Colors.textPrimary,
             letterSpacing: -1.5,
             marginBottom: 8,
@@ -327,7 +327,7 @@ function SplashScreen() {
   );
 }
 
-import VerifyEmailScreen from "./screens/VerifyEmailScreen";
+import VerifyEmailScreen from './screens/VerifyEmailScreen';
 
 function AppContent() {
   const { user, loading } = useAuth();

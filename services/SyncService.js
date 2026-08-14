@@ -1,9 +1,9 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-import { IssueService } from "./IssueService";
-import NetInfo from "@react-native-community/netinfo";
-import * as FileSystem from "expo-file-system";
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import { IssueService } from './IssueService';
+import NetInfo from '@react-native-community/netinfo';
+import * as FileSystem from 'expo-file-system';
 
-const QUEUE_KEY = "@civic_offline_queue";
+const QUEUE_KEY = '@civic_offline_queue';
 let isProcessing = false;
 
 export const SyncService = {
@@ -14,10 +14,10 @@ export const SyncService = {
       let finalPhoto = issueData.photo;
       if (
         finalPhoto &&
-        !finalPhoto.startsWith("http") &&
+        !finalPhoto.startsWith('http') &&
         !finalPhoto.includes(FileSystem.documentDirectory)
       ) {
-        const fileName = finalPhoto.split("/").pop();
+        const fileName = finalPhoto.split('/').pop();
         const newPath = FileSystem.documentDirectory + fileName;
         await FileSystem.copyAsync({ from: finalPhoto, to: newPath });
         finalPhoto = newPath;
@@ -33,7 +33,7 @@ export const SyncService = {
         `[SyncService] Enqueued 1 issue. Total queue: ${queue.length}`,
       );
     } catch (error) {
-      console.error("[SyncService] Failed to enqueue issue:", error);
+      console.error('[SyncService] Failed to enqueue issue:', error);
     }
   },
 
@@ -58,7 +58,7 @@ export const SyncService = {
           const { _queuedAt, ...issueData } = item;
 
           // Upload photo if it's a local URI
-          if (issueData.photo && !issueData.photo.startsWith("http")) {
+          if (issueData.photo && !issueData.photo.startsWith('http')) {
             issueData.photo = await IssueService.uploadImage(issueData.photo);
             item.photo = issueData.photo; // Save uploaded URL back to item so it doesn't re-upload if addIssue fails
           }
@@ -69,7 +69,7 @@ export const SyncService = {
           );
         } catch (error) {
           console.error(
-            "[SyncService] Failed to sync queued issue, keeping in queue:",
+            '[SyncService] Failed to sync queued issue, keeping in queue:',
             error,
           );
           newQueue.push(item);
@@ -78,7 +78,7 @@ export const SyncService = {
 
       await AsyncStorage.setItem(QUEUE_KEY, JSON.stringify(newQueue));
     } catch (error) {
-      console.error("[SyncService] Failed to process queue:", error);
+      console.error('[SyncService] Failed to process queue:', error);
     } finally {
       isProcessing = false;
     }

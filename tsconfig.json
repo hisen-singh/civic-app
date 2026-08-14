@@ -2,10 +2,9 @@
   "compilerOptions": {
     "target": "esnext",
     "module": "esnext",
-    "lib": [
-      "esnext"
-    ],
+    "lib": ["esnext"],
     "allowJs": true,
+    "checkJs": true,
     "jsx": "react-native",
     "noEmit": true,
     "isolatedModules": true,
@@ -16,8 +15,14 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
+  "include": ["**/*.js", "**/*.jsx"],
   "exclude": [
     "node_modules",
+    "admin-dashboard",
+    "functions",
+    ".expo",
+    "android",
+    "ios",
     "babel.config.js",
     "metro.config.js",
     "jest.config.js"
