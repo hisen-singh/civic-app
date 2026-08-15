@@ -3,10 +3,7 @@ import { initializeFirestore, persistentLocalCache } from 'firebase/firestore';
 import { getAnalytics } from 'firebase/analytics';
 import { getStorage } from 'firebase/storage';
 import { getRemoteConfig, fetchAndActivate } from 'firebase/remote-config';
-import {
-  initializeAuth,
-  browserLocalPersistence,
-} from 'firebase/auth';
+import { initializeAuth, browserLocalPersistence } from 'firebase/auth';
 import * as FirebaseAuth from 'firebase/auth';
 
 /** @type {any} */

@@ -718,7 +718,7 @@ export default function HomeScreen() {
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', flex: 1 }}>
           <Image
-            source={require('../assets/logo.jpg')}
+            source={require('../assets/icon.png')}
             style={{ width: 34, height: 34, borderRadius: 17, marginRight: 10 }}
           />
           <Text style={styles.brandTitle}>CIVIC</Text>

@@ -98,7 +98,8 @@
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|native-base|react-native-svg|firebase|@firebase)"
     ],
     "moduleNameMapper": {
-      "^test-renderer$": "react-test-renderer"
+      "^test-renderer$": "react-test-renderer",
+      "^expo-file-system/legacy$": "expo-file-system"
     }
   },
   "lint-staged": {
