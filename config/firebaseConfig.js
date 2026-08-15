@@ -5,9 +5,13 @@ import { getStorage } from 'firebase/storage';
 import { getRemoteConfig, fetchAndActivate } from 'firebase/remote-config';
 import {
   initializeAuth,
-  getReactNativePersistence,
   browserLocalPersistence,
 } from 'firebase/auth';
+import * as FirebaseAuth from 'firebase/auth';
+
+/** @type {any} */
+const AnyAuth = FirebaseAuth;
+const getReactNativePersistence = AnyAuth.getReactNativePersistence;
 import ReactNativeAsyncStorage from '@react-native-async-storage/async-storage';
 import { Platform } from 'react-native';
 

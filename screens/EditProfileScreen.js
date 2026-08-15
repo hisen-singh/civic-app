@@ -350,7 +350,7 @@ export default function EditProfileScreen({ navigation }) {
                   />
                 ) : (
                   <MaterialCommunityIcons
-                    name="email-send-outline"
+                    name="email-edit-outline"
                     size={16}
                     color={theme.colors.accentBrand}
                     style={{ marginRight: 8 }}
