@@ -1,7 +1,7 @@
 import { SyncService } from '../services/SyncService';
 import { IssueService } from '../services/IssueService';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import NetInfo from '@react-native-community/netinfo';
 
 jest.mock('@react-native-async-storage/async-storage', () => ({
@@ -16,7 +16,7 @@ jest.mock('../services/IssueService', () => ({
   },
 }));
 
-jest.mock('expo-file-system', () => ({
+jest.mock('expo-file-system/legacy', () => ({
   documentDirectory: 'file:///mock/doc/dir/',
   copyAsync: jest.fn(),
 }));
