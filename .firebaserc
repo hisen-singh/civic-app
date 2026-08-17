@@ -1,5 +1,7 @@
 {
   "projects": {
-    "default": "civic-d0574"
+    "default": "civic-d0574",
+    "dev": "civic-5e823",
+    "staging": "civic-b72a8"
   }
 }
