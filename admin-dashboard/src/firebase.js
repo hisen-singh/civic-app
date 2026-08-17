@@ -3,15 +3,24 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getFunctions } from 'firebase/functions';
 
+// Firebase configuration loaded from environment variables
 const firebaseConfig = {
-  apiKey: "AIzaSyCWFEouXZQHNYFZPCeqBE6q3VpokIWnJ4A",
-  authDomain: "civic-d0574.firebaseapp.com",
-  projectId: "civic-d0574",
-  storageBucket: "civic-d0574.firebasestorage.app",
-  messagingSenderId: "1045062367632",
-  appId: "1:1045062367632:web:5cf44682d92d1bdcdc5b15",
-  measurementId: "G-KJ8V6BMD86"
+  apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
+  authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN,
+  projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID,
+  storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
+  appId: import.meta.env.VITE_FIREBASE_APP_ID,
+  measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID,
 };
+
+// Validate required config on init
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+  console.error(
+    '[firebase.js] FATAL: Missing required Firebase environment variables. ' +
+    'Ensure .env file exists with VITE_FIREBASE_* variables.'
+  );
+}
 
 const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);

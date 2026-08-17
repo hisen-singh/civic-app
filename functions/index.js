@@ -4,9 +4,9 @@ const admin = require("firebase-admin");
 admin.initializeApp();
 const db = admin.firestore();
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // HELPERS
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 
 /** Haversine formula – returns distance in metres */
 function haversine(lat1, lon1, lat2, lon2) {
@@ -79,10 +79,22 @@ async function createNotification({ userId, title, body, type, issueId }) {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
+/** Log an audit entry for sensitive operations */
+async function auditLog(action, adminUid, targetUid = null, details = {}) {
+  await db.collection("audit_logs").add({
+    action,
+    adminUid,
+    targetUid,
+    details,
+    timestamp: new Date().toISOString(),
+    ip: null, // Cloud Functions don't expose client IP easily; could add later
+  });
+}
+
+// ────────────────────────────────────────────────────────────────────────────
 // 1. ON ISSUE CREATED
 //    • Notifies users whose Watch Areas contain the new issue
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.onIssueCreated = functions.firestore
   .document("issues/{issueId}")
   .onCreate(async (snapshot, context) => {
@@ -134,11 +146,11 @@ exports.onIssueCreated = functions.firestore
     }
   });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 2. ON ISSUE STATUS UPDATED
 //    • When status → "Solved", notify the reporter + all solvers
 //    • When status → "In Progress", notify the reporter that someone joined
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.onIssueUpdated = functions.firestore
   .document("issues/{issueId}")
   .onUpdate(async (change, context) => {
@@ -204,10 +216,10 @@ exports.onIssueUpdated = functions.firestore
     return null;
   });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 3. ON COMMENT ADDED
 //    • Notify the issue author when someone comments (unless it's themselves)
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.onCommentAdded = functions.firestore
   .document("issues/{issueId}/comments/{commentId}")
   .onCreate(async (snap, context) => {
@@ -237,11 +249,11 @@ exports.onCommentAdded = functions.firestore
     return null;
   });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 4. RECALCULATE USER TRUST SCORES (Scheduled – runs daily at midnight IST)
 //    • Computes each user's trust score from Firestore data
 //    • Writes the result back to the 'users' collection
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.recalculateTrustScores = functions.pubsub
   .schedule("0 0 * * *")
   .timeZone("Asia/Kolkata")
@@ -305,10 +317,10 @@ exports.recalculateTrustScores = functions.pubsub
     return null;
   });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 5. ARCHIVE OLD SOLVED ISSUES (Scheduled – runs weekly on Sunday)
 //    • Moves issues solved more than 30 days ago to 'archivedIssues'
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.archiveOldIssues = functions.pubsub
   .schedule("0 0 * * 0") // Every Sunday midnight
   .timeZone("Asia/Kolkata")
@@ -340,10 +352,10 @@ exports.archiveOldIssues = functions.pubsub
     return null;
   });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 6. CLEANUP OLD READ NOTIFICATIONS (Scheduled – runs daily)
 //    • Deletes read notifications older than 7 days
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.cleanupNotifications = functions.pubsub
   .schedule("0 1 * * *") // 1am every day
   .timeZone("Asia/Kolkata")
@@ -370,10 +382,10 @@ exports.cleanupNotifications = functions.pubsub
     return null;
   });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 7. SAVE / UPDATE FCM TOKEN (HTTPS callable)
 //    • Called from the app when user logs in or token refreshes
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.saveFcmToken = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -402,10 +414,10 @@ exports.saveFcmToken = functions.https.onCall(async (data, context) => {
   return { success: true };
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 8. GET LEADERBOARD (HTTPS callable)
 //    • Returns top 20 users ranked by trust score
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.getLeaderboard = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -429,10 +441,10 @@ exports.getLeaderboard = functions.https.onCall(async (data, context) => {
   return { leaderboard };
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 9. CHECK ADMIN STATUS (HTTPS callable)
 //    • Returns whether the calling user has admin custom claim
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -443,11 +455,11 @@ exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
   return { isAdmin: context.auth.token.admin === true };
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 10. SET ADMIN ROLE (HTTPS callable)
 //     • Only existing admins can grant admin role to other users
 //     • Pass { targetUid: "user-id-here" } to grant admin
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.setAdminRole = functions.https.onCall(async (data, context) => {
   if (!context.auth) {
     throw new functions.https.HttpsError(
@@ -481,16 +493,21 @@ exports.setAdminRole = functions.https.onCall(async (data, context) => {
       { merge: true },
     );
 
+  // Log to audit trail
+  await auditLog("setAdminRole", context.auth.uid, targetUid, {
+    action: "Grant admin role",
+  });
+
   console.log(
     `[setAdminRole] Admin role granted to ${targetUid} by ${context.auth.uid}`,
   );
   return { success: true };
 });
 
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 // 11. UPDATE ISSUE STATUS (Admin-only HTTPS callable)
 //     • Allows admins to change any issue's status
-// ─────────────────────────────────────────────────────────────────────────────
+// ────────────────────────────────────────────────────────────────────────────
 exports.adminUpdateIssueStatus = functions.https.onCall(
   async (data, context) => {
     if (!context.auth) {
@@ -522,6 +539,12 @@ exports.adminUpdateIssueStatus = functions.https.onCall(
       );
     }
 
+    // Log audit entry before making changes
+    await auditLog("adminUpdateIssueStatus", context.auth.uid, null, {
+      issueId,
+      newStatus,
+    });
+
     await db.collection("issues").doc(issueId).update({ status: newStatus });
     console.log(
       `[adminUpdateIssueStatus] Issue ${issueId} → ${newStatus} by admin ${context.auth.uid}`,
@@ -530,47 +553,75 @@ exports.adminUpdateIssueStatus = functions.https.onCall(
   },
 );
 
-exports.logAppCrash = functions.https.onRequest(async (req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "POST, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
-    return;
+// ────────────────────────────────────────────────────────────────────────────
+// 12. LOG APP CRASH (HTTPS callable – SECURED)
+//     • Called from the app to report native crashes
+//     • NOW REQUIRES AUTHENTICATION
+// ────────────────────────────────────────────────────────────────────────────
+exports.logAppCrash = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in to report crashes.",
+    );
   }
+
   try {
-    const errorData = req.body;
-    console.error("[logAppCrash] CLIENT CRASH DETECTED:", JSON.stringify(errorData, null, 2));
+    const errorData = data;
+    console.error(
+      "[logAppCrash] CLIENT CRASH DETECTED:",
+      JSON.stringify(errorData, null, 2),
+    );
     await db.collection("client_crashes").add({
       ...errorData,
-      timestamp: new Date().toISOString()
+      userId: context.auth.uid,
+      timestamp: new Date().toISOString(),
     });
-    res.status(200).send({ success: true });
+    return { success: true };
   } catch (err) {
     console.error("Failed to log crash:", err);
-    res.status(500).send({ error: err.message });
+    throw new functions.https.HttpsError(
+      "internal",
+      "Failed to log crash report.",
+    );
   }
 });
 
-exports.getClientCrashes = functions.https.onRequest(async (req, res) => {
-  res.set("Access-Control-Allow-Origin", "*");
-  res.set("Access-Control-Allow-Methods", "GET, OPTIONS");
-  res.set("Access-Control-Allow-Headers", "Content-Type");
-  if (req.method === "OPTIONS") {
-    res.status(204).send("");
-    return;
+// ────────────────────────────────────────────────────────────────────────────
+// 13. GET CLIENT CRASHES (HTTPS callable – SECURED)
+//     • Fetch crash logs (admin-only for now)
+//     • NOW REQUIRES AUTHENTICATION & ADMIN ROLE
+// ────────────────────────────────────────────────────────────────────────────
+exports.getClientCrashes = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   }
+  if (context.auth.token.admin !== true) {
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only admins can view crash logs.",
+    );
+  }
+
   try {
-    const snapshot = await db.collection("client_crashes").orderBy("timestamp", "desc").limit(10).get();
+    const snapshot = await db
+      .collection("client_crashes")
+      .orderBy("timestamp", "desc")
+      .limit(50)
+      .get();
     const crashes = [];
-    snapshot.forEach(doc => {
+    snapshot.forEach((doc) => {
       crashes.push({ id: doc.id, ...doc.data() });
     });
-    res.status(200).send({ crashes });
+    return { crashes };
   } catch (err) {
     console.error("Failed to get crashes:", err);
-    res.status(500).send({ error: err.message });
+    throw new functions.https.HttpsError(
+      "internal",
+      "Failed to retrieve crash logs.",
+    );
   }
 });
-
-
