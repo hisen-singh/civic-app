@@ -26,6 +26,7 @@ import {
 import { db, storage } from "../config/firebaseConfig";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
+import * as Sentry from "@sentry/react-native";
 
 const ISSUES_COLLECTION = "issues";
 
@@ -301,6 +302,7 @@ export const IssueService = {
       return await getDownloadURL(storageRef);
     } catch (error) {
       console.error("Error uploading image:", error);
+      Sentry.captureException(error);
       throw new Error("Failed to upload image.");
     }
   },
@@ -373,6 +375,7 @@ export const IssueService = {
       return { id: docRef.id, ...newIssue };
     } catch (error) {
       console.error("Error adding issue to Firestore:", error);
+      Sentry.captureException(error);
       throw new Error("Failed to save issue. Please try again.");
     }
   },
@@ -402,6 +405,7 @@ export const IssueService = {
       return true;
     } catch (error) {
       console.error("Error upvoting issue:", error);
+      Sentry.captureException(error);
       throw error;
     }
   },
@@ -422,6 +426,7 @@ export const IssueService = {
       return { success: true };
     } catch (error) {
       console.error("Error joining issue:", error);
+      Sentry.captureException(error);
       throw error;
     }
   },
@@ -440,6 +445,7 @@ export const IssueService = {
       return { success: true };
     } catch (error) {
       console.error("Error updating issue status:", error);
+      Sentry.captureException(error);
       throw error;
     }
   },
@@ -517,6 +523,7 @@ export const IssueService = {
       return { id: docRef.id, ...newComment };
     } catch (error) {
       console.error("Error adding comment:", error);
+      Sentry.captureException(error);
       throw error;
     }
   },
@@ -532,6 +539,7 @@ export const IssueService = {
       return true;
     } catch (error) {
       console.error("Error deleting issue:", error);
+      Sentry.captureException(error);
       throw error;
     }
   },
@@ -561,6 +569,7 @@ export const IssueService = {
       },
       (error) => {
         console.error("[IssueService] Real-time feed error:", error);
+        Sentry.captureException(error);
         if (onError) onError(error);
       },
     );
@@ -590,6 +599,7 @@ export const IssueService = {
       return url;
     } catch (error) {
       console.error("Error adding after photo:", error);
+      Sentry.captureException(error);
       throw error;
     }
   },

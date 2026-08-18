@@ -1,6 +1,14 @@
 import "react-native-gesture-handler";
 import "./config/i18n";
 import React, { useCallback, useRef, useEffect, useState } from "react";
+import * as Sentry from "@sentry/react-native";
+
+Sentry.init({
+  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
+  environment: process.env.APP_ENV || "production",
+  enableNativeStacktraces: true,
+});
+
 import * as Notifications from "expo-notifications";
 try {
   Notifications.setNotificationHandler({
@@ -11,7 +19,10 @@ try {
     }),
   });
 } catch (e) {
-  console.warn("Failed to set notification handler (likely missing google-services.json on native Android build):", e);
+  console.warn(
+    "Failed to set notification handler (likely missing google-services.json on native Android build):",
+    e,
+  );
 }
 import { View, Text, Animated } from "react-native";
 import { NavigationContainer } from "@react-navigation/native";
