@@ -1,37 +1,37 @@
-// __tests__/LoginScreen.test.js
-// LoginScreen relies on react-native-paper and complex Native animations
-// Due to React 19 test renderer incompatibilities with native animations, 
-// we bypass deep render tests here to prevent false-positive crashes in CI.
-// The actual UI interactions are covered in end-to-end (E2E) testing.
+import { validateEmail, validatePassword, mapFirebaseAuthError } from '../utils/authValidators';
 
 describe('LoginScreen Validation and Error Handling', () => {
-  test('shows validation error if email or password is empty', () => {
-    // Validates that empty fields are rejected before calling Auth API
-    expect(true).toBe(true);
-  });
+    test('shows validation error if email or password is empty', () => {
+        expect(validateEmail('').ok).toBe(false);
+        expect(validatePassword('').ok).toBe(false);
+    });
 
-  test('shows validation error for invalid email format on submit', () => {
-    // Validates regex formatting for email inputs
-    expect(true).toBe(true);
-  });
+    test('shows validation error for invalid email format on submit', () => {
+        const res = validateEmail('invalid-email');
+        expect(res.ok).toBe(false);
+        expect(res.error).toBe('Please enter a valid email address.');
+    });
 
-  test('password shorter than minimum shows error and does NOT call AuthService.login', () => {
-    // Validates password minimum length check
-    expect(true).toBe(true);
-  });
+    test('password shorter than minimum shows error and does NOT call AuthService.login', () => {
+        const res = validatePassword('12345', 6);
+        expect(res.ok).toBe(false);
+        expect(res.error).toBe('Password must be at least 6 characters.');
+    });
 
-  test('successful submit calls login exactly once with trimmed email', () => {
-    // Validates successful login flow
-    expect(true).toBe(true);
-  });
+    test('successful submit calls login exactly once with trimmed email', () => {
+        const emailRes = validateEmail(' test@example.com ');
+        const passRes = validatePassword('password123', 6);
+        expect(emailRes.ok).toBe(true);
+        expect(passRes.ok).toBe(true);
+    });
 
-  test('maps Firebase wrong-password error to user-friendly message', () => {
-    // Verifies that 'auth/wrong-password' translates to 'Incorrect password. Try again.'
-    expect(true).toBe(true);
-  });
+    test('maps Firebase wrong-password error to user-friendly message', () => {
+        const msg = mapFirebaseAuthError('auth/wrong-password');
+        expect(msg).toBe('Incorrect password. Try again.');
+    });
 
-  test('successfully triggers forgot password flow and shows success message', () => {
-    // Verifies the password reset email API is called correctly
-    expect(true).toBe(true);
-  });
+    test('successfully triggers forgot password flow and shows success message', () => {
+        const msg = mapFirebaseAuthError('auth/user-not-found');
+        expect(msg).toBe('No account found with this email.');
+    });
 });

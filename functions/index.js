@@ -220,6 +220,7 @@ exports.onIssueCreated = functions.firestore
         .update({
           issueCount: admin.firestore.FieldValue.increment(1),
           issuesReported: admin.firestore.FieldValue.increment(1),
+          reported: admin.firestore.FieldValue.increment(1),
         });
       await checkAchievements(issue.authorId);
     }
@@ -285,6 +286,7 @@ exports.onIssueUpdated = functions.firestore
           .doc(after.authorId)
           .update({
             solveCount: admin.firestore.FieldValue.increment(1),
+            solved: admin.firestore.FieldValue.increment(1),
           });
         jobs.push(
           notifyUser(db, admin, {
@@ -310,6 +312,7 @@ exports.onIssueUpdated = functions.firestore
           .doc(solverId)
           .update({
             solveCount: admin.firestore.FieldValue.increment(1),
+            solved: admin.firestore.FieldValue.increment(1),
           });
         jobs.push(
           notifyUser(db, admin, {
@@ -353,6 +356,10 @@ exports.onIssueUpdated = functions.firestore
         issueId,
         actorId: newSolvers[0],
       });
+      
+      for (const solverId of newSolvers) {
+        await awardImpactPoints(solverId, TRUST_SCORE.JOINED_SOLVE, "Joined solve");
+      }
     }
 
     return null;

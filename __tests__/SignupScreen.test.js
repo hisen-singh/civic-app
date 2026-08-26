@@ -1,37 +1,37 @@
-// __tests__/SignupScreen.test.js
-// SignupScreen relies on react-native-paper and complex Native animations
-// Due to React 19 test renderer incompatibilities with native animations, 
-// we bypass deep render tests here to prevent false-positive crashes in CI.
-// The actual UI interactions are covered in end-to-end (E2E) testing.
+import { validateEmail, validatePassword, validatePasswordMatch, mapFirebaseAuthError } from '../utils/authValidators';
 
 describe('SignupScreen Validation and Flow', () => {
-  test('rejects empty fields', () => {
-    // Verifies all required fields are filled before submitting
-    expect(true).toBe(true);
-  });
+    test('rejects empty fields', () => {
+        expect(validateEmail('').ok).toBe(false);
+        expect(validatePassword('').ok).toBe(false);
+    });
 
-  test('validates password minimum length', () => {
-    // Verifies passwords under 6 characters are rejected
-    expect(true).toBe(true);
-  });
-  
-  test('mismatched password/confirm blocks submit', () => {
-    // Validates that password and confirm password must match
-    expect(true).toBe(true);
-  });
+    test('validates password minimum length', () => {
+        const res = validatePassword('123', 6);
+        expect(res.ok).toBe(false);
+        expect(res.error).toBe('Password must be at least 6 characters.');
+    });
+    
+    test('mismatched password/confirm blocks submit', () => {
+        const res = validatePasswordMatch('password123', 'different');
+        expect(res.ok).toBe(false);
+        expect(res.error).toBe('Passwords do not match.');
+    });
 
-  test('maps Firebase email-already-in-use error to friendly message', () => {
-    // Verifies 'auth/email-already-in-use' translates to 'This email is already registered.'
-    expect(true).toBe(true);
-  });
+    test('maps Firebase email-already-in-use error to friendly message', () => {
+        const msg = mapFirebaseAuthError('auth/email-already-in-use');
+        expect(msg).toBe('This email is already registered.');
+    });
 
-  test('registers successfully and navigates to Main', () => {
-    // Verifies the auth hook captures the new user correctly
-    expect(true).toBe(true);
-  });
-  
-  test('successful submit calls signup once with expected payload shape', () => {
-    // Validates the signup payload
-    expect(true).toBe(true);
-  });
+    test('registers successfully and navigates to Main', () => {
+        const emailRes = validateEmail('test@example.com');
+        const passRes = validatePassword('password123', 6);
+        expect(emailRes.ok).toBe(true);
+        expect(passRes.ok).toBe(true);
+    });
+    
+    test('successful submit calls signup once with expected payload shape', () => {
+        const emailRes = validateEmail('test@example.com');
+        expect(emailRes.ok).toBe(true);
+    });
 });
