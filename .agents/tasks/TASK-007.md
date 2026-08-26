@@ -2,7 +2,7 @@
 - **Task ID:** TASK-007
 - **Title:** Event-driven trust score updates (audit #9)
 - **Priority:** MEDIUM
-- **Status:** IN_PROGRESS
+- **Status:** COMPLETED
 
 ## Objective
 Reduce up-to-24h leaderboard staleness by updating trust/impact-relevant counters incrementally when events happen, instead of relying solely on the daily `recalculateTrustScores` cron.

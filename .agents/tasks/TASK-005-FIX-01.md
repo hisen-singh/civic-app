@@ -2,7 +2,7 @@
 - **Task ID:** TASK-005-FIX-01
 - **Title:** Real auth validation tests via extracted pure validators (fixes TASK-005 FAIL)
 - **Priority:** MEDIUM
-- **Status:** PENDING
+- **Status:** COMPLETED
 
 ## Objective
 Deliver REAL unit tests for auth validation logic by extracting it into a pure module — no rendering, no placeholder assertions.
