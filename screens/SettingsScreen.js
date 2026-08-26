@@ -1,16 +1,23 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef } from "react";
 import {
-  View, Text, StyleSheet, TouchableOpacity, ScrollView,
-  Switch, Alert, ActivityIndicator, Linking,
-} from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Animated } from 'react-native';
-import Constants from 'expo-constants';
-import { AuthService } from '../services/AuthService';
-import { useAuth } from '../contexts/AuthContext';
-import { Colors, Spacing, Radius, Typography } from '../theme';
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ScrollView,
+  Switch,
+  Alert,
+  ActivityIndicator,
+  Linking,
+} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Animated } from "react-native";
+import Constants from "expo-constants";
+import { AuthService } from "../services/AuthService";
+import { useAuth } from "../contexts/AuthContext";
+import { Colors, Spacing, Radius, Typography } from "../theme";
 
 export default function SettingsScreen() {
   const { t } = useTranslation();
@@ -20,47 +27,51 @@ export default function SettingsScreen() {
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
-  const [emailVerified, setEmailVerified] = useState(user?.emailVerified || false);
+  const [emailVerified, setEmailVerified] = useState(
+    user?.emailVerified || false,
+  );
   const [loggingOut, setLoggingOut] = useState(false);
 
   React.useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
   }, []);
 
   const handleLogout = () => {
-    Alert.alert(
-      'Log Out',
-      'Are you sure you want to log out of Civic?',
-      [
-        { text: 'Cancel', style: 'cancel' },
-        {
-          text: 'Log Out',
-          style: 'destructive',
-          onPress: async () => {
-            setLoggingOut(true);
-            try {
-              await AuthService.logout();
-            } catch (err) {
-              Alert.alert('Error', 'Failed to log out. Please try again.');
-              setLoggingOut(false);
-            }
-          },
+    Alert.alert("Log Out", "Are you sure you want to log out of Civic?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Log Out",
+        style: "destructive",
+        onPress: async () => {
+          setLoggingOut(true);
+          try {
+            await AuthService.logout();
+          } catch (err) {
+            Alert.alert("Error", "Failed to log out. Please try again.");
+            setLoggingOut(false);
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleDeleteAccount = () => {
     Alert.alert(
-      'Delete Account',
-      'This will permanently delete your account and all your data. This action cannot be undone.',
+      "Delete Account",
+      "This will permanently delete your account and all your data. This action cannot be undone.",
       [
-        { text: 'Cancel', style: 'cancel' },
+        { text: "Cancel", style: "cancel" },
         {
-          text: 'Delete',
-          style: 'destructive',
+          text: "Delete",
+          style: "destructive",
           onPress: () => {
-            Linking.openURL('mailto:support@civic.app?subject=Delete%20Account');
+            Linking.openURL(
+              "mailto:support@civic.app?subject=Delete%20Account",
+            );
           },
         },
       ],
@@ -82,12 +93,19 @@ export default function SettingsScreen() {
         />
       </View>
       <View style={styles.rowContent}>
-        <Text style={[styles.rowTitle, danger && styles.rowTitleDanger]}>{title}</Text>
+        <Text style={[styles.rowTitle, danger && styles.rowTitleDanger]}>
+          {title}
+        </Text>
         {subtitle && <Text style={styles.rowSubtitle}>{subtitle}</Text>}
       </View>
-      {right || (onPress && (
-        <MaterialCommunityIcons name="chevron-right" size={20} color={Colors.textTertiary} />
-      ))}
+      {right ||
+        (onPress && (
+          <MaterialCommunityIcons
+            name="chevron-right"
+            size={20}
+            color={Colors.textTertiary}
+          />
+        ))}
     </TouchableOpacity>
   );
 
@@ -103,23 +121,30 @@ export default function SettingsScreen() {
         <View style={styles.section}>
           <SettingRow
             icon="account-outline"
-            title={user?.displayName || 'Civic User'}
-            subtitle={user?.email || ''}
+            title={user?.displayName || "Civic User"}
+            subtitle={user?.email || ""}
           />
           <SettingRow
             icon="email-check-outline"
             title="Email Verification"
-            subtitle={emailVerified ? 'Verified' : 'Not verified'}
+            subtitle={emailVerified ? "Verified" : "Not verified"}
             right={
-              <View style={[styles.badge, emailVerified ? styles.badgeGreen : styles.badgeYellow]}>
-                <Text style={styles.badgeText}>{emailVerified ? '✓ Verified' : '⚠ Pending'}</Text>
+              <View
+                style={[
+                  styles.badge,
+                  emailVerified ? styles.badgeGreen : styles.badgeYellow,
+                ]}
+              >
+                <Text style={styles.badgeText}>
+                  {emailVerified ? "✓ Verified" : "⚠ Pending"}
+                </Text>
               </View>
             }
           />
           <SettingRow
             icon="numeric"
             title="App Version"
-            subtitle={`v${Constants.expoConfig?.version || '1.0.0'} (${Constants.expoConfig?.android?.versionCode || '1'})`}
+            subtitle={`v${Constants.expoConfig?.version || "1.0.0"} (${Constants.expoConfig?.android?.versionCode || "1"})`}
           />
         </View>
 
@@ -160,22 +185,22 @@ export default function SettingsScreen() {
           <SettingRow
             icon="file-document-outline"
             title="Terms of Service"
-            onPress={() => Linking.openURL('https://civic.app/terms')}
+            onPress={() => Linking.openURL("https://civic.app/terms")}
           />
           <SettingRow
             icon="shield-lock-outline"
             title="Privacy Policy"
-            onPress={() => Linking.openURL('https://civic.app/privacy')}
+            onPress={() => Linking.openURL("https://civic.app/privacy")}
           />
           <SettingRow
             icon="help-circle-outline"
             title="Help & FAQ"
-            onPress={() => Linking.openURL('https://civic.app/help')}
+            onPress={() => Linking.openURL("https://civic.app/help")}
           />
           <SettingRow
             icon="email-outline"
             title="Contact Support"
-            onPress={() => Linking.openURL('mailto:support@civic.app')}
+            onPress={() => Linking.openURL("mailto:support@civic.app")}
           />
         </View>
 
@@ -198,7 +223,11 @@ export default function SettingsScreen() {
               loggingOut ? (
                 <ActivityIndicator size="small" color={Colors.error} />
               ) : (
-                <MaterialCommunityIcons name="chevron-right" size={20} color={Colors.error} />
+                <MaterialCommunityIcons
+                  name="chevron-right"
+                  size={20}
+                  color={Colors.error}
+                />
               )
             }
             danger
@@ -222,11 +251,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.surface,
     marginHorizontal: Spacing.lg,
     borderRadius: Radius.lg,
-    overflow: 'hidden',
+    overflow: "hidden",
   },
   row: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     paddingVertical: Spacing.md,
     paddingHorizontal: Spacing.md,
     borderBottomWidth: 1,
@@ -237,15 +266,19 @@ const styles = StyleSheet.create({
     height: 36,
     borderRadius: 18,
     backgroundColor: Colors.accentSurface,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginRight: Spacing.md,
   },
   rowIconDanger: { backgroundColor: Colors.errorSurface },
   rowContent: { flex: 1 },
   rowTitle: { ...Typography.body, color: Colors.textPrimary },
   rowTitleDanger: { color: Colors.error },
-  rowSubtitle: { ...Typography.caption, color: Colors.textSecondary, marginTop: 2 },
+  rowSubtitle: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginTop: 2,
+  },
   badge: { paddingHorizontal: 8, paddingVertical: 3, borderRadius: Radius.sm },
   badgeGreen: { backgroundColor: Colors.successSurface },
   badgeYellow: { backgroundColor: Colors.warningSurface },

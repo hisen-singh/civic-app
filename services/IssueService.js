@@ -657,7 +657,9 @@ export const IssueService = {
       const issueRef = doc(db, ISSUES_COLLECTION, issueId);
       await updateDoc(issueRef, { afterPhoto: url });
       // Update cache in place so the next read sees fresh data immediately
-      const patched = IssueService._patchCachedIssue(issueId, { afterPhoto: url });
+      const patched = IssueService._patchCachedIssue(issueId, {
+        afterPhoto: url,
+      });
       if (!patched) IssueService.invalidateCache();
       return url;
     } catch (error) {

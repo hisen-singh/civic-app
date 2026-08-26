@@ -1,6 +1,6 @@
-import { collection, getDocs, doc, getDoc } from 'firebase/firestore';
-import { db } from '../config/firebaseConfig';
-import { BADGES, getBadgeById } from '../data/badges';
+import { collection, getDocs, doc, getDoc } from "firebase/firestore";
+import { db } from "../config/firebaseConfig";
+import { BADGES, getBadgeById } from "../data/badges";
 
 /**
  * AchievementService — handles badge definitions, user badge state,
@@ -27,10 +27,10 @@ export const AchievementService = {
   getUserBadges: async (userId) => {
     if (!userId) return [];
     try {
-      const userBadgesRef = collection(db, 'userBadges', userId, 'badges');
+      const userBadgesRef = collection(db, "userBadges", userId, "badges");
       const snapshot = await getDocs(userBadgesRef);
 
-      const earned = snapshot.docs.map(d => {
+      const earned = snapshot.docs.map((d) => {
         const badgeId = d.id;
         const badgeDef = getBadgeById(badgeId);
         return {
@@ -42,7 +42,7 @@ export const AchievementService = {
 
       return earned;
     } catch (error) {
-      console.error('[AchievementService] Error fetching user badges:', error);
+      console.error("[AchievementService] Error fetching user badges:", error);
       return [];
     }
   },
@@ -54,12 +54,12 @@ export const AchievementService = {
   getBadgeProgress: async (userId) => {
     if (!userId) return [];
     try {
-      const userDoc = await getDoc(doc(db, 'users', userId));
+      const userDoc = await getDoc(doc(db, "users", userId));
       if (!userDoc.exists()) return [];
 
       const user = userDoc.data();
       const earnedBadges = await AchievementService.getUserBadges(userId);
-      const earnedIds = new Set(earnedBadges.map(b => b.id));
+      const earnedIds = new Set(earnedBadges.map((b) => b.id));
 
       // Compute current values for each criterion type
       const stats = {
@@ -73,8 +73,8 @@ export const AchievementService = {
         consecutiveMonths: user.consecutiveMonths || 0,
       };
 
-      return BADGES.map(badge => {
-        const earned = earnedBadges.find(b => b.id === badge.id);
+      return BADGES.map((badge) => {
+        const earned = earnedBadges.find((b) => b.id === badge.id);
         if (earned) {
           return {
             ...badge,
@@ -103,7 +103,10 @@ export const AchievementService = {
         };
       });
     } catch (error) {
-      console.error('[AchievementService] Error computing badge progress:', error);
+      console.error(
+        "[AchievementService] Error computing badge progress:",
+        error,
+      );
       return [];
     }
   },
@@ -114,7 +117,7 @@ export const AchievementService = {
   getRecentBadges: async (userId, sinceDate) => {
     if (!userId) return [];
     const badges = await AchievementService.getUserBadges(userId);
-    return badges.filter(b => {
+    return badges.filter((b) => {
       if (!b.awardedAt) return false;
       const awarded = new Date(b.awardedAt);
       return awarded >= new Date(sinceDate);

@@ -18,8 +18,7 @@ export const SyncService = {
     if (unsubscribeNetwork) return; // Already initialized
 
     unsubscribeNetwork = NetInfo.addEventListener((state) => {
-      const isOnline =
-        state.isConnected && state.isInternetReachable !== false;
+      const isOnline = state.isConnected && state.isInternetReachable !== false;
       if (isOnline) {
         console.log(
           "[SyncService] Connectivity restored — flushing offline queue",

@@ -62,7 +62,14 @@ async function getFcmToken(userId) {
 }
 
 /** Send a push notification via Expo + persist to Firestore */
-async function createNotification({ userId, title, body, type, issueId, actorId }) {
+async function createNotification({
+  userId,
+  title,
+  body,
+  type,
+  issueId,
+  actorId,
+}) {
   const notifRef = db.collection("notifications").doc();
   await notifRef.set({
     userId,
@@ -106,9 +113,12 @@ async function createNotification({ userId, title, body, type, issueId, actorId 
 /** Award impact points to a user */
 async function awardImpactPoints(userId, points, reason) {
   if (!userId || points === 0) return;
-  await db.collection("users").doc(userId).update({
-    impactScore: admin.firestore.FieldValue.increment(points),
-  });
+  await db
+    .collection("users")
+    .doc(userId)
+    .update({
+      impactScore: admin.firestore.FieldValue.increment(points),
+    });
   console.log(`[Impact] +${points} for ${reason} → user ${userId}`);
 }
 
@@ -126,18 +136,28 @@ async function auditLog(action, adminUid, targetUid = null, details = {}) {
 /** Check and award a badge idempotently */
 async function checkAndAwardBadge(userId, badgeId, tier = 0) {
   if (!userId || !badgeId) return false;
-  const userBadgesRef = db.collection("userBadges").doc(userId).collection("badges");
+  const userBadgesRef = db
+    .collection("userBadges")
+    .doc(userId)
+    .collection("badges");
   const existing = await userBadgesRef.doc(badgeId).get();
   if (existing.exists) return false; // already awarded
 
   const now = new Date().toISOString();
   await userBadgesRef.doc(badgeId).set({ awardedAt: now, tier });
   // Also add to user's badges array
-  await db.collection("users").doc(userId).update({
-    badges: admin.firestore.FieldValue.arrayUnion(badgeId),
-  });
+  await db
+    .collection("users")
+    .doc(userId)
+    .update({
+      badges: admin.firestore.FieldValue.arrayUnion(badgeId),
+    });
   // Award impact points for earning a badge
-  await awardImpactPoints(userId, TRUST_SCORE.BADGE_EARNED, `Badge: ${badgeId}`);
+  await awardImpactPoints(
+    userId,
+    TRUST_SCORE.BADGE_EARNED,
+    `Badge: ${badgeId}`,
+  );
   console.log(`[Badge] Awarded ${badgeId} to user ${userId}`);
   return true;
 }
@@ -159,7 +179,10 @@ async function checkAchievements(userId) {
       { badgeId: "influencer", condition: (u) => u.followerCount >= 100 },
       { badgeId: "impact_maker", condition: (u) => u.impactScore >= 1000 },
       { badgeId: "helping_hand", condition: (u) => u.uniqueSolversHelped >= 5 },
-      { badgeId: "transformation_agent", condition: (u) => u.transformations >= 5 },
+      {
+        badgeId: "transformation_agent",
+        condition: (u) => u.transformations >= 5,
+      },
     ];
 
     for (const check of checks) {
@@ -181,11 +204,18 @@ exports.onIssueCreated = functions.firestore
 
     // Award impact points to author
     if (issue.authorId && issue.authorId !== "anonymous") {
-      await awardImpactPoints(issue.authorId, TRUST_SCORE.ISSUE_REPORTED, "Issue reported");
-      await db.collection("users").doc(issue.authorId).update({
-        issueCount: admin.firestore.FieldValue.increment(1),
-        issuesReported: admin.firestore.FieldValue.increment(1),
-      });
+      await awardImpactPoints(
+        issue.authorId,
+        TRUST_SCORE.ISSUE_REPORTED,
+        "Issue reported",
+      );
+      await db
+        .collection("users")
+        .doc(issue.authorId)
+        .update({
+          issueCount: admin.firestore.FieldValue.increment(1),
+          issuesReported: admin.firestore.FieldValue.increment(1),
+        });
       await checkAchievements(issue.authorId);
     }
 
@@ -200,7 +230,12 @@ exports.onIssueCreated = functions.firestore
       areasSnap.forEach((doc) => {
         const area = doc.data();
         if (area.userId === issue.authorId) return;
-        const dist = haversine(issue.latitude, issue.longitude, area.latitude, area.longitude);
+        const dist = haversine(
+          issue.latitude,
+          issue.longitude,
+          area.latitude,
+          area.longitude,
+        );
         if (dist <= area.radius) {
           jobs.push(
             createNotification({
@@ -210,7 +245,7 @@ exports.onIssueCreated = functions.firestore
               type: "WATCH_AREA_ALERT",
               issueId,
               actorId: issue.authorId,
-            })
+            }),
           );
         }
       });
@@ -235,10 +270,17 @@ exports.onIssueUpdated = functions.firestore
       const jobs = [];
 
       if (after.authorId && after.authorId !== "anonymous") {
-        await awardImpactPoints(after.authorId, TRUST_SCORE.ISSUE_SOLVED_AUTHOR, "Issue solved (author)");
-        await db.collection("users").doc(after.authorId).update({
-          solveCount: admin.firestore.FieldValue.increment(1),
-        });
+        await awardImpactPoints(
+          after.authorId,
+          TRUST_SCORE.ISSUE_SOLVED_AUTHOR,
+          "Issue solved (author)",
+        );
+        await db
+          .collection("users")
+          .doc(after.authorId)
+          .update({
+            solveCount: admin.firestore.FieldValue.increment(1),
+          });
         jobs.push(
           createNotification({
             userId: after.authorId,
@@ -246,17 +288,24 @@ exports.onIssueUpdated = functions.firestore
             body: `"${after.title}" has been marked as solved by the community.`,
             type: "ISSUE_SOLVED",
             issueId,
-          })
+          }),
         );
       }
 
       // Notify solvers
       for (const solverId of after.solvers || []) {
         if (solverId === after.authorId) continue;
-        await awardImpactPoints(solverId, TRUST_SCORE.SOLVE_HELPED, "Issue solved (helper)");
-        await db.collection("users").doc(solverId).update({
-          solveCount: admin.firestore.FieldValue.increment(1),
-        });
+        await awardImpactPoints(
+          solverId,
+          TRUST_SCORE.SOLVE_HELPED,
+          "Issue solved (helper)",
+        );
+        await db
+          .collection("users")
+          .doc(solverId)
+          .update({
+            solveCount: admin.firestore.FieldValue.increment(1),
+          });
         jobs.push(
           createNotification({
             userId: solverId,
@@ -264,7 +313,7 @@ exports.onIssueUpdated = functions.firestore
             body: `An issue you helped with ("${after.title}") has been marked solved!`,
             type: "ISSUE_SOLVED",
             issueId,
-          })
+          }),
         );
       }
 
@@ -279,10 +328,18 @@ exports.onIssueUpdated = functions.firestore
 
     // New solver joined
     const newSolvers = (after.solvers || []).filter(
-      (id) => !(before.solvers || []).includes(id)
+      (id) => !(before.solvers || []).includes(id),
     );
-    if (newSolvers.length > 0 && after.authorId && after.authorId !== "anonymous") {
-      await awardImpactPoints(after.authorId, TRUST_SCORE.JOINED_SOLVE, "Someone joined your issue");
+    if (
+      newSolvers.length > 0 &&
+      after.authorId &&
+      after.authorId !== "anonymous"
+    ) {
+      await awardImpactPoints(
+        after.authorId,
+        TRUST_SCORE.JOINED_SOLVE,
+        "Someone joined your issue",
+      );
       await createNotification({
         userId: after.authorId,
         title: "🤝 Someone is helping!",
@@ -326,9 +383,12 @@ exports.onCommentAdded = functions.firestore
     }
 
     // Increment recentActivity for trending
-    await db.collection("issues").doc(issueId).update({
-      recentActivity: admin.firestore.FieldValue.increment(3),
-    });
+    await db
+      .collection("issues")
+      .doc(issueId)
+      .update({
+        recentActivity: admin.firestore.FieldValue.increment(3),
+      });
 
     return null;
   });
@@ -347,13 +407,24 @@ exports.onReactionAdded = functions.firestore
     const issue = issueDoc.data();
 
     // Increment recentActivity
-    await db.collection("issues").doc(issueId).update({
-      recentActivity: admin.firestore.FieldValue.increment(5),
-    });
+    await db
+      .collection("issues")
+      .doc(issueId)
+      .update({
+        recentActivity: admin.firestore.FieldValue.increment(5),
+      });
 
     // Award impact points to issue author
-    if (issue.authorId && issue.authorId !== "anonymous" && reactorId !== issue.authorId) {
-      await awardImpactPoints(issue.authorId, 2, "Reaction received on your issue");
+    if (
+      issue.authorId &&
+      issue.authorId !== "anonymous" &&
+      reactorId !== issue.authorId
+    ) {
+      await awardImpactPoints(
+        issue.authorId,
+        2,
+        "Reaction received on your issue",
+      );
     }
 
     // Notify author of reaction (throttle — only notify on first few reactions)
@@ -393,11 +464,17 @@ exports.onFollowCreated = functions.firestore
     await batch.commit();
 
     // Award impact points to the followed user
-    await awardImpactPoints(targetId, TRUST_SCORE.FOLLOW_RECEIVED, "New follower");
+    await awardImpactPoints(
+      targetId,
+      TRUST_SCORE.FOLLOW_RECEIVED,
+      "New follower",
+    );
 
     // Notify the followed user
     const followerDoc = await db.collection("users").doc(followerId).get();
-    const followerName = followerDoc.exists ? followerDoc.data().displayName : "Someone";
+    const followerName = followerDoc.exists
+      ? followerDoc.data().displayName
+      : "Someone";
     await createNotification({
       userId: targetId,
       title: "🎉 New Follower!",
@@ -416,7 +493,7 @@ exports.onFollowCreated = functions.firestore
       .doc(targetId)
       .collection("followers")
       .get();
-    const followerIds = targetFollowersSnap.docs.map(d => d.id);
+    const followerIds = targetFollowersSnap.docs.map((d) => d.id);
 
     if (followerIds.length > 0) {
       const feedItem = {
@@ -430,7 +507,11 @@ exports.onFollowCreated = functions.firestore
       for (const chunk of chunks) {
         const batch2 = db.batch();
         for (const fid of chunk) {
-          const feedRef = db.collection("userFeed").doc(fid).collection("timeline").doc();
+          const feedRef = db
+            .collection("userFeed")
+            .doc(fid)
+            .collection("timeline")
+            .doc();
           batch2.set(feedRef, feedItem);
         }
         await batch2.commit();
@@ -477,7 +558,8 @@ exports.recalculateImpactScores = functions.pubsub
       const issue = doc.data();
       const reporter = issue.authorId;
       if (reporter && reporter !== "anonymous") {
-        if (!userScores[reporter]) userScores[reporter] = { score: 0, reported: 0, solved: 0 };
+        if (!userScores[reporter])
+          userScores[reporter] = { score: 0, reported: 0, solved: 0 };
         userScores[reporter].reported += 1;
         userScores[reporter].score += TRUST_SCORE.ISSUE_REPORTED;
         if (issue.status === "Solved") {
@@ -486,7 +568,8 @@ exports.recalculateImpactScores = functions.pubsub
         }
       }
       (issue.solvers || []).forEach((solverId) => {
-        if (!userScores[solverId]) userScores[solverId] = { score: 0, reported: 0, solved: 0 };
+        if (!userScores[solverId])
+          userScores[solverId] = { score: 0, reported: 0, solved: 0 };
         userScores[solverId].score += TRUST_SCORE.JOINED_SOLVE;
         if (issue.status === "Solved") {
           userScores[solverId].score += TRUST_SCORE.SOLVE_HELPED;
@@ -495,20 +578,26 @@ exports.recalculateImpactScores = functions.pubsub
       });
     });
 
-    const sorted = Object.entries(userScores).sort(([, a], [, b]) => b.score - a.score);
+    const sorted = Object.entries(userScores).sort(
+      ([, a], [, b]) => b.score - a.score,
+    );
 
     for (const chunk of chunkArray(sorted)) {
       const batch = db.batch();
       chunk.forEach(([uid, data]) => {
         const index = sorted.findIndex(([id]) => id === uid);
         const ref = db.collection("users").doc(uid);
-        batch.set(ref, {
-          impactScore: data.score,
-          reported: data.reported,
-          solved: data.solved,
-          rank: index + 1,
-          updatedAt: new Date().toISOString(),
-        }, { merge: true });
+        batch.set(
+          ref,
+          {
+            impactScore: data.score,
+            reported: data.reported,
+            solved: data.solved,
+            rank: index + 1,
+            updatedAt: new Date().toISOString(),
+          },
+          { merge: true },
+        );
       });
       await batch.commit();
     }
@@ -542,7 +631,8 @@ exports.calculateTrendingScores = functions.pubsub
       const issue = doc.data();
       const hoursOld = (now - issue.createdAt.toMillis()) / 3600000 || 1;
       const urgencyW = URGENCY_WEIGHT[issue.urgency] || 1;
-      const trendingScore = (issue.recentActivity * urgencyW) / Math.sqrt(hoursOld);
+      const trendingScore =
+        (issue.recentActivity * urgencyW) / Math.sqrt(hoursOld);
 
       batch.update(doc.ref, {
         trendingScore,
@@ -592,10 +682,17 @@ exports.checkViralIssues = functions.pubsub
     for (const doc of viralSnap.docs) {
       const issue = doc.data();
       if (issue.authorId && issue.authorId !== "anonymous") {
-        await awardImpactPoints(issue.authorId, TRUST_SCORE.VIRAL_REACHED, "Issue went viral");
-        await db.collection("users").doc(issue.authorId).update({
-          viralIssues: admin.firestore.FieldValue.increment(1),
-        });
+        await awardImpactPoints(
+          issue.authorId,
+          TRUST_SCORE.VIRAL_REACHED,
+          "Issue went viral",
+        );
+        await db
+          .collection("users")
+          .doc(issue.authorId)
+          .update({
+            viralIssues: admin.firestore.FieldValue.increment(1),
+          });
         await createNotification({
           userId: issue.authorId,
           title: "🚀 Your issue went viral!",
@@ -633,7 +730,10 @@ exports.archiveOldIssues = functions.pubsub
     const batch = db.batch();
     snap.forEach((doc) => {
       const archiveRef = db.collection("archivedIssues").doc(doc.id);
-      batch.set(archiveRef, { ...doc.data(), archivedAt: new Date().toISOString() });
+      batch.set(archiveRef, {
+        ...doc.data(),
+        archivedAt: new Date().toISOString(),
+      });
       batch.delete(doc.ref);
     });
     await batch.commit();
@@ -663,7 +763,9 @@ exports.cleanupNotifications = functions.pubsub
     const batch = db.batch();
     snap.forEach((doc) => batch.delete(doc.ref));
     await batch.commit();
-    console.log(`[cleanupNotifications] Deleted ${snap.size} old notifications.`);
+    console.log(
+      `[cleanupNotifications] Deleted ${snap.size} old notifications.`,
+    );
     return null;
   });
 
@@ -702,16 +804,30 @@ exports.cleanupOldFeedItems = functions.pubsub
 // HTTPS CALLABLE: FOLLOW USER
 // ────────────────────────────────────────────────────────────────────────────
 exports.followUser = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { targetUid } = data;
   if (!targetUid || typeof targetUid !== "string") {
-    throw new functions.https.HttpsError("invalid-argument", "targetUid is required.");
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "targetUid is required.",
+    );
   }
   if (targetUid === context.auth.uid) {
-    throw new functions.https.HttpsError("invalid-argument", "Cannot follow yourself.");
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "Cannot follow yourself.",
+    );
   }
 
-  const followingRef = db.collection("users").doc(context.auth.uid).collection("following").doc(targetUid);
+  const followingRef = db
+    .collection("users")
+    .doc(context.auth.uid)
+    .collection("following")
+    .doc(targetUid);
   const existing = await followingRef.get();
   if (existing.exists) {
     return { success: false, reason: "Already following" };
@@ -725,11 +841,23 @@ exports.followUser = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: UNFOLLOW USER
 // ────────────────────────────────────────────────────────────────────────────
 exports.unfollowUser = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { targetUid } = data;
-  if (!targetUid) throw new functions.https.HttpsError("invalid-argument", "targetUid is required.");
+  if (!targetUid)
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "targetUid is required.",
+    );
 
-  const followingRef = db.collection("users").doc(context.auth.uid).collection("following").doc(targetUid);
+  const followingRef = db
+    .collection("users")
+    .doc(context.auth.uid)
+    .collection("following")
+    .doc(targetUid);
   await followingRef.delete();
   return { success: true };
 });
@@ -738,7 +866,11 @@ exports.unfollowUser = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET HOME FEED
 // ────────────────────────────────────────────────────────────────────────────
 exports.getHomeFeed = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { city, pageSize = 20 } = data;
 
   // Get user's following list
@@ -747,7 +879,7 @@ exports.getHomeFeed = functions.https.onCall(async (data, context) => {
     .doc(context.auth.uid)
     .collection("following")
     .get();
-  const followedIds = followingSnap.docs.map(d => d.id);
+  const followedIds = followingSnap.docs.map((d) => d.id);
 
   let queryConstraints = [
     ["status", "==", "Open"],
@@ -763,12 +895,13 @@ exports.getHomeFeed = functions.https.onCall(async (data, context) => {
     .get();
 
   const issues = issuesSnap.docs
-    .map(d => ({ id: d.id, ...d.data() }))
-    .filter(issue => {
+    .map((d) => ({ id: d.id, ...d.data() }))
+    .filter((issue) => {
       // Include if: trending OR from followed users OR in same city
       const isFollowed = followedIds.includes(issue.authorId);
       const isOwn = issue.authorId === context.auth.uid;
-      const isSameCity = city && issue.city && issue.city.toLowerCase() === city.toLowerCase();
+      const isSameCity =
+        city && issue.city && issue.city.toLowerCase() === city.toLowerCase();
       return issue.isViral || isFollowed || isOwn || isSameCity;
     })
     .slice(0, pageSize);
@@ -780,20 +913,28 @@ exports.getHomeFeed = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET TRENDING ISSUES
 // ────────────────────────────────────────────────────────────────────────────
 exports.getTrendingIssues = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { city, category, pageSize = 20 } = data;
 
-  let q = db.collection("issues")
+  let q = db
+    .collection("issues")
     .where("status", "in", ["Open", "In Progress"])
     .orderBy("trendingScore", "desc")
     .limit(pageSize);
 
   const snapshot = await q.get();
-  let issues = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+  let issues = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
 
   // Client-side filter for city/category (can be moved to composite index)
-  if (city) issues = issues.filter(i => (i.city || '').toLowerCase() === city.toLowerCase());
-  if (category) issues = issues.filter(i => i.category === category);
+  if (city)
+    issues = issues.filter(
+      (i) => (i.city || "").toLowerCase() === city.toLowerCase(),
+    );
+  if (category) issues = issues.filter((i) => i.category === category);
 
   return { issues };
 });
@@ -802,7 +943,11 @@ exports.getTrendingIssues = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET LEADERBOARD
 // ────────────────────────────────────────────────────────────────────────────
 exports.getLeaderboard = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { period = "all_time", city, category, pageSize = 20 } = data;
 
   let q;
@@ -813,10 +958,7 @@ exports.getLeaderboard = functions.https.onCall(async (data, context) => {
       .orderBy("impactScore", "desc")
       .limit(pageSize);
   } else {
-    q = db
-      .collection("users")
-      .orderBy("impactScore", "desc")
-      .limit(pageSize);
+    q = db.collection("users").orderBy("impactScore", "desc").limit(pageSize);
   }
 
   const snap = await q.get();
@@ -833,7 +975,11 @@ exports.getLeaderboard = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET USER RANK
 // ────────────────────────────────────────────────────────────────────────────
 exports.getUserRank = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
 
   const userDoc = await db.collection("users").doc(context.auth.uid).get();
   const user = userDoc.data();
@@ -844,7 +990,8 @@ exports.getUserRank = functions.https.onCall(async (data, context) => {
     .collection("users")
     .orderBy("impactScore", "desc")
     .get();
-  const globalRank = globalSnap.docs.findIndex(d => d.id === context.auth.uid) + 1;
+  const globalRank =
+    globalSnap.docs.findIndex((d) => d.id === context.auth.uid) + 1;
 
   // City rank
   let cityRank = 0;
@@ -854,7 +1001,7 @@ exports.getUserRank = functions.https.onCall(async (data, context) => {
       .where("city", "==", user.city)
       .orderBy("impactScore", "desc")
       .get();
-    cityRank = citySnap.docs.findIndex(d => d.id === context.auth.uid) + 1;
+    cityRank = citySnap.docs.findIndex((d) => d.id === context.auth.uid) + 1;
   }
 
   return {
@@ -870,12 +1017,17 @@ exports.getUserRank = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET ACHIEVEMENTS (badge progress for a user)
 // ────────────────────────────────────────────────────────────────────────────
 exports.getAchievements = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { userId } = data;
   const targetId = userId || context.auth.uid;
 
   const userDoc = await db.collection("users").doc(targetId).get();
-  if (!userDoc.exists) throw new functions.https.HttpsError("not-found", "User not found");
+  if (!userDoc.exists)
+    throw new functions.https.HttpsError("not-found", "User not found");
   const user = userDoc.data();
 
   const userBadgesSnap = await db
@@ -883,24 +1035,84 @@ exports.getAchievements = functions.https.onCall(async (data, context) => {
     .doc(targetId)
     .collection("badges")
     .get();
-  const earnedIds = new Set(userBadgesSnap.docs.map(d => d.id));
+  const earnedIds = new Set(userBadgesSnap.docs.map((d) => d.id));
 
   const badgesData = [
-    { id: "first_report", name: "First Report", icon: "flag-outline", color: "#6366F1" },
-    { id: "problem_solver", name: "Problem Solver", icon: "check-circle-outline", color: "#10B981" },
-    { id: "community_hero", name: "Community Hero", icon: "shield-star-outline", color: "#F59E0B" },
-    { id: "viral_voice", name: "Viral Voice", icon: "trend-up", color: "#EF4444" },
-    { id: "follower", name: "Follower", icon: "account-multiple-outline", color: "#3B82F6" },
-    { id: "influencer", name: "Influencer", icon: "megaphone-outline", color: "#8B5CF6" },
-    { id: "city_leader", name: "Voice of the City", icon: "map-marker-star-outline", color: "#F97316" },
-    { id: "early_adopter", name: "Early Adopter", icon: "rocket-launch-outline", color: "#EC4899" },
-    { id: "helping_hand", name: "Helping Hand", icon: "hand-heart-outline", color: "#06B6D4" },
-    { id: "consistent_reporter", name: "Consistent Reporter", icon: "calendar-check-outline", color: "#84CC16" },
-    { id: "transformation_agent", name: "Transformation Agent", icon: "image-filter-drama-outline", color: "#A855F7" },
-    { id: "impact_maker", name: "Impact Maker", icon: "lightning-bolt-outline", color: "#FBBF24" },
+    {
+      id: "first_report",
+      name: "First Report",
+      icon: "flag-outline",
+      color: "#6366F1",
+    },
+    {
+      id: "problem_solver",
+      name: "Problem Solver",
+      icon: "check-circle-outline",
+      color: "#10B981",
+    },
+    {
+      id: "community_hero",
+      name: "Community Hero",
+      icon: "shield-star-outline",
+      color: "#F59E0B",
+    },
+    {
+      id: "viral_voice",
+      name: "Viral Voice",
+      icon: "trend-up",
+      color: "#EF4444",
+    },
+    {
+      id: "follower",
+      name: "Follower",
+      icon: "account-multiple-outline",
+      color: "#3B82F6",
+    },
+    {
+      id: "influencer",
+      name: "Influencer",
+      icon: "megaphone-outline",
+      color: "#8B5CF6",
+    },
+    {
+      id: "city_leader",
+      name: "Voice of the City",
+      icon: "map-marker-star-outline",
+      color: "#F97316",
+    },
+    {
+      id: "early_adopter",
+      name: "Early Adopter",
+      icon: "rocket-launch-outline",
+      color: "#EC4899",
+    },
+    {
+      id: "helping_hand",
+      name: "Helping Hand",
+      icon: "hand-heart-outline",
+      color: "#06B6D4",
+    },
+    {
+      id: "consistent_reporter",
+      name: "Consistent Reporter",
+      icon: "calendar-check-outline",
+      color: "#84CC16",
+    },
+    {
+      id: "transformation_agent",
+      name: "Transformation Agent",
+      icon: "image-filter-drama-outline",
+      color: "#A855F7",
+    },
+    {
+      id: "impact_maker",
+      name: "Impact Maker",
+      icon: "lightning-bolt-outline",
+      color: "#FBBF24",
+    },
   ];
   return {
-    badges: badgesData.map(badge => ({
+    badges: badgesData.map((badge) => ({
       ...badge,
       earned: earnedIds.has(badge.id),
     })),
@@ -919,10 +1131,17 @@ exports.getAchievements = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: SAVE FCM TOKEN
 // ────────────────────────────────────────────────────────────────────────────
 exports.saveFcmToken = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { token } = data;
   if (!token || typeof token !== "string") {
-    throw new functions.https.HttpsError("invalid-argument", "A valid FCM token is required.");
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "A valid FCM token is required.",
+    );
   }
 
   await db
@@ -930,7 +1149,10 @@ exports.saveFcmToken = functions.https.onCall(async (data, context) => {
     .doc(context.auth.uid)
     .collection("private")
     .doc("data")
-    .set({ fcmToken: token, fcmUpdatedAt: new Date().toISOString() }, { merge: true });
+    .set(
+      { fcmToken: token, fcmUpdatedAt: new Date().toISOString() },
+      { merge: true },
+    );
 
   return { success: true };
 });
@@ -939,7 +1161,11 @@ exports.saveFcmToken = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: CHECK ADMIN STATUS
 // ────────────────────────────────────────────────────────────────────────────
 exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   return { isAdmin: context.auth.token.admin === true };
 });
 
@@ -947,64 +1173,108 @@ exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: SET ADMIN ROLE
 // ────────────────────────────────────────────────────────────────────────────
 exports.setAdminRole = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   if (context.auth.token.admin !== true) {
-    throw new functions.https.HttpsError("permission-denied", "Only admins can grant admin role.");
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only admins can grant admin role.",
+    );
   }
 
   const { targetUid } = data;
   if (!targetUid || typeof targetUid !== "string") {
-    throw new functions.https.HttpsError("invalid-argument", "A valid targetUid is required.");
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "A valid targetUid is required.",
+    );
   }
 
   await admin.auth().setCustomUserClaims(targetUid, { admin: true });
   await db
     .collection("users")
     .doc(targetUid)
-    .set({ isAdmin: true, adminGrantedAt: new Date().toISOString() }, { merge: true });
+    .set(
+      { isAdmin: true, adminGrantedAt: new Date().toISOString() },
+      { merge: true },
+    );
 
-  await auditLog("setAdminRole", context.auth.uid, targetUid, { action: "Grant admin role" });
+  await auditLog("setAdminRole", context.auth.uid, targetUid, {
+    action: "Grant admin role",
+  });
   return { success: true };
 });
 
 // ────────────────────────────────────────────────────────────────────────────
 // HTTPS CALLABLE: ADMIN UPDATE ISSUE STATUS
 // ────────────────────────────────────────────────────────────────────────────
-exports.adminUpdateIssueStatus = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
-  if (context.auth.token.admin !== true) {
-    throw new functions.https.HttpsError("permission-denied", "Only admins can update issue status.");
-  }
+exports.adminUpdateIssueStatus = functions.https.onCall(
+  async (data, context) => {
+    if (!context.auth)
+      throw new functions.https.HttpsError(
+        "unauthenticated",
+        "Must be signed in.",
+      );
+    if (context.auth.token.admin !== true) {
+      throw new functions.https.HttpsError(
+        "permission-denied",
+        "Only admins can update issue status.",
+      );
+    }
 
-  const { issueId, newStatus } = data;
-  if (!issueId || !newStatus) {
-    throw new functions.https.HttpsError("invalid-argument", "issueId and newStatus are required.");
-  }
+    const { issueId, newStatus } = data;
+    if (!issueId || !newStatus) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        "issueId and newStatus are required.",
+      );
+    }
 
-  const validStatuses = ["Open", "In Progress", "Solved", "Failed"];
-  if (!validStatuses.includes(newStatus)) {
-    throw new functions.https.HttpsError("invalid-argument", `Status must be one of: ${validStatuses.join(", ")}`);
-  }
+    const validStatuses = ["Open", "In Progress", "Solved", "Failed"];
+    if (!validStatuses.includes(newStatus)) {
+      throw new functions.https.HttpsError(
+        "invalid-argument",
+        `Status must be one of: ${validStatuses.join(", ")}`,
+      );
+    }
 
-  await auditLog("adminUpdateIssueStatus", context.auth.uid, null, { issueId, newStatus });
-  await db.collection("issues").doc(issueId).update({
-    status: newStatus,
-    statusUpdatedAt: new Date().toISOString(),
-  });
-  return { success: true };
-});
+    await auditLog("adminUpdateIssueStatus", context.auth.uid, null, {
+      issueId,
+      newStatus,
+    });
+    await db.collection("issues").doc(issueId).update({
+      status: newStatus,
+      statusUpdatedAt: new Date().toISOString(),
+    });
+    return { success: true };
+  },
+);
 
 // ────────────────────────────────────────────────────────────────────────────
 // HTTPS CALLABLE: REPORT CONTENT
 // ────────────────────────────────────────────────────────────────────────────
 exports.reportContent = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   const { issueId, reason } = data;
   if (!issueId || !reason) {
-    throw new functions.https.HttpsError("invalid-argument", "issueId and reason are required.");
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "issueId and reason are required.",
+    );
   }
 
-  const flagRef = db.collection("flaggedContent").doc(issueId).collection("flags").doc();
+  const flagRef = db
+    .collection("flaggedContent")
+    .doc(issueId)
+    .collection("flags")
+    .doc();
   await flagRef.set({
     reporterId: context.auth.uid,
     reason,
@@ -1012,9 +1282,12 @@ exports.reportContent = functions.https.onCall(async (data, context) => {
   });
 
   // Increment report count on issue
-  await db.collection("issues").doc(issueId).update({
-    reportCount: admin.firestore.FieldValue.increment(1),
-  });
+  await db
+    .collection("issues")
+    .doc(issueId)
+    .update({
+      reportCount: admin.firestore.FieldValue.increment(1),
+    });
 
   return { success: true };
 });
@@ -1023,7 +1296,11 @@ exports.reportContent = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: LOG APP CRASH
 // ────────────────────────────────────────────────────────────────────────────
 exports.logAppCrash = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in to report crashes.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in to report crashes.",
+    );
 
   await db.collection("client_crashes").add({
     ...data,
@@ -1037,9 +1314,16 @@ exports.logAppCrash = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET CLIENT CRASHES (admin)
 // ────────────────────────────────────────────────────────────────────────────
 exports.getClientCrashes = functions.https.onCall(async (data, context) => {
-  if (!context.auth) throw new functions.https.HttpsError("unauthenticated", "Must be signed in.");
+  if (!context.auth)
+    throw new functions.https.HttpsError(
+      "unauthenticated",
+      "Must be signed in.",
+    );
   if (context.auth.token.admin !== true) {
-    throw new functions.https.HttpsError("permission-denied", "Only admins can view crash logs.");
+    throw new functions.https.HttpsError(
+      "permission-denied",
+      "Only admins can view crash logs.",
+    );
   }
 
   const snapshot = await db
@@ -1048,5 +1332,5 @@ exports.getClientCrashes = functions.https.onCall(async (data, context) => {
     .limit(50)
     .get();
 
-  return { crashes: snapshot.docs.map(d => ({ id: d.id, ...d.data() })) };
+  return { crashes: snapshot.docs.map((d) => ({ id: d.id, ...d.data() })) };
 });

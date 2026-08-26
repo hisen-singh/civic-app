@@ -12,11 +12,11 @@ import {
   getDocs,
   serverTimestamp,
   increment,
-} from 'firebase/firestore';
-import { httpsCallable } from 'firebase/functions';
-import { db, functions } from '../config/firebaseConfig';
+} from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import { db, functions } from "../config/firebaseConfig";
 
-const USERS_COLLECTION = 'users';
+const USERS_COLLECTION = "users";
 
 /**
  * UserService — handles user profiles, follow/unfollow, and user search.
@@ -37,7 +37,7 @@ export const UserService = {
       }
       return null;
     } catch (error) {
-      console.error('[UserService] Error fetching user profile:', error);
+      console.error("[UserService] Error fetching user profile:", error);
       return null;
     }
   },
@@ -50,7 +50,7 @@ export const UserService = {
     try {
       const q = query(
         collection(db, USERS_COLLECTION),
-        where('usernameLower', '==', username.toLowerCase()),
+        where("usernameLower", "==", username.toLowerCase()),
         limit(1),
       );
       const snapshot = await getDocs(q);
@@ -60,7 +60,7 @@ export const UserService = {
       }
       return null;
     } catch (error) {
-      console.error('[UserService] Error fetching user by username:', error);
+      console.error("[UserService] Error fetching user by username:", error);
       return null;
     }
   },
@@ -70,16 +70,18 @@ export const UserService = {
    * Only allows writing to non-computed fields.
    */
   updateProfile: async (userId, data) => {
-    if (!userId) throw new Error('Not authenticated');
+    if (!userId) throw new Error("Not authenticated");
     try {
       const updates = {};
-      if (data.displayName !== undefined) updates.displayName = data.displayName;
+      if (data.displayName !== undefined)
+        updates.displayName = data.displayName;
       if (data.bio !== undefined) updates.bio = data.bio;
       if (data.city !== undefined) updates.city = data.city;
       if (data.interests !== undefined) updates.interests = data.interests;
       if (data.avatarUrl !== undefined) updates.avatarUrl = data.avatarUrl;
       if (data.username !== undefined) updates.username = data.username;
-      if (data.username !== undefined) updates.usernameLower = data.username.toLowerCase();
+      if (data.username !== undefined)
+        updates.usernameLower = data.username.toLowerCase();
 
       updates.updatedAt = new Date().toISOString();
 
@@ -87,7 +89,7 @@ export const UserService = {
       await updateDoc(docRef, updates);
       return { success: true };
     } catch (error) {
-      console.error('[UserService] Error updating profile:', error);
+      console.error("[UserService] Error updating profile:", error);
       throw error;
     }
   },
@@ -104,12 +106,14 @@ export const UserService = {
       if (!existing.exists()) {
         // Create new user document
         const newUser = {
-          displayName: profileData.displayName || 'Civic User',
+          displayName: profileData.displayName || "Civic User",
           username: profileData.username || `user${userId.slice(0, 8)}`,
-          usernameLower: (profileData.username || `user${userId.slice(0, 8)}`).toLowerCase(),
+          usernameLower: (
+            profileData.username || `user${userId.slice(0, 8)}`
+          ).toLowerCase(),
           avatarUrl: null,
-          bio: '',
-          city: profileData.city || '',
+          bio: "",
+          city: profileData.city || "",
           interests: profileData.interests || [],
           createdAt: new Date().toISOString(),
           followerCount: 0,
@@ -133,7 +137,7 @@ export const UserService = {
       }
       return { id: existing.id, ...existing.data() };
     } catch (error) {
-      console.error('[UserService] Error ensuring user document:', error);
+      console.error("[UserService] Error ensuring user document:", error);
       throw error;
     }
   },
@@ -142,13 +146,13 @@ export const UserService = {
    * Follow a user (via Cloud Function for atomic count updates).
    */
   followUser: async (targetUid) => {
-    if (!targetUid) throw new Error('Target user ID required');
+    if (!targetUid) throw new Error("Target user ID required");
     try {
-      const followUser = httpsCallable(functions, 'followUser');
+      const followUser = httpsCallable(functions, "followUser");
       const result = await followUser({ targetUid });
       return result.data;
     } catch (error) {
-      console.error('[UserService] Error following user:', error);
+      console.error("[UserService] Error following user:", error);
       throw error;
     }
   },
@@ -157,13 +161,13 @@ export const UserService = {
    * Unfollow a user.
    */
   unfollowUser: async (targetUid) => {
-    if (!targetUid) throw new Error('Target user ID required');
+    if (!targetUid) throw new Error("Target user ID required");
     try {
-      const unfollowUser = httpsCallable(functions, 'unfollowUser');
+      const unfollowUser = httpsCallable(functions, "unfollowUser");
       const result = await unfollowUser({ targetUid });
       return result.data;
     } catch (error) {
-      console.error('[UserService] Error unfollowing user:', error);
+      console.error("[UserService] Error unfollowing user:", error);
       throw error;
     }
   },
@@ -175,17 +179,27 @@ export const UserService = {
   getFollowers: async (userId, pageSize = 20, lastDoc = null) => {
     if (!userId) return { users: [], lastDoc: null, hasMore: false };
     try {
-      const followersRef = collection(db, USERS_COLLECTION, userId, 'followers');
+      const followersRef = collection(
+        db,
+        USERS_COLLECTION,
+        userId,
+        "followers",
+      );
       let q;
       if (lastDoc) {
-        q = query(followersRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+        q = query(
+          followersRef,
+          orderBy("createdAt", "desc"),
+          startAfter(lastDoc),
+          limit(pageSize),
+        );
       } else {
-        q = query(followersRef, orderBy('createdAt', 'desc'), limit(pageSize));
+        q = query(followersRef, orderBy("createdAt", "desc"), limit(pageSize));
       }
       const snapshot = await getDocs(q);
 
       // Fetch each follower's public profile
-      const userIds = snapshot.docs.map(d => d.id);
+      const userIds = snapshot.docs.map((d) => d.id);
       const users = [];
       for (const uid of userIds) {
         const profile = await UserService.getUserProfile(uid);
@@ -194,11 +208,14 @@ export const UserService = {
 
       return {
         users,
-        lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+        lastDoc:
+          snapshot.docs.length > 0
+            ? snapshot.docs[snapshot.docs.length - 1]
+            : null,
         hasMore: snapshot.docs.length === pageSize,
       };
     } catch (error) {
-      console.error('[UserService] Error fetching followers:', error);
+      console.error("[UserService] Error fetching followers:", error);
       return { users: [], lastDoc: null, hasMore: false };
     }
   },
@@ -209,16 +226,26 @@ export const UserService = {
   getFollowing: async (userId, pageSize = 20, lastDoc = null) => {
     if (!userId) return { users: [], lastDoc: null, hasMore: false };
     try {
-      const followingRef = collection(db, USERS_COLLECTION, userId, 'following');
+      const followingRef = collection(
+        db,
+        USERS_COLLECTION,
+        userId,
+        "following",
+      );
       let q;
       if (lastDoc) {
-        q = query(followingRef, orderBy('createdAt', 'desc'), startAfter(lastDoc), limit(pageSize));
+        q = query(
+          followingRef,
+          orderBy("createdAt", "desc"),
+          startAfter(lastDoc),
+          limit(pageSize),
+        );
       } else {
-        q = query(followingRef, orderBy('createdAt', 'desc'), limit(pageSize));
+        q = query(followingRef, orderBy("createdAt", "desc"), limit(pageSize));
       }
       const snapshot = await getDocs(q);
 
-      const userIds = snapshot.docs.map(d => d.id);
+      const userIds = snapshot.docs.map((d) => d.id);
       const users = [];
       for (const uid of userIds) {
         const profile = await UserService.getUserProfile(uid);
@@ -227,11 +254,14 @@ export const UserService = {
 
       return {
         users,
-        lastDoc: snapshot.docs.length > 0 ? snapshot.docs[snapshot.docs.length - 1] : null,
+        lastDoc:
+          snapshot.docs.length > 0
+            ? snapshot.docs[snapshot.docs.length - 1]
+            : null,
         hasMore: snapshot.docs.length === pageSize,
       };
     } catch (error) {
-      console.error('[UserService] Error fetching following:', error);
+      console.error("[UserService] Error fetching following:", error);
       return { users: [], lastDoc: null, hasMore: false };
     }
   },
@@ -243,7 +273,13 @@ export const UserService = {
   isFollowing: async (currentUserId, targetUserId) => {
     if (!currentUserId || !targetUserId) return false;
     try {
-      const docRef = doc(db, USERS_COLLECTION, targetUserId, 'followers', currentUserId);
+      const docRef = doc(
+        db,
+        USERS_COLLECTION,
+        targetUserId,
+        "followers",
+        currentUserId,
+      );
       const snap = await getDoc(docRef);
       return snap.exists();
     } catch (error) {
@@ -262,21 +298,22 @@ export const UserService = {
       // Replace with Algolia for production scale.
       const q = query(
         collection(db, USERS_COLLECTION),
-        orderBy('displayName'),
+        orderBy("displayName"),
         limit(pageSize * 3), // over-fetch to account for filtering
       );
       const snapshot = await getDocs(q);
       const lowerQuery = query.toLowerCase();
       return snapshot.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(u =>
-          (u.displayName || '').toLowerCase().includes(lowerQuery) ||
-          (u.username || '').toLowerCase().includes(lowerQuery) ||
-          (u.city || '').toLowerCase().includes(lowerQuery)
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter(
+          (u) =>
+            (u.displayName || "").toLowerCase().includes(lowerQuery) ||
+            (u.username || "").toLowerCase().includes(lowerQuery) ||
+            (u.city || "").toLowerCase().includes(lowerQuery),
         )
         .slice(0, pageSize);
     } catch (error) {
-      console.error('[UserService] Error searching users:', error);
+      console.error("[UserService] Error searching users:", error);
       return [];
     }
   },
@@ -293,32 +330,37 @@ export const UserService = {
       if (city) {
         q = query(
           collection(db, USERS_COLLECTION),
-          where('city', '==', city),
-          orderBy('impactScore', 'desc'),
+          where("city", "==", city),
+          orderBy("impactScore", "desc"),
           limit(pageSize * 2),
         );
       } else {
         q = query(
           collection(db, USERS_COLLECTION),
-          orderBy('impactScore', 'desc'),
+          orderBy("impactScore", "desc"),
           limit(pageSize * 2),
         );
       }
       const snapshot = await getDocs(q);
 
       // Fetch who's already followed
-      const followingRef = collection(db, USERS_COLLECTION, currentUserId, 'following');
+      const followingRef = collection(
+        db,
+        USERS_COLLECTION,
+        currentUserId,
+        "following",
+      );
       const followingSnap = await getDocs(followingRef);
-      const followingIds = new Set(followingSnap.docs.map(d => d.id));
+      const followingIds = new Set(followingSnap.docs.map((d) => d.id));
 
       const suggestions = snapshot.docs
-        .map(d => ({ id: d.id, ...d.data() }))
-        .filter(u => u.id !== currentUserId && !followingIds.has(u.id))
+        .map((d) => ({ id: d.id, ...d.data() }))
+        .filter((u) => u.id !== currentUserId && !followingIds.has(u.id))
         .slice(0, pageSize);
 
       return suggestions;
     } catch (error) {
-      console.error('[UserService] Error getting suggestions:', error);
+      console.error("[UserService] Error getting suggestions:", error);
       return [];
     }
   },

@@ -1,14 +1,19 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from "react";
 import {
-  View, FlatList, Text, StyleSheet, TouchableOpacity, ActivityIndicator,
-} from 'react-native';
-import { MaterialCommunityIcons } from '@expo/vector-icons';
-import { useTranslation } from 'react-i18next';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { Animated } from 'react-native';
-import { Colors, Spacing, Radius, Typography } from '../theme';
-import { AchievementService } from '../services/AchievementService';
-import { useAuth } from '../contexts/AuthContext';
+  View,
+  FlatList,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  ActivityIndicator,
+} from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useTranslation } from "react-i18next";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Animated } from "react-native";
+import { Colors, Spacing, Radius, Typography } from "../theme";
+import { AchievementService } from "../services/AchievementService";
+import { useAuth } from "../contexts/AuthContext";
 
 export default function AchievementsScreen() {
   const { t } = useTranslation();
@@ -19,7 +24,11 @@ export default function AchievementsScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
-    Animated.timing(fadeAnim, { toValue: 1, duration: 300, useNativeDriver: true }).start();
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: 300,
+      useNativeDriver: true,
+    }).start();
     loadBadges();
   }, []);
 
@@ -29,19 +38,29 @@ export default function AchievementsScreen() {
       const progress = await AchievementService.getBadgeProgress(user.uid);
       setBadges(progress);
     } catch (err) {
-      console.error('[AchievementsScreen] Error:', err);
+      console.error("[AchievementsScreen] Error:", err);
     } finally {
       setLoading(false);
     }
   };
 
-  const earnedBadges = badges.filter(b => b.earned);
-  const lockedBadges = badges.filter(b => !b.earned);
-  const nextBadge = lockedBadges.find(b => b.progress > 0);
+  const earnedBadges = badges.filter((b) => b.earned);
+  const lockedBadges = badges.filter((b) => !b.earned);
+  const nextBadge = lockedBadges.find((b) => b.progress > 0);
 
   const renderBadge = ({ item }) => (
-    <View style={[styles.badgeCard, item.earned ? styles.badgeEarned : styles.badgeLocked]}>
-      <View style={[styles.badgeIconWrap, { backgroundColor: item.bg || 'rgba(99,102,241,0.15)' }]}>
+    <View
+      style={[
+        styles.badgeCard,
+        item.earned ? styles.badgeEarned : styles.badgeLocked,
+      ]}
+    >
+      <View
+        style={[
+          styles.badgeIconWrap,
+          { backgroundColor: item.bg || "rgba(99,102,241,0.15)" },
+        ]}
+      >
         <MaterialCommunityIcons
           name={item.icon}
           size={32}
@@ -49,7 +68,11 @@ export default function AchievementsScreen() {
         />
         {!item.earned && (
           <View style={styles.lockOverlay}>
-            <MaterialCommunityIcons name="lock-outline" size={14} color={Colors.textTertiary} />
+            <MaterialCommunityIcons
+              name="lock-outline"
+              size={14}
+              color={Colors.textTertiary}
+            />
           </View>
         )}
       </View>
@@ -88,7 +111,7 @@ export default function AchievementsScreen() {
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <FlatList
         data={badges}
-        keyExtractor={item => item.id}
+        keyExtractor={(item) => item.id}
         renderItem={renderBadge}
         numColumns={2}
         columnWrapperStyle={styles.row}
@@ -102,12 +125,19 @@ export default function AchievementsScreen() {
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryStat}>
-                <Text style={styles.summaryNumber}>{badges.length - earnedBadges.length}</Text>
+                <Text style={styles.summaryNumber}>
+                  {badges.length - earnedBadges.length}
+                </Text>
                 <Text style={styles.summaryLabel}>Locked</Text>
               </View>
               <View style={styles.summaryDivider} />
               <View style={styles.summaryStat}>
-                <Text style={styles.summaryNumber}>{Math.round((earnedBadges.length / (badges.length || 1)) * 100)}%</Text>
+                <Text style={styles.summaryNumber}>
+                  {Math.round(
+                    (earnedBadges.length / (badges.length || 1)) * 100,
+                  )}
+                  %
+                </Text>
                 <Text style={styles.summaryLabel}>Complete</Text>
               </View>
             </View>
@@ -121,7 +151,10 @@ export default function AchievementsScreen() {
         }
         ListEmptyComponent={
           loading ? (
-            <ActivityIndicator style={{ marginTop: 80 }} color={Colors.accent} />
+            <ActivityIndicator
+              style={{ marginTop: 80 }}
+              color={Colors.accent}
+            />
           ) : null
         }
       />
@@ -136,26 +169,34 @@ const styles = StyleSheet.create({
     marginBottom: Spacing.md,
   },
   summaryRow: {
-    flexDirection: 'row',
+    flexDirection: "row",
     backgroundColor: Colors.surface,
     borderRadius: Radius.lg,
     padding: Spacing.lg,
-    alignItems: 'center',
-    justifyContent: 'space-around',
+    alignItems: "center",
+    justifyContent: "space-around",
   },
-  summaryStat: { alignItems: 'center', flex: 1 },
+  summaryStat: { alignItems: "center", flex: 1 },
   summaryNumber: { ...Typography.displayMedium, color: Colors.accent },
-  summaryLabel: { ...Typography.caption, color: Colors.textSecondary, marginTop: 4 },
+  summaryLabel: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    marginTop: 4,
+  },
   summaryDivider: { width: 1, height: 40, backgroundColor: Colors.border },
   nextUp: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: "row",
+    alignItems: "center",
     marginTop: Spacing.md,
     padding: Spacing.md,
     backgroundColor: Colors.surface,
     borderRadius: Radius.md,
   },
-  nextUpLabel: { ...Typography.caption, color: Colors.textTertiary, marginRight: 8 },
+  nextUpLabel: {
+    ...Typography.caption,
+    color: Colors.textTertiary,
+    marginRight: 8,
+  },
   nextUpName: { ...Typography.subtitle, color: Colors.textPrimary },
   row: { paddingHorizontal: Spacing.md },
   badgeCard: {
@@ -164,9 +205,9 @@ const styles = StyleSheet.create({
     padding: Spacing.lg,
     borderRadius: Radius.lg,
     backgroundColor: Colors.surface,
-    alignItems: 'center',
+    alignItems: "center",
     minHeight: 160,
-    justifyContent: 'center',
+    justifyContent: "center",
   },
   badgeEarned: { borderWidth: 1, borderColor: Colors.accent },
   badgeLocked: { opacity: 0.6 },
@@ -174,26 +215,52 @@ const styles = StyleSheet.create({
     width: 64,
     height: 64,
     borderRadius: 32,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: Spacing.sm,
-    position: 'relative',
+    position: "relative",
   },
   lockOverlay: {
-    position: 'absolute',
+    position: "absolute",
     bottom: -4,
     right: -4,
     backgroundColor: Colors.surface,
     borderRadius: 12,
     padding: 2,
   },
-  badgeName: { ...Typography.subtitle, color: Colors.textPrimary, textAlign: 'center', marginBottom: 4 },
+  badgeName: {
+    ...Typography.subtitle,
+    color: Colors.textPrimary,
+    textAlign: "center",
+    marginBottom: 4,
+  },
   badgeNameLocked: { color: Colors.textTertiary },
-  badgeDesc: { ...Typography.caption, color: Colors.textSecondary, textAlign: 'center' },
-  progressContainer: { marginTop: Spacing.sm, width: '100%' },
-  progressBar: { height: 4, backgroundColor: Colors.border, borderRadius: 2, overflow: 'hidden' },
-  progressFill: { height: '100%', borderRadius: 2 },
-  progressText: { ...Typography.caption, color: Colors.textTertiary, marginTop: 4, textAlign: 'center' },
-  tierBadge: { position: 'absolute', top: Spacing.sm, right: Spacing.sm, paddingHorizontal: 6, paddingVertical: 2, borderRadius: Radius.sm },
-  tierText: { ...Typography.overline, color: '#FFF', fontSize: 9 },
+  badgeDesc: {
+    ...Typography.caption,
+    color: Colors.textSecondary,
+    textAlign: "center",
+  },
+  progressContainer: { marginTop: Spacing.sm, width: "100%" },
+  progressBar: {
+    height: 4,
+    backgroundColor: Colors.border,
+    borderRadius: 2,
+    overflow: "hidden",
+  },
+  progressFill: { height: "100%", borderRadius: 2 },
+  progressText: {
+    ...Typography.caption,
+    color: Colors.textTertiary,
+    marginTop: 4,
+    textAlign: "center",
+  },
+  tierBadge: {
+    position: "absolute",
+    top: Spacing.sm,
+    right: Spacing.sm,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: Radius.sm,
+  },
+  tierText: { ...Typography.overline, color: "#FFF", fontSize: 9 },
 });
