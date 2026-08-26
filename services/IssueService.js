@@ -64,9 +64,11 @@ export const IssueService = {
     _pendingRequest = (async () => {
       const currentGen = _cacheGeneration;
       try {
+        // Hard cap: never load the entire collection into memory
         const q = query(
           collection(db, ISSUES_COLLECTION),
           orderBy("createdAt", "desc"),
+          limit(50),
         );
         const snapshot = await getDocs(q);
 
@@ -200,6 +202,34 @@ export const IssueService = {
   invalidateCache: () => {
     _lastFetchTime = 0;
     _cacheGeneration += 1;
+  },
+
+  /**
+   * Patch a single cached issue in place instead of invalidating the whole
+   * cache. Keeps reads consistent immediately after mutations (no stale TTL
+   * window). Accepts a partial object or an updater receiving the cached doc.
+   * Returns false if the issue isn't cached (caller should invalidateCache()).
+   */
+  _patchCachedIssue: (issueId, patchOrUpdater) => {
+    const idx = _issueCache.findIndex((i) => i.id === issueId);
+    if (idx === -1) return false;
+    const current = _issueCache[idx];
+    const patch =
+      typeof patchOrUpdater === "function"
+        ? patchOrUpdater(current)
+        : patchOrUpdater;
+    _issueCache[idx] = { ...current, ...patch };
+    _lastFetchTime = Date.now();
+    return true;
+  },
+
+  /** Remove an issue from the cache immediately. Returns true if removed. */
+  _removeFromCache: (issueId) => {
+    const idx = _issueCache.findIndex((i) => i.id === issueId);
+    if (idx === -1) return false;
+    _issueCache.splice(idx, 1);
+    _lastFetchTime = Date.now();
+    return true;
   },
 
   /**
@@ -371,8 +401,13 @@ export const IssueService = {
         timestamp: serverTimestamp(),
       });
 
-      IssueService.invalidateCache();
-      return { id: docRef.id, ...newIssue };
+      const addedIssue = { id: docRef.id, ...newIssue };
+
+      // Prepend to cache so the new issue appears without a full refetch
+      _issueCache = [addedIssue, ..._issueCache].slice(0, 50);
+      _lastFetchTime = Date.now();
+
+      return addedIssue;
     } catch (error) {
       console.error("Error adding issue to Firestore:", error);
       Sentry.captureException(error);
@@ -401,7 +436,13 @@ export const IssueService = {
         votes: increment(1),
         voters: arrayUnion(userId),
       });
-      IssueService.invalidateCache();
+      // Update cache in place so the next read sees fresh data immediately
+      const prevData = snap.exists() ? snap.data() : {};
+      const patched = IssueService._patchCachedIssue(id, {
+        votes: (prevData.votes ?? 0) + 1,
+        voters: [...(prevData.voters || []), userId],
+      });
+      if (!patched) IssueService.invalidateCache();
       return true;
     } catch (error) {
       console.error("Error upvoting issue:", error);
@@ -417,12 +458,21 @@ export const IssueService = {
   joinIssue: async (id, userId) => {
     try {
       const issueRef = doc(db, ISSUES_COLLECTION, id);
+      const statusUpdatedAt = new Date().toISOString();
       await updateDoc(issueRef, {
         solvers: arrayUnion(userId),
         status: "In Progress",
-        statusUpdatedAt: new Date().toISOString(),
+        statusUpdatedAt,
       });
-      IssueService.invalidateCache();
+      // Update cache in place so the next read sees fresh data immediately
+      const patched = IssueService._patchCachedIssue(id, (cached) => ({
+        solvers: (cached.solvers || []).includes(userId)
+          ? cached.solvers
+          : [...(cached.solvers || []), userId],
+        status: "In Progress",
+        statusUpdatedAt,
+      }));
+      if (!patched) IssueService.invalidateCache();
       return { success: true };
     } catch (error) {
       console.error("Error joining issue:", error);
@@ -437,11 +487,17 @@ export const IssueService = {
   updateIssueStatus: async (id, newStatus) => {
     try {
       const issueRef = doc(db, ISSUES_COLLECTION, id);
+      const statusUpdatedAt = new Date().toISOString();
       await updateDoc(issueRef, {
         status: newStatus,
-        statusUpdatedAt: new Date().toISOString(),
+        statusUpdatedAt,
       });
-      IssueService.invalidateCache();
+      // Update cache in place so the next read sees fresh data immediately
+      const patched = IssueService._patchCachedIssue(id, {
+        status: newStatus,
+        statusUpdatedAt,
+      });
+      if (!patched) IssueService.invalidateCache();
       return { success: true };
     } catch (error) {
       console.error("Error updating issue status:", error);
@@ -519,7 +575,11 @@ export const IssueService = {
         commentsCount: increment(1),
       });
 
-      IssueService.invalidateCache();
+      // Update cache in place so the next read sees fresh data immediately
+      const patched = IssueService._patchCachedIssue(id, (cached) => ({
+        commentsCount: (cached.commentsCount || 0) + 1,
+      }));
+      if (!patched) IssueService.invalidateCache();
       return { id: docRef.id, ...newComment };
     } catch (error) {
       console.error("Error adding comment:", error);
@@ -535,7 +595,8 @@ export const IssueService = {
     try {
       const issueRef = doc(db, ISSUES_COLLECTION, id);
       await deleteDoc(issueRef);
-      IssueService.invalidateCache();
+      // Remove immediately from cache so deleted issues don't linger until TTL
+      if (!IssueService._removeFromCache(id)) IssueService.invalidateCache();
       return true;
     } catch (error) {
       console.error("Error deleting issue:", error);
@@ -595,7 +656,9 @@ export const IssueService = {
       const url = await getDownloadURL(storageRef);
       const issueRef = doc(db, ISSUES_COLLECTION, issueId);
       await updateDoc(issueRef, { afterPhoto: url });
-      IssueService.invalidateCache();
+      // Update cache in place so the next read sees fresh data immediately
+      const patched = IssueService._patchCachedIssue(issueId, { afterPhoto: url });
+      if (!patched) IssueService.invalidateCache();
       return url;
     } catch (error) {
       console.error("Error adding after photo:", error);

@@ -14,6 +14,9 @@ jest.mock('firebase/firestore', () => ({
   increment: jest.fn(),
   query: jest.fn(),
   orderBy: jest.fn(),
+  limit: jest.fn(),
+  where: jest.fn(),
+  startAfter: jest.fn(),
   serverTimestamp: jest.fn(),
 }));
 
@@ -82,20 +85,20 @@ describe('IssueService cache and validation', () => {
     expect(result.createdAt).toBeDefined();
   });
 
-  test('addIssue invalidates cache so new issues show up immediately', async () => {
+  test('addIssue updates the cache so new issues show up immediately', async () => {
     addDoc.mockResolvedValueOnce({ id: '3' });
-    
+
     // First fetch populates the cache
     getDocs.mockResolvedValueOnce({ docs: [] });
     await IssueService.getAllIssues();
-    
-    // Add a new issue (should invalidate cache)
+
+    // Add a new issue — it should be prepended to the cache directly,
+    // so the next read returns it without hitting Firestore again
     await IssueService.addIssue({ title: 'New Issue Title', description: 'A detailed description for the new issue' });
-    
-    // Second fetch should hit Firestore again because cache was invalidated
-    getDocs.mockResolvedValueOnce({ docs: [{ id: '3', data: () => ({ title: 'New Issue' }) }] });
-    await IssueService.getAllIssues();
-    
-    expect(getDocs).toHaveBeenCalledTimes(2);
+
+    const cached = await IssueService.getAllIssues();
+    expect(getDocs).toHaveBeenCalledTimes(1);
+    expect(cached[0].id).toBe('3');
+    expect(cached[0].title).toBe('New Issue Title');
   });
 });

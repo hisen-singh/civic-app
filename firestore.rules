@@ -25,21 +25,24 @@ service cloud.firestore {
         && request.resource.data.title.size() > 0
         && request.resource.data.title.size() <= 200;
 
-      // Only signed-in users can update – restrict which fields they can touch
+      // Authors and admins can update; voters/solvers can update their own reactions
       allow update: if isSignedIn()
         && (
           isAdmin() ||
           (
-            request.auth.uid == resource.data.authorId && 
+            request.auth.uid == resource.data.authorId &&
             request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['status', 'statusUpdatedAt', 'commentsCount', 'afterPhoto', 'votes', 'voters', 'solvers']) &&
-            (!('afterPhoto' in request.resource.data) || (request.resource.data.afterPhoto is string && request.resource.data.afterPhoto.size() < 2000))
+              .hasOnly(['status', 'statusUpdatedAt', 'commentsCount', 'afterPhoto', 'votes',
+                         'voters', 'solvers', 'recentActivity', 'trendingScore', 'shareCount',
+                         'viewCount', 'photoUrl', 'videoUrl'])
           ) ||
           (
+            // Any signed-in user can vote (add themselves to voters) or react
             request.resource.data.diff(resource.data).affectedKeys()
-              .hasOnly(['votes', 'voters', 'solvers', 'status', 'statusUpdatedAt', 'commentsCount'])
+              .hasOnly(['votes', 'voters', 'solvers', 'status', 'statusUpdatedAt',
+                         'commentsCount', 'recentActivity'])
             &&
-            // Validate Votes Increment
+            // Validate votes increment (+1 only)
             (
               !('votes' in request.resource.data.diff(resource.data).affectedKeys()) ||
               (
@@ -51,7 +54,7 @@ service cloud.firestore {
               )
             )
             &&
-            // Validate Solvers Increment
+            // Validate solvers increment (+1 only)
             (
               !('solvers' in request.resource.data.diff(resource.data).affectedKeys()) ||
               (
@@ -62,78 +65,165 @@ service cloud.firestore {
               )
             )
             &&
-            // Validate Status Change
+            // Valid status transitions:
+            // Author: can set to Solved/Failed
+            // Solver joining: can set to In Progress
             (
               request.resource.data.status == resource.data.status ||
-              (request.resource.data.status == 'In Progress' && 'solvers' in request.resource.data.diff(resource.data).affectedKeys())
+              (request.resource.data.status == 'In Progress' && 'solvers' in request.resource.data.diff(resource.data).affectedKeys()) ||
+              (
+                request.resource.data.status in ['Solved', 'Failed'] &&
+                request.auth.uid == resource.data.authorId
+              )
             )
             &&
-            // Validate Comments Increment
+            // Comments count increment
             (
               !('commentsCount' in request.resource.data.diff(resource.data).affectedKeys()) ||
-              (
-                request.resource.data.commentsCount == resource.data.commentsCount + 1
-              )
+              request.resource.data.commentsCount == resource.data.commentsCount + 1
+            )
+            &&
+            // recentActivity can be incremented by reactions
+            (
+              !('recentActivity' in request.resource.data.diff(resource.data).affectedKeys()) ||
+              request.resource.data.recentActivity == resource.data.recentActivity + 5
+            )
+            &&
+            // Legacy anonymous issues have no provable owner, so clients may
+            // only vote and bump comment counters on them. Joins, solver-list
+            // edits and status changes must go through admins/Cloud Functions.
+            (
+              resource.data.authorId != 'anonymous' ||
+              request.resource.data.diff(resource.data).affectedKeys()
+                .hasOnly(['votes', 'voters', 'commentsCount', 'recentActivity'])
             )
           )
         );
 
-      // Only the author or an admin can delete an issue
+      // Only author or admin can delete
       allow delete: if isOwner(resource.data.authorId) || isAdmin();
-      
-      // Comments Subcollection Rules
+
+      // ── Reactions subcollection ──────────────────────────────────────────
+      match /reactions/{userId} {
+        allow read: if isSignedIn();
+        // Users can add/remove their own reaction
+        allow create: if isSignedIn() && request.auth.uid == userId
+          && request.resource.data.type in ['support', 'solve', 'help', 'awareness'];
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+        allow update: if false; // Don't allow changing reaction type
+      }
+
+      // ── Comments subcollection ───────────────────────────────────────────
       match /comments/{commentId} {
         allow read: if isSignedIn();
-        allow create: if isSignedIn() 
+        allow create: if isSignedIn()
           && request.resource.data.authorId == request.auth.uid
-          && request.resource.data.text is string 
+          && request.resource.data.text is string
           && request.resource.data.text.size() <= 1000;
         allow update, delete: if isAdmin() || isOwner(resource.data.authorId);
       }
     }
 
-    // ─── ARCHIVED ISSUES (read-only) ────────────────────────────────────────
+    // ─── ARCHIVED ISSUES ───────────────────────────────────────────────────
     match /archivedIssues/{issueId} {
       allow read: if isSignedIn();
-      allow write: if false; // only backend can write
+      allow write: if false; // only backend
     }
 
-    // ─── WATCH AREAS ────────────────────────────────────────────────────────
+    // ─── USERS ─────────────────────────────────────────────────────────────
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      // Users can write their own profile, but NOT computed fields
+      allow write: if isOwner(userId)
+        && !request.resource.data.keys().hasAny([
+          'trustScore', 'rank', 'reported', 'solved', 'impactScore',
+          'followerCount', 'followingCount', 'issueCount', 'solveCount'
+        ]);
+
+      // ── Followers subcollection (who follows this user) ───────────────
+      match /followers/{followerId} {
+        allow read: if isSignedIn();
+        // Anyone can follow (create doc), can unfollow (delete doc)
+        allow create: if isSignedIn() && request.auth.uid == followerId;
+        allow delete: if isSignedIn() && request.auth.uid == followerId;
+      }
+
+      // ── Following subcollection (who this user follows) ──────────────
+      match /following/{followingId} {
+        allow read: if isSignedIn();
+        allow create: if isSignedIn() && request.auth.uid == userId;
+        allow delete: if isSignedIn() && request.auth.uid == userId;
+      }
+    }
+
+    // ─── USER FEED (written by functions, read by owner) ───────────────────
+    match /userFeed/{userId}/timeline/{itemId} {
+      allow read: if isOwner(userId);
+      allow write: if false; // Cloud Functions only
+    }
+
+    // ─── WATCH AREAS ───────────────────────────────────────────────────────
     match /watchAreas/{areaId} {
-      // Users can only read/write their own watch areas
+      // Radius must be sane: 100m – 5km. Prevents one user subscribing to
+      // city-wide notification zones with absurd radii.
+      function validWatchRadius(r) {
+        return r is number && r >= 100 && r <= 5000;
+      }
       allow read: if isSignedIn() && request.auth.uid == resource.data.userId;
-      allow create: if isSignedIn() && request.auth.uid == request.resource.data.userId;
+      allow create: if isSignedIn()
+        && request.auth.uid == request.resource.data.userId
+        && validWatchRadius(request.resource.data.radius);
       allow update, delete: if isSignedIn()
-        && request.auth.uid == resource.data.userId;
+        && request.auth.uid == resource.data.userId
+        && (
+          !request.resource.data.diff(resource.data).affectedKeys().hasAny(['radius']) ||
+          validWatchRadius(request.resource.data.radius)
+        );
     }
 
     // ─── NOTIFICATIONS ──────────────────────────────────────────────────────
     match /notifications/{notifId} {
-      // Users can only read their own notifications
       allow read: if isOwner(resource.data.userId);
-
-      // Users can only mark their own notifications as read (update 'read' field only)
       allow update: if isOwner(resource.data.userId)
         && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
-
-      // Only the backend (Cloud Functions) can create/delete notifications
-      allow create, delete: if false;
+      allow create, delete: if false; // Cloud Functions only
     }
 
-    // ─── USERS ──────────────────────────────────────────────────────────────
-    match /users/{userId} {
-      // Users can read their own data; others can only read public fields
+    // ─── BADGES ─────────────────────────────────────────────────────────────
+    match /badges/{badgeId} {
       allow read: if isSignedIn();
+      allow write: if false; // Admin only via setAdminRole equivalent
+    }
 
-      // Users can only write their own doc (e.g. save FCM token, avatar)
-      // trustScore, rank are managed exclusively by Cloud Functions
-      allow write: if isOwner(userId)
-        && !request.resource.data.keys().hasAny(['trustScore', 'rank', 'reported', 'solved']);
-        
-      // Private User Data (FCM tokens, etc)
-      match /private/{docId} {
-        allow read, write: if isOwner(userId);
-      }
+    // ─── USER BADGES ───────────────────────────────────────────────────────
+    match /userBadges/{userId}/badges/{badgeId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Cloud Functions only (achievement system)
+    }
+
+    // ─── LEADERBOARD ────────────────────────────────────────────────────────
+    match /leaderboard/{period}/entries/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Cloud Functions only
+    }
+    match /leaderboard/city:{cityName}/entries/{userId} {
+      allow read: if isSignedIn();
+      allow write: if false; // Cloud Functions only
+    }
+
+    // ─── AUDIT LOGS ────────────────────────────────────────────────────────
+    match /audit_logs/{logId} {
+      allow read: if isAdmin();
+      allow write: if false; // Cloud Functions only
+    }
+
+    // ─── FLAGGED CONTENT ───────────────────────────────────────────────────
+    match /flaggedContent/{issueId}/flags/{flagId} {
+      allow read: if isAdmin();
+      allow create: if isSignedIn()
+        && request.resource.data.reporterId == request.auth.uid
+        && request.resource.data.reason is string;
+      allow update, delete: if false;
     }
 
   }

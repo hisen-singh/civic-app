@@ -56,9 +56,13 @@ import WatchAreaScreen from "./screens/WatchAreaScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import EditProfileScreen from "./screens/EditProfileScreen";
 import AnalyticsScreen from "./screens/AnalyticsScreen";
+import AchievementsScreen from "./screens/AchievementsScreen";
+import SettingsScreen from "./screens/SettingsScreen";
+import FollowListScreen from "./screens/FollowListScreen";
 
 // Auth
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { SyncService } from "./services/SyncService";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
@@ -277,6 +281,9 @@ function AppStack() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="Analytics" component={AnalyticsScreen} />
+      <Stack.Screen name="Achievements" component={AchievementsScreen} />
+      <Stack.Screen name="Settings" component={SettingsScreen} />
+      <Stack.Screen name="FollowList" component={FollowListScreen} />
     </Stack.Navigator>
   );
 }
@@ -390,6 +397,12 @@ function App() {
   const [fontsLoaded, fontError] = Font.useFonts({
     ...MaterialCommunityIcons.font,
   });
+
+  // Start offline-sync network recovery listener once at startup so queued
+  // issues flush automatically when connectivity returns
+  useEffect(() => {
+    SyncService.initNetworkSync();
+  }, []);
 
   // Proceed if fonts loaded OR if there was an error (don't block forever)
   if (!fontsLoaded && !fontError) {

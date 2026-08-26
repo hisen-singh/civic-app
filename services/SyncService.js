@@ -5,8 +5,33 @@ import * as FileSystem from "expo-file-system";
 
 const QUEUE_KEY = "@civic_offline_queue";
 let isProcessing = false;
+let unsubscribeNetwork = null;
 
 export const SyncService = {
+  /**
+   * Listen for connectivity changes and automatically flush the offline
+   * queue when the device comes back online. Call once at app startup.
+   * Without this, issues reported offline stay queued until the app is
+   * reopened even after connectivity returns.
+   */
+  initNetworkSync: () => {
+    if (unsubscribeNetwork) return; // Already initialized
+
+    unsubscribeNetwork = NetInfo.addEventListener((state) => {
+      const isOnline =
+        state.isConnected && state.isInternetReachable !== false;
+      if (isOnline) {
+        console.log(
+          "[SyncService] Connectivity restored — flushing offline queue",
+        );
+        SyncService.processQueue();
+      }
+    });
+
+    // Also flush immediately in case the app started online with queued items
+    SyncService.processQueue();
+  },
+
   enqueueIssue: async (issueData) => {
     try {
       const queueStr = await AsyncStorage.getItem(QUEUE_KEY);

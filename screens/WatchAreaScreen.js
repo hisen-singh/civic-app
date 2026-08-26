@@ -59,7 +59,7 @@ export default function WatchAreaScreen() {
                 userId: user.uid,
                 latitude: newAreaCoords.latitude,
                 longitude: newAreaCoords.longitude,
-                radius: radius,
+                radius: Math.min(Math.max(radius, 100), 5000), // Clamp to 100m–5km (enforced by rules)
                 active: true,
                 createdAt: new Date().toISOString()
             });
