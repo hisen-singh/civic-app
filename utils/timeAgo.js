@@ -25,20 +25,52 @@ export function timeAgo(dateInput) {
 }
 
 /**
+ * Sanitizes a YouTube URL.
+ * Returns a canonical https://www.youtube.com/embed/<id> URL if valid, or null.
+ * 
+ * @param {string} url - The URL to validate and sanitize
+ * @returns {string|null} The sanitized embed URL, or null if invalid
+ */
+export function sanitizeYouTubeUrl(url) {
+    if (!url || typeof url !== 'string' || url.trim() !== url) return null;
+    try {
+        const parsed = new URL(url);
+        if (parsed.protocol !== 'https:') return null;
+        const host = parsed.hostname.replace(/^www\./, '');
+        if (!['youtube.com', 'youtu.be'].includes(host)) return null;
+
+        let videoId = null;
+
+        if (host === 'youtu.be') {
+            videoId = parsed.pathname.slice(1);
+        } else if (parsed.pathname === '/watch') {
+            videoId = parsed.searchParams.get('v');
+        } else if (parsed.pathname.startsWith('/embed/')) {
+            videoId = parsed.pathname.split('/')[2];
+        } else if (parsed.pathname.startsWith('/shorts/')) {
+            videoId = parsed.pathname.split('/')[2];
+        }
+
+        if (!videoId || !/^[A-Za-z0-9_-]{11}$/.test(videoId)) return null;
+
+        // Check for disallowed query parameters (allow v, t, list)
+        const allowedParams = ['v', 't', 'list'];
+        for (const key of Array.from(parsed.searchParams.keys())) {
+            if (!allowedParams.includes(key)) return null;
+        }
+
+        return `https://www.youtube.com/embed/${videoId}`;
+    } catch {
+        return null;
+    }
+}
+
+/**
  * Validates that a URL is a safe, valid YouTube link.
- * Returns true only for https:// youtube.com or youtu.be URLs.
  * 
  * @param {string} url - The URL to validate
  * @returns {boolean} Whether the URL is a valid YouTube link
  */
 export function isValidYouTubeUrl(url) {
-    if (!url || typeof url !== 'string') return false;
-    try {
-        const parsed = new URL(url);
-        if (parsed.protocol !== 'https:') return false;
-        const host = parsed.hostname.replace(/^www\./, '');
-        return host === 'youtube.com' || host === 'youtu.be' || host === 'm.youtube.com';
-    } catch {
-        return false;
-    }
+    return sanitizeYouTubeUrl(url) !== null;
 }
