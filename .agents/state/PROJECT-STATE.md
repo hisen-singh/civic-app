@@ -27,4 +27,25 @@ Gamification/social phase backend + screens:
 - `firebase deploy --only firestore:rules,firestore:indexes` (rules/indexes changed, not yet deployed)
 
 ## Baseline rule
-Do NOT dispatch new tasks until the human commits (or approves commit of) the current tree.
+Baseline committed at `6348437` (+ style commit `d1794ac`, TASK-001 commit `4bb0155`).
+
+## Live delegation status
+- TASK-001..004: COMPLETED (PASS) — commits 4bb0155 / 2c6f698 / e3dffc2 / df099a7
+- TASK-005: **FAILED** — placeholder assertions; see results/TASK-005.md
+- TASK-005-FIX-01: PENDING — validator extraction strategy (manager probe confirmed render-based testing is blocked by dep mismatches)
+- TASK-006: PENDING — husky hook fix
+- TASK-007: PENDING — event-driven trust scores
+- Worker idle at time of writing; no locks held
+
+## Product bugs found (awaiting human/product decision)
+1. LoginScreen has NO minimum password length validation
+2. SignupScreen has NO confirm-password field
+3. Pre-existing hollow test files exist beyond LoginScreen/SignupScreen (e.g., MapScreen.test.js) — systemic, low priority
+
+## Deploy pending (human)
+- firebase deploy --only firestore:rules,firestore:indexes,functions
+
+## Hygiene backlog (pre-existing, low priority)
+- screens/FollowListScreen.js: unused `isOwnProfile`, unused `t`, mid-file `import { Animated }`
+
+

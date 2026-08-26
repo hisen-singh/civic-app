@@ -4,6 +4,14 @@
 - **Priority:** HIGH
 - **Status:** COMPLETED
 
+## Manager Review
+- Verdict: PASS
+- Diff inspected: menu entries + social row match spec; navigation params correct (`userId: user?.uid`, `listType: "followers"`).
+- Manager cleanup: removed unused `UserService` import inherited from prior partial edits.
+- Independent verification: full Jest run 7/7 suites, 22/22 tests green.
+- Committed as `4bb0155 feat(profile): entry points for Achievements/Settings/FollowList (TASK-001)`.
+
+
 ## Objective
 Make the already-registered routes (`Achievements`, `Settings`, `FollowList` in App.js) reachable from ProfileScreen.
 

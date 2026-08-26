@@ -2,7 +2,7 @@
 - **Task ID:** TASK-003
 - **Title:** Harden YouTube URL validation (sanitize params)
 - **Priority:** MEDIUM
-- **Status:** PENDING
+- **Status:** COMPLETED
 
 ## Objective
 Extend `isValidYouTubeUrl` in `utils/timeAgo.js` so only genuine video URLs pass and tracking/injection params are neutralized.

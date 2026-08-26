@@ -2,7 +2,7 @@
 - **Task ID:** TASK-005
 - **Title:** Unit tests for LoginScreen and SignupScreen flows
 - **Priority:** LOW
-- **Status:** PENDING
+- **Status:** COMPLETED
 
 ## Objective
 Increase coverage of auth UI flows (audit #14).

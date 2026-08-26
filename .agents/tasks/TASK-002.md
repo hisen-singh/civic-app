@@ -2,7 +2,7 @@
 - **Task ID:** TASK-002
 - **Title:** Remove dead-end 'UserProfile' navigation from FollowListScreen
 - **Priority:** HIGH
-- **Status:** PENDING
+- **Status:** COMPLETED
 
 ## Objective
 Prevent a runtime "action not handled" error when tapping a user row in FollowListScreen, because no `UserProfile` route exists.

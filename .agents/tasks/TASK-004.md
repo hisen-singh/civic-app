@@ -2,7 +2,7 @@
 - **Task ID:** TASK-004
 - **Title:** Implement notify_user helper in Cloud Functions
 - **Priority:** MEDIUM
-- **Status:** PENDING
+- **Status:** COMPLETED
 
 ## Objective
 Implement the `notify_user` helper referenced in comments throughout `functions/index.js` and use it at existing notification creation sites.
