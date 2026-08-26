@@ -30,6 +30,8 @@ export default function ProfileScreen() {
     solved: 0,
     rank: "-",
     badges: [],
+    followerCount: 0,
+    followingCount: 0,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -65,12 +67,17 @@ export default function ProfileScreen() {
       const userStats = await IssueService.getUserStats(uid);
       const { reported, supported, solved, roadsSolved, ecoSolved } = userStats;
 
-      // Get rank from user profile (updated via cron)
+      // Get rank and social counts from user profile (updated via cron / Cloud Functions)
       let rank = "-";
+      let followerCount = 0;
+      let followingCount = 0;
       try {
         const userDocSnap = await getDoc(doc(db, "users", uid));
         if (userDocSnap.exists()) {
-          rank = userDocSnap.data().rank || "-";
+          const userData = userDocSnap.data();
+          rank = userData.rank || "-";
+          followerCount = userData.followerCount || 0;
+          followingCount = userData.followingCount || 0;
         }
       } catch (e) {
         console.warn("Failed to fetch rank", e);
@@ -218,6 +225,22 @@ export default function ProfileScreen() {
       iconColor: Colors.textSecondary,
       onPress: () => i18n.changeLanguage(i18n.language === "en" ? "hi" : "en"),
     },
+    {
+      title: "My Achievements",
+      desc: "Badges, tiers & progress",
+      icon: "medal-outline",
+      iconBg: Colors.accentSurface,
+      iconColor: Colors.accent,
+      onPress: () => navigation.navigate("Achievements"),
+    },
+    {
+      title: "Settings",
+      desc: "Account, notifications & support",
+      icon: "cog-outline",
+      iconBg: Colors.surfaceElevated,
+      iconColor: Colors.textSecondary,
+      onPress: () => navigation.navigate("Settings"),
+    },
   ];
 
   return (
@@ -314,6 +337,17 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Solved</Text>
           </View>
         </View>
+
+        <AnimatedPressable
+          onPress={() => navigation.navigate("FollowList", { userId: user?.uid, listType: "followers" })}
+          activeScale={0.96}
+        >
+          <View style={{ alignItems: "center", marginTop: Spacing.md }}>
+            <Text style={{ fontSize: 12, color: Colors.accentLight, fontWeight: "500", letterSpacing: 0.3 }}>
+              {stats.followerCount} Followers · {stats.followingCount} Following
+            </Text>
+          </View>
+        </AnimatedPressable>
       </LinearGradient>
 
       <View
