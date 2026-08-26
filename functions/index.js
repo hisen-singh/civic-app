@@ -62,7 +62,7 @@ async function getFcmToken(userId) {
 }
 
 /** Send a push notification via Expo + persist to Firestore */
-async function createNotification({
+async function notifyUser(db, admin, {
   userId,
   title,
   body,
@@ -70,43 +70,48 @@ async function createNotification({
   issueId,
   actorId,
 }) {
-  const notifRef = db.collection("notifications").doc();
-  await notifRef.set({
-    userId,
-    title,
-    body,
-    type,
-    issueId: issueId || null,
-    actorId: actorId || null,
-    read: false,
-    createdAt: new Date().toISOString(),
-  });
+  if (!userId) return;
+  try {
+    const notifRef = db.collection("notifications").doc();
+    await notifRef.set({
+      userId,
+      title,
+      body,
+      type,
+      issueId: issueId || null,
+      actorId: actorId || null,
+      read: false,
+      createdAt: new Date().toISOString(),
+    });
 
-  const expoPushToken = await getFcmToken(userId);
-  if (expoPushToken) {
-    try {
-      const response = await fetch("https://exp.host/--/api/v2/push/send", {
-        method: "POST",
-        headers: {
-          Accept: "application/json",
-          "Accept-encoding": "gzip, deflate",
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          to: expoPushToken,
-          sound: "default",
-          title,
-          body,
-          data: { type, issueId: issueId || "" },
-        }),
-      });
-      const receipt = await response.json();
-      if (receipt.errors) {
-        console.warn(`Expo push failed for user ${userId}:`, receipt.errors);
+    const expoPushToken = await getFcmToken(userId);
+    if (expoPushToken) {
+      try {
+        const response = await fetch("https://exp.host/--/api/v2/push/send", {
+          method: "POST",
+          headers: {
+            Accept: "application/json",
+            "Accept-encoding": "gzip, deflate",
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            to: expoPushToken,
+            sound: "default",
+            title,
+            body,
+            data: { type, issueId: issueId || "" },
+          }),
+        });
+        const receipt = await response.json();
+        if (receipt.errors) {
+          console.warn(`Expo push failed for user ${userId}:`, receipt.errors);
+        }
+      } catch (err) {
+        console.warn(`Expo push fetch failed for user ${userId}:`, err.message);
       }
-    } catch (err) {
-      console.warn(`Expo push fetch failed for user ${userId}:`, err.message);
     }
+  } catch (err) {
+    console.error(`Failed to notify user ${userId}:`, err);
   }
 }
 
@@ -238,7 +243,7 @@ exports.onIssueCreated = functions.firestore
         );
         if (dist <= area.radius) {
           jobs.push(
-            createNotification({
+            notifyUser(db, admin, {
               userId: area.userId,
               title: "📍 New Issue in your Watch Area",
               body: `${issue.category} reported nearby: ${issue.title}`,
@@ -282,7 +287,7 @@ exports.onIssueUpdated = functions.firestore
             solveCount: admin.firestore.FieldValue.increment(1),
           });
         jobs.push(
-          createNotification({
+          notifyUser(db, admin, {
             userId: after.authorId,
             title: "✅ Your Issue Was Resolved!",
             body: `"${after.title}" has been marked as solved by the community.`,
@@ -307,7 +312,7 @@ exports.onIssueUpdated = functions.firestore
             solveCount: admin.firestore.FieldValue.increment(1),
           });
         jobs.push(
-          createNotification({
+          notifyUser(db, admin, {
             userId: solverId,
             title: "🏆 Issue Resolved!",
             body: `An issue you helped with ("${after.title}") has been marked solved!`,
@@ -340,7 +345,7 @@ exports.onIssueUpdated = functions.firestore
         TRUST_SCORE.JOINED_SOLVE,
         "Someone joined your issue",
       );
-      await createNotification({
+      await notifyUser(db, admin, {
         userId: after.authorId,
         title: "🤝 Someone is helping!",
         body: `A community member just joined your issue: "${after.title}"`,
@@ -372,7 +377,7 @@ exports.onCommentAdded = functions.firestore
       latestComment.authorId !== issue.authorId &&
       issue.authorId !== "anonymous"
     ) {
-      await createNotification({
+      await notifyUser(db, admin, {
         userId: issue.authorId,
         title: "💬 New Comment",
         body: `${latestComment.authorName || "Someone"} commented on "${issue.title}"`,
@@ -431,7 +436,7 @@ exports.onReactionAdded = functions.firestore
     if (issue.authorId && reactorId !== issue.authorId) {
       const reactionCount = (issue.reactionsCount || 0) + 1;
       if (reactionCount <= 5 || reactionCount % 10 === 0) {
-        await createNotification({
+        await notifyUser(db, admin, {
           userId: issue.authorId,
           title: "🔥 Your issue is getting attention!",
           body: `${reactionCount} people reacted to "${issue.title}"`,
@@ -475,7 +480,7 @@ exports.onFollowCreated = functions.firestore
     const followerName = followerDoc.exists
       ? followerDoc.data().displayName
       : "Someone";
-    await createNotification({
+    await notifyUser(db, admin, {
       userId: targetId,
       title: "🎉 New Follower!",
       body: `${followerName} started following you`,
@@ -693,7 +698,7 @@ exports.checkViralIssues = functions.pubsub
           .update({
             viralIssues: admin.firestore.FieldValue.increment(1),
           });
-        await createNotification({
+        await notifyUser(db, admin, {
           userId: issue.authorId,
           title: "🚀 Your issue went viral!",
           body: `"${issue.title}" reached ${VIRAL_THRESHOLD}+ votes!`,
