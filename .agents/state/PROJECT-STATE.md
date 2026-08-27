@@ -1,11 +1,15 @@
 # Project State Snapshot
-Updated: 2026-08-25 (by MANAGER)
+
+Updated: 2026-08-27 (by MANAGER)
 
 ## Branch
+
 `phase/02-get-your-eyes-back`
 
 ## Uncommitted work (verified, tests green 7/7 suites / 22 tests)
+
 Gamification/social phase backend + screens:
+
 - NEW: data/badges.js, services/{AchievementService,FeedService,LeaderboardService,UserService}.js
 - NEW: screens/{AchievementsScreen,SettingsScreen,FollowListScreen}.js
 - MODIFIED: firestore.rules, firestore.indexes.json, functions/index.js (Cloud Functions: followUser, unfollowUser, getHomeFeed, getTrendingIssues, getLeaderboard, getUserRank, getAchievements, saveFcmToken, admin/report/crash callables)
@@ -13,8 +17,9 @@ Gamification/social phase backend + screens:
 - Jest config fixed (@sentry/react-native transformIgnorePatterns); IssueService.test.js updated for new cache behavior.
 
 ## Known gaps / open audit items
-1. AchievementsScreen / SettingsScreen registered in App.js BUT no UI entry points exist (ProfileScreen has no menu items for them; follower/following counts not displayed).
-2. FollowListScreen navigates to non-existent route 'UserProfile' (dead-end tap).
+
+1. ~~AchievementsScreen / SettingsScreen registered but no UI entry points~~ RESOLVED by TASK-001 (settings menu items) — follower/following counts ARE displayed via FollowList row (landed with phase-02 baseline).
+2. ~~FollowListScreen navigates to non-existent route 'UserProfile'~~ RESOLVED by TASK-009 + FIX-01 (dedicated UserProfile stack route; see below).
 3. Audit #8: AuthContext does not react to ID-token refresh (admin claims stale up to 1h). — MANAGER-OWNED (auth architecture)
 4. Audit #9: Trust scores only recalculated by daily cron; no event-driven updates. — functions/index.js
 5. Audit #11: No rate limiting on HTTPS callables. — MANAGER-OWNED (security)
@@ -24,37 +29,35 @@ Gamification/social phase backend + screens:
 9. Audit #15: notify_user referenced in comments but never implemented in functions/index.js.
 
 ## Deployment pending
+
 - `firebase deploy --only firestore:rules,firestore:indexes` (rules/indexes changed, not yet deployed)
 
 ## Baseline rule
+
 Baseline committed at `6348437` (+ style commit `d1794ac`, TASK-001 commit `4bb0155`).
 
 ## Live delegation status
+
 - TASK-001..004: COMPLETED (PASS) — commits 4bb0155 / 2c6f698 / e3dffc2 / df099a7
 - TASK-005: FAILED → regenerated as TASK-005-FIX-01 (see below)
 - TASK-005-FIX-01: COMPLETED (PASS) — extracted pure validators, real tests; suite 9/55 green (a3c0d98)
 - TASK-006: COMPLETED (PASS, verified 7042061)
 - TASK-007: COMPLETED (PASS) — incremental trust counters + solver-side JOINED_SOLVE (a3c0d98)
-- TASK-008: IN_PROGRESS by worker (eslint.config.js; lock held)
+- TASK-008: COMPLETED (PASS) — eslint.config.js created and lint config working
+- TASK-009: COMPLETED → REQUIRES FIX (stale tab params) → FIX-01 delivered 15:23, MANAGER REVIEW: **APPROVED** (tests 9/9, 55/55 verified) — UserProfile stack route + back button; chain ready to commit
+- Optional follow-up nit: ProfileScreen back button scrolls with content (inside ScrollView) — move outside ScrollView if desired
 - Reviewer note (TASK-007): trigger still awards JOINED_SOLVE to author at line 346 — pre-existing, self-corrects at daily cron; optional follow-up.
 
 ## Product bugs found (awaiting human/product decision)
+
 1. LoginScreen has NO minimum password length validation — FIXED implicitly by TASK-005-FIX-01 (validatePassword min-6 wired in)
 2. SignupScreen has NO confirm-password field — validator exists; UI field pending product decision
 3. Pre-existing hollow test files exist beyond LoginScreen/SignupScreen (e.g., MapScreen.test.js) — systemic, low priority
 
 ## Deploy pending (human)
-- firebase deploy --only firestore:rules,firestore:indexes,functions
 
-## Product bugs found (awaiting human/product decision)
-1. LoginScreen has NO minimum password length validation
-2. SignupScreen has NO confirm-password field
-3. Pre-existing hollow test files exist beyond LoginScreen/SignupScreen (e.g., MapScreen.test.js) — systemic, low priority
-
-## Deploy pending (human)
 - firebase deploy --only firestore:rules,firestore:indexes,functions
 
 ## Hygiene backlog (pre-existing, low priority)
+
 - screens/FollowListScreen.js: unused `isOwnProfile`, unused `t`, mid-file `import { Animated }`
-
-

@@ -78,10 +78,9 @@ export default function FollowListScreen() {
     <TouchableOpacity
       style={styles.userRow}
       onPress={() => {
-        // TODO(phase-03): implement UserProfileScreen
-        console.warn('[FollowListScreen] UserProfile route not available yet');
+        navigation.navigate("UserProfile", { userId: item.id });
       }}
-      activeOpacity={1}
+      activeOpacity={0.7}
     >
       <View style={styles.avatarContainer}>
         {item.avatarUrl ? (

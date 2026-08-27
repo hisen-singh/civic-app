@@ -284,6 +284,7 @@ function AppStack() {
       <Stack.Screen name="Achievements" component={AchievementsScreen} />
       <Stack.Screen name="Settings" component={SettingsScreen} />
       <Stack.Screen name="FollowList" component={FollowListScreen} />
+      <Stack.Screen name="UserProfile" component={ProfileScreen} />
     </Stack.Navigator>
   );
 }

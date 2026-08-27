@@ -8,7 +8,11 @@ import {
 } from "react-native";
 import { Text, ActivityIndicator } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
-import { useFocusEffect, useNavigation } from "@react-navigation/native";
+import {
+  useFocusEffect,
+  useNavigation,
+  useRoute,
+} from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { AuthService } from "../services/AuthService";
 import { useAuth } from "../contexts/AuthContext";
@@ -17,12 +21,19 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import AnimatedPressable from "../components/ui/AnimatedPressable";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Colors, Radius, Spacing, Gradients } from "../theme";
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigation = useNavigation();
+  const route = useRoute();
+  const profileUserId = route.params?.userId || user?.uid;
+  const isOwnProfile =
+    !route.params?.userId || route.params?.userId === user?.uid;
+  const isStackProfile = route.name === "UserProfile";
+  const insets = useSafeAreaInsets();
   const [stats, setStats] = useState({
     reported: 0,
     supported: 0,
@@ -60,7 +71,7 @@ export default function ProfileScreen() {
       setLoading(true);
     }
     try {
-      const uid = user?.uid;
+      const uid = profileUserId;
 
       // Get user stats directly from server count aggregates
       const userStats = await IssueService.getUserStats(uid);
@@ -124,7 +135,15 @@ export default function ProfileScreen() {
         .sort((a, b) => b.unlocked - a.unlocked)
         .slice(0, 4);
 
-      setStats({ reported, supported, solved, rank, badges, followerCount, followingCount });
+      setStats({
+        reported,
+        supported,
+        solved,
+        rank,
+        badges,
+        followerCount,
+        followingCount,
+      });
     } catch (e) {
       console.error("Profile stats error:", e);
     } finally {
@@ -136,7 +155,7 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       loadStats();
-    }, [user]),
+    }, [user, profileUserId]),
   );
 
   const onRefresh = useCallback(() => {
@@ -154,16 +173,40 @@ export default function ProfileScreen() {
     }
   };
 
-  const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
+  const [profileDisplayName, setProfileDisplayName] = useState(null);
+  const [profilePhotoURL, setProfilePhotoURL] = useState(null);
+
+  useEffect(() => {
+    if (!isOwnProfile && profileUserId) {
+      (async () => {
+        try {
+          const snap = await getDoc(doc(db, "users", profileUserId));
+          if (snap.exists()) {
+            const d = snap.data();
+            setProfileDisplayName(d.displayName || d.username || "User");
+            setProfilePhotoURL(d.avatarUrl || d.photoURL || null);
+          }
+        } catch (e) {
+          console.warn("Failed to fetch profile user data", e);
+        }
+      })();
+    }
+  }, [isOwnProfile, profileUserId]);
+
+  const displayName = isOwnProfile
+    ? user?.displayName || user?.email?.split("@")[0] || "User"
+    : profileDisplayName || "User";
   const initials = displayName.substring(0, 2).toUpperCase();
+  const photoURL = isOwnProfile ? user?.photoURL : profilePhotoURL;
   const trustScore =
     stats.reported * 50 + stats.supported * 30 + stats.solved * 100;
-  const joinDate = user?.metadata?.creationTime
-    ? new Date(user.metadata.creationTime).toLocaleDateString("en-US", {
-        month: "short",
-        year: "numeric",
-      })
-    : "";
+  const joinDate =
+    isOwnProfile && user?.metadata?.creationTime
+      ? new Date(user.metadata.creationTime).toLocaleDateString("en-US", {
+          month: "short",
+          year: "numeric",
+        })
+      : "";
 
   if (loading) {
     return (
@@ -267,16 +310,58 @@ export default function ProfileScreen() {
         width: "100%",
       }}
     >
+      {/* Back button for stack presentation */}
+      {isStackProfile && (
+        <TouchableOpacity
+          onPress={() => navigation.goBack()}
+          activeOpacity={0.7}
+          style={{
+            position: "absolute",
+            top: insets.top + 8,
+            left: Spacing.lg,
+            zIndex: 10,
+            width: 36,
+            height: 36,
+            borderRadius: 12,
+            backgroundColor: Colors.surface,
+            borderWidth: 1,
+            borderColor: Colors.border,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+        >
+          <MaterialCommunityIcons
+            name="chevron-left"
+            size={22}
+            color={Colors.textPrimary}
+          />
+        </TouchableOpacity>
+      )}
       {/* Profile Header */}
       <LinearGradient colors={Gradients.heroCard} style={styles.headerSection}>
         <View style={styles.avatarRow}>
-          <AnimatedPressable
-            onPress={() => navigation.navigate("EditProfile")}
-            activeScale={0.95}
-          >
+          {isOwnProfile ? (
+            <AnimatedPressable
+              onPress={() => navigation.navigate("EditProfile")}
+              activeScale={0.95}
+            >
+              <View style={styles.avatarRing}>
+                {photoURL ? (
+                  <Image source={{ uri: photoURL }} style={styles.avatar} />
+                ) : (
+                  <LinearGradient
+                    colors={[Colors.accentDark, Colors.accentLight]}
+                    style={styles.avatar}
+                  >
+                    <Text style={styles.avatarText}>{initials}</Text>
+                  </LinearGradient>
+                )}
+              </View>
+            </AnimatedPressable>
+          ) : (
             <View style={styles.avatarRing}>
-              {user?.photoURL ? (
-                <Image source={{ uri: user.photoURL }} style={styles.avatar} />
+              {photoURL ? (
+                <Image source={{ uri: photoURL }} style={styles.avatar} />
               ) : (
                 <LinearGradient
                   colors={[Colors.accentDark, Colors.accentLight]}
@@ -286,26 +371,30 @@ export default function ProfileScreen() {
                 </LinearGradient>
               )}
             </View>
-          </AnimatedPressable>
+          )}
           <View style={{ flex: 1, marginLeft: Spacing.lg }}>
             <Text style={styles.displayName}>{displayName}</Text>
-            <Text style={styles.email}>{user?.email || ""}</Text>
+            {isOwnProfile && (
+              <Text style={styles.email}>{user?.email || ""}</Text>
+            )}
             {joinDate ? (
               <Text style={styles.joinDate}>Member since {joinDate}</Text>
             ) : null}
           </View>
-          <AnimatedPressable
-            onPress={() => navigation.navigate("EditProfile")}
-            activeScale={0.92}
-          >
-            <View style={styles.editBtn}>
-              <MaterialCommunityIcons
-                name="pencil-outline"
-                size={18}
-                color={Colors.accentLight}
-              />
-            </View>
-          </AnimatedPressable>
+          {isOwnProfile && (
+            <AnimatedPressable
+              onPress={() => navigation.navigate("EditProfile")}
+              activeScale={0.92}
+            >
+              <View style={styles.editBtn}>
+                <MaterialCommunityIcons
+                  name="pencil-outline"
+                  size={18}
+                  color={Colors.accentLight}
+                />
+              </View>
+            </AnimatedPressable>
+          )}
         </View>
 
         {/* Stats Row */}
@@ -338,11 +427,23 @@ export default function ProfileScreen() {
         </View>
 
         <AnimatedPressable
-          onPress={() => navigation.navigate("FollowList", { userId: user?.uid, listType: "followers" })}
+          onPress={() =>
+            navigation.navigate("FollowList", {
+              userId: profileUserId,
+              listType: "followers",
+            })
+          }
           activeScale={0.96}
         >
           <View style={{ alignItems: "center", marginTop: Spacing.md }}>
-            <Text style={{ fontSize: 12, color: Colors.accentLight, fontWeight: "500", letterSpacing: 0.3 }}>
+            <Text
+              style={{
+                fontSize: 12,
+                color: Colors.accentLight,
+                fontWeight: "500",
+                letterSpacing: 0.3,
+              }}
+            >
               {stats.followerCount} Followers · {stats.followingCount} Following
             </Text>
           </View>
@@ -444,57 +545,67 @@ export default function ProfileScreen() {
           ))}
         </View>
 
-        {/* Settings */}
-        <Text style={styles.sectionTitle}>Settings</Text>
-        {settingsItems.map((item, index) => (
-          <AnimatedPressable
-            key={item.title}
-            onPress={item.onPress}
-            activeScale={0.98}
-            style={{
-              marginBottom:
-                index < settingsItems.length - 1 ? Spacing.sm : Spacing.xxxl,
-            }}
-          >
-            <View style={styles.settingsRow}>
-              <View
-                style={[styles.settingsIcon, { backgroundColor: item.iconBg }]}
+        {/* Settings — only for own profile */}
+        {isOwnProfile && (
+          <View>
+            <Text style={styles.sectionTitle}>Settings</Text>
+            {settingsItems.map((item, index) => (
+              <AnimatedPressable
+                key={item.title}
+                onPress={item.onPress}
+                activeScale={0.98}
+                style={{
+                  marginBottom:
+                    index < settingsItems.length - 1
+                      ? Spacing.sm
+                      : Spacing.xxxl,
+                }}
               >
-                <MaterialCommunityIcons
-                  name={item.icon}
-                  size={20}
-                  color={item.iconColor}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.settingsTitle}>{item.title}</Text>
-                <Text style={styles.settingsDesc}>{item.desc}</Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={20}
-                color={Colors.textTertiary}
-              />
-            </View>
-          </AnimatedPressable>
-        ))}
-
-        {/* Logout */}
-        <TouchableOpacity
-          onPress={handleLogout}
-          activeOpacity={0.7}
-          style={styles.logoutBtn}
-        >
-          <MaterialCommunityIcons
-            name="logout"
-            size={18}
-            color={Colors.error}
-            style={{ marginRight: 8 }}
-          />
-          <Text style={styles.logoutText}>
-            {t("profile.sign_out", "Sign Out")}
-          </Text>
-        </TouchableOpacity>
+                <View style={styles.settingsRow}>
+                  <View
+                    style={[
+                      styles.settingsIcon,
+                      { backgroundColor: item.iconBg },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name={item.icon}
+                      size={20}
+                      color={item.iconColor}
+                    />
+                  </View>
+                  <View style={{ flex: 1 }}>
+                    <Text style={styles.settingsTitle}>{item.title}</Text>
+                    <Text style={styles.settingsDesc}>{item.desc}</Text>
+                  </View>
+                  <MaterialCommunityIcons
+                    name="chevron-right"
+                    size={20}
+                    color={Colors.textTertiary}
+                  />
+                </View>
+              </AnimatedPressable>
+            ))}
+          </View>
+        )}
+        {/* Logout — only for own profile */}
+        {isOwnProfile && (
+          <TouchableOpacity
+            onPress={handleLogout}
+            activeOpacity={0.7}
+            style={styles.logoutBtn}
+          >
+            <MaterialCommunityIcons
+              name="logout"
+              size={18}
+              color={Colors.error}
+              style={{ marginRight: 8 }}
+            />
+            <Text style={styles.logoutText}>
+              {t("profile.sign_out", "Sign Out")}
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <Text style={styles.versionText}>Civic v1.0</Text>
         <View style={{ height: 40 }} />
