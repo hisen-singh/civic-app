@@ -18,8 +18,9 @@ manager present. The manager reviews in batch daily and only intervenes on FAIL 
 
 ## STANDING RULES FOR THE WORKER (autonomous mode)
 
-1. Take tasks STRICTLY in numeric order. Before starting task N: confirm
-   `.agents/locks/` contains NO lock, then create `.agents/locks/TASK-N.lock`
+1. Take tasks in the DAY-QUEUE order below (NOT numeric order — Day 1 starts with
+   TASK-013, the easiest). Before starting task N: confirm `.agents/locks/`
+   contains NO lock for it, then create `.agents/locks/TASK-N.lock`
    containing `TASK-N`. Delete the lock when done.
 2. Never touch files outside the task's Allowed list. Never modify `.agents/tasks/*`
    or `.agents/results/*` of OTHER tasks.
@@ -37,15 +38,16 @@ manager present. The manager reviews in batch daily and only intervenes on FAIL 
 
 ## TASK QUEUE (execute in this order)
 
-### DAY 1 — 2026-08-27
+### DAY 1 — 2026-08-27 (easiest first — user directive)
 
-- [ ] TASK-010 — Callable rate limiting (functions) · security
+- [ ] TASK-013 — SignupScreen confirm-password field · EASIEST, start here (single screen, validator exists)
+- [ ] TASK-010 — Callable rate limiting (functions) · security (mechanical: helper + one line per handler)
 - [ ] TASK-011 — JOINED_SOLVE author award bug + client trustScore divergence · bugs
 
 ### DAY 2 — 2026-08-28
 
 - [ ] TASK-012 — AuthContext reacts to ID-token refresh (admin claims) · auth
-- [ ] TASK-013 — SignupScreen confirm-password field · product gap
+- [ ] Spillover from Day 1 (if any)
 
 ### DAY 3 — 2026-08-29
 
