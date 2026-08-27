@@ -1,7 +1,6 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
-  ScrollView,
   TouchableOpacity,
   Animated,
   RefreshControl,
@@ -18,7 +17,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import AnimatedPressable from "../components/ui/AnimatedPressable";
-import { Colors, Radius, Spacing, Shadows, Gradients } from "../theme";
+import { Colors, Radius, Spacing, Gradients } from "../theme";
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
@@ -125,7 +124,7 @@ export default function ProfileScreen() {
         .sort((a, b) => b.unlocked - a.unlocked)
         .slice(0, 4);
 
-      setStats({ reported, supported, solved, rank, badges });
+      setStats({ reported, supported, solved, rank, badges, followerCount, followingCount });
     } catch (e) {
       console.error("Profile stats error:", e);
     } finally {

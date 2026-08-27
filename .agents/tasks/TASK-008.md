@@ -2,7 +2,7 @@
 - **Task ID:** TASK-008
 - **Title:** Add minimal flat ESLint config so lint-staged pre-commit works on real changes
 - **Priority:** MEDIUM
-- **Status:** IN_PROGRESS
+- **Status:** COMPLETED
 
 ## Objective
 Without an `eslint.config.js`, every commit containing staged `.js/.jsx` files fails at the pre-commit hook (`ESLint couldn't find an eslint.config.* file`). This blocks the whole hook pipeline TASK-006 just fixed.

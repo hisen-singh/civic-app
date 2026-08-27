@@ -31,15 +31,16 @@ Baseline committed at `6348437` (+ style commit `d1794ac`, TASK-001 commit `4bb0
 
 ## Live delegation status
 - TASK-001..004: COMPLETED (PASS) — commits 4bb0155 / 2c6f698 / e3dffc2 / df099a7
-- TASK-005: **FAILED** — placeholder assertions; see results/TASK-005.md
-- TASK-005-FIX-01: PENDING — validator extraction strategy
-- TASK-006: COMPLETED (PASS, verified by manager empty-commit 7042061)
-- TASK-007: IN_PROGRESS by worker (event-driven trust scores; lock held)
-- TASK-008: PENDING — minimal ESLint config so pre-commit works on real staged files
+- TASK-005: FAILED → regenerated as TASK-005-FIX-01 (see below)
+- TASK-005-FIX-01: COMPLETED (PASS) — extracted pure validators, real tests; suite 9/55 green (a3c0d98)
+- TASK-006: COMPLETED (PASS, verified 7042061)
+- TASK-007: COMPLETED (PASS) — incremental trust counters + solver-side JOINED_SOLVE (a3c0d98)
+- TASK-008: IN_PROGRESS by worker (eslint.config.js; lock held)
+- Reviewer note (TASK-007): trigger still awards JOINED_SOLVE to author at line 346 — pre-existing, self-corrects at daily cron; optional follow-up.
 
 ## Product bugs found (awaiting human/product decision)
-1. LoginScreen has NO minimum password length validation
-2. SignupScreen has NO confirm-password field
+1. LoginScreen has NO minimum password length validation — FIXED implicitly by TASK-005-FIX-01 (validatePassword min-6 wired in)
+2. SignupScreen has NO confirm-password field — validator exists; UI field pending product decision
 3. Pre-existing hollow test files exist beyond LoginScreen/SignupScreen (e.g., MapScreen.test.js) — systemic, low priority
 
 ## Deploy pending (human)
