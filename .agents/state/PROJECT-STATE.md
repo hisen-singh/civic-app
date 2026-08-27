@@ -19,14 +19,20 @@ Gamification/social phase backend + screens:
 ## Known gaps / open audit items
 
 1. ~~AchievementsScreen / SettingsScreen registered but no UI entry points~~ RESOLVED by TASK-001 (settings menu items) — follower/following counts ARE displayed via FollowList row (landed with phase-02 baseline).
-2. ~~FollowListScreen navigates to non-existent route 'UserProfile'~~ RESOLVED by TASK-009 + FIX-01 (dedicated UserProfile stack route; see below).
-3. Audit #8: AuthContext does not react to ID-token refresh (admin claims stale up to 1h). — MANAGER-OWNED (auth architecture)
-4. Audit #9: Trust scores only recalculated by daily cron; no event-driven updates. — functions/index.js
-5. Audit #11: No rate limiting on HTTPS callables. — MANAGER-OWNED (security)
-6. Audit #12: server/ directory is dead code. — requires HUMAN approval to remove
-7. Audit #13: YouTube URL params not sanitized (domain allowlist only). — utils/timeAgo.js
-8. Audit #14: No unit tests for LoginScreen, MapScreen (has some), SignupScreen (has some), SolveScreen, WatchArea flows.
-9. Audit #15: notify_user referenced in comments but never implemented in functions/index.js.
+2. ~~FollowListScreen navigates to non-existent route 'UserProfile'~~ RESOLVED by TASK-009 + FIX-01 (dedicated UserProfile stack route; committed 5eaecdb).
+3. Audit #8: AuthContext does not react to ID-token refresh (admin claims stale up to 1h) → TASK-012 (Day 2).
+4. Audit #9: Trust scores only recalculated by daily cron; partially mitigated by TASK-007 incremental counters. Backlog.
+5. Audit #11: No rate limiting on HTTPS callables → TASK-010 (Day 1).
+6. Audit #12: server/ directory is dead code — requires HUMAN approval to remove.
+7. Audit #14: No unit tests for SolveScreen, WatchArea, profile param flows → TASK-015 (Day 3).
+8. ~~Audit #13: YouTube URL params not sanitized~~ RESOLVED by TASK-003 (canonical sanitizer + tests). Stale reference removed.
+9. ~~Audit #15: notify_user never implemented~~ RESOLVED by TASK-004 (notifyUser helper, commit df099a7). Stale reference removed.
+10. SignupScreen confirm-password field → TASK-013 (Day 2, user-approved 2026-08-27).
+
+## Tooling note (2026-08-27)
+
+- eslint + prettier + lint-staged installed as devDependencies; husky pre-commit hook verified working (commit 5eaecdb).
+- Worker note: JSX conditional blocks must be properly brace-closed — TASK-009's `</>` was missing its closing `}` and jest/babel masked it; eslint catches it. Always run eslint before marking COMPLETED.
 
 ## Deployment pending
 
@@ -44,7 +50,8 @@ Baseline committed at `6348437` (+ style commit `d1794ac`, TASK-001 commit `4bb0
 - TASK-006: COMPLETED (PASS, verified 7042061)
 - TASK-007: COMPLETED (PASS) — incremental trust counters + solver-side JOINED_SOLVE (a3c0d98)
 - TASK-008: COMPLETED (PASS) — eslint.config.js created and lint config working
-- TASK-009: COMPLETED → REQUIRES FIX (stale tab params) → FIX-01 delivered 15:23, MANAGER REVIEW: **APPROVED** (tests 9/9, 55/55 verified) — UserProfile stack route + back button; chain ready to commit
+- TASK-009: COMPLETED → REQUIRES FIX (stale tab params) → FIX-01 delivered 15:23, MANAGER REVIEW: **APPROVED** (tests 9/9, 55/55 verified) — UserProfile stack route + back button; **COMMITTED 5eaecdb**
+- 5-DAY SHIP MODE active (user directive 2026-08-27): see `.agents/ROADMAP-5DAY.md` — TASK-010..016 queued with full specs + standing autonomous rules. Deadline 2026-09-01.
 - Optional follow-up nit: ProfileScreen back button scrolls with content (inside ScrollView) — move outside ScrollView if desired
 - Reviewer note (TASK-007): trigger still awards JOINED_SOLVE to author at line 346 — pre-existing, self-corrects at daily cron; optional follow-up.
 
