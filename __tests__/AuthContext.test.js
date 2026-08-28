@@ -1,47 +1,51 @@
-import React from 'react';
-import renderer, { act } from 'react-test-renderer';
-import { AuthProvider, useAuth } from '../contexts/AuthContext';
-import { onAuthStateChanged } from 'firebase/auth';
-import { BackendService } from '../services/BackendService';
+import React from "react";
+import renderer, { act } from "react-test-renderer";
+import { AuthProvider, useAuth } from "../contexts/AuthContext";
+import { onAuthStateChanged, onIdTokenChanged } from "firebase/auth";
+import { BackendService } from "../services/BackendService";
 
 // Mock Dependencies
-jest.mock('firebase/auth', () => ({
+jest.mock("firebase/auth", () => ({
   __esModule: true,
-  onAuthStateChanged: jest.fn()
+  onAuthStateChanged: jest.fn(),
+  onIdTokenChanged: jest.fn(),
 }));
 
-jest.mock('../config/firebaseConfig', () => ({
-  auth: {}
+jest.mock("../config/firebaseConfig", () => ({
+  auth: {},
 }));
 
-jest.mock('../services/BackendService', () => ({
+jest.mock("../services/BackendService", () => ({
   BackendService: {
-    registerPushToken: jest.fn().mockResolvedValue()
-  }
+    registerPushToken: jest.fn().mockResolvedValue(),
+  },
 }));
 
 // A dummy component to consume the context
 const AuthConsumer = () => {
-  const { user, loading } = useAuth();
+  const { user, loading, isAdmin } = useAuth();
   return (
     <>
       <div testID="loading">{loading.toString()}</div>
-      <div testID="user">{user ? user.uid : 'null'}</div>
+      <div testID="user">{user ? user.uid : "null"}</div>
+      <div testID="admin">{isAdmin.toString()}</div>
     </>
   );
 };
 
-describe('AuthContext', () => {
+describe("AuthContext", () => {
   beforeEach(() => {
     jest.clearAllMocks();
     jest.useFakeTimers();
+    onAuthStateChanged.mockImplementation(() => () => {});
+    onIdTokenChanged.mockImplementation(() => () => {});
   });
 
   afterEach(() => {
     jest.useRealTimers();
   });
 
-  test('initializes with loading: true and user: null', () => {
+  test("initializes with loading: true and user: null", () => {
     // Hang the auth callback
     onAuthStateChanged.mockImplementation(() => () => {});
 
@@ -50,18 +54,19 @@ describe('AuthContext', () => {
       tree = renderer.create(
         <AuthProvider>
           <AuthConsumer />
-        </AuthProvider>
+        </AuthProvider>,
       );
     });
 
-    const loadingText = tree.root.findByProps({ testID: 'loading' }).props.children;
-    const userText = tree.root.findByProps({ testID: 'user' }).props.children;
+    const loadingText = tree.root.findByProps({ testID: "loading" }).props
+      .children;
+    const userText = tree.root.findByProps({ testID: "user" }).props.children;
 
-    expect(loadingText).toBe('true');
-    expect(userText).toBe('null');
+    expect(loadingText).toBe("true");
+    expect(userText).toBe("null");
   });
 
-  test('updates state when onAuthStateChanged successfully returns a user', () => {
+  test("updates state when onAuthStateChanged successfully returns a user", () => {
     let authCallback;
     onAuthStateChanged.mockImplementation((auth, callback) => {
       authCallback = callback;
@@ -73,26 +78,27 @@ describe('AuthContext', () => {
       tree = renderer.create(
         <AuthProvider>
           <AuthConsumer />
-        </AuthProvider>
+        </AuthProvider>,
       );
     });
 
     // Simulate firebase logging the user in
     act(() => {
-      authCallback({ uid: 'user123' });
+      authCallback({ uid: "user123" });
     });
 
-    const loadingText = tree.root.findByProps({ testID: 'loading' }).props.children;
-    const userText = tree.root.findByProps({ testID: 'user' }).props.children;
+    const loadingText = tree.root.findByProps({ testID: "loading" }).props
+      .children;
+    const userText = tree.root.findByProps({ testID: "user" }).props.children;
 
-    expect(loadingText).toBe('false');
-    expect(userText).toBe('user123');
-    
+    expect(loadingText).toBe("false");
+    expect(userText).toBe("user123");
+
     // Ensure push token is registered when user logs in
     expect(BackendService.registerPushToken).toHaveBeenCalled();
   });
 
-  test('safety timeout unblocks the app after 8 seconds if Firebase hangs', () => {
+  test("safety timeout unblocks the app after 8 seconds if Firebase hangs", () => {
     // Simulate a complete Firebase freeze
     onAuthStateChanged.mockImplementation(() => () => {});
 
@@ -101,7 +107,7 @@ describe('AuthContext', () => {
       tree = renderer.create(
         <AuthProvider>
           <AuthConsumer />
-        </AuthProvider>
+        </AuthProvider>,
       );
     });
 
@@ -111,7 +117,38 @@ describe('AuthContext', () => {
     });
 
     // The context should have forced loading to false so the app doesn't hang forever
-    const loadingText = tree.root.findByProps({ testID: 'loading' }).props.children;
-    expect(loadingText).toBe('false');
+    const loadingText = tree.root.findByProps({ testID: "loading" }).props
+      .children;
+    expect(loadingText).toBe("false");
+  });
+
+  test("updates isAdmin when onIdTokenChanged returns admin claim", async () => {
+    let authCallback;
+    onIdTokenChanged.mockImplementation((auth, callback) => {
+      authCallback = callback;
+      return () => {}; // return unsubscribe function
+    });
+
+    let tree;
+    await act(async () => {
+      tree = renderer.create(
+        <AuthProvider>
+          <AuthConsumer />
+        </AuthProvider>,
+      );
+    });
+
+    // Simulate firebase token change
+    await act(async () => {
+      await authCallback({
+        uid: "adminUser",
+        getIdTokenResult: jest
+          .fn()
+          .mockResolvedValue({ claims: { admin: true } }),
+      });
+    });
+
+    const adminText = tree.root.findByProps({ testID: "admin" }).props.children;
+    expect(adminText).toBe("true");
   });
 });
