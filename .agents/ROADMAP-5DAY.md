@@ -38,16 +38,17 @@ manager present. The manager reviews in batch daily and only intervenes on FAIL 
 
 ## TASK QUEUE (execute in this order)
 
-### DAY 1 — 2026-08-27 (easiest first — user directive)
+### DAY 1 — 2026-08-27 ✅ DONE
 
-- [ ] TASK-013 — SignupScreen confirm-password field · EASIEST, start here (single screen, validator exists)
-- [ ] TASK-010 — Callable rate limiting (functions) · security (mechanical: helper + one line per handler)
-- [ ] TASK-011 — JOINED_SOLVE author award bug + client trustScore divergence · bugs
+- [x] TASK-010 — rate limiting — APPROVED, c04def2
+- [x] TASK-011 — JOINED_SOLVE + trustScore — APPROVED, ac4881c
+- (TASK-013 was skipped by worker — moved to Day 2, MANDATORY)
 
 ### DAY 2 — 2026-08-28
 
-- [ ] TASK-012 — AuthContext reacts to ID-token refresh (admin claims) · auth
-- [ ] Spillover from Day 1 (if any)
+- [x] TASK-012 — live isAdmin via onIdTokenChanged — APPROVED
+- [ ] **TASK-013 — SignupScreen confirm-password · MANDATORY NEXT — worker has
+      skipped it TWICE. Do not start any other task before this one is COMPLETED.**
 
 ### DAY 3 — 2026-08-29
 

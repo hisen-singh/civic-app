@@ -52,8 +52,9 @@ Baseline committed at `6348437` (+ style commit `d1794ac`, TASK-001 commit `4bb0
 - TASK-008: COMPLETED (PASS) — eslint.config.js created and lint config working
 - TASK-009: COMPLETED → REQUIRES FIX (stale tab params) → FIX-01 delivered 15:23, MANAGER REVIEW: **APPROVED** (tests 9/9, 55/55 verified) — UserProfile stack route + back button; **COMMITTED 5eaecdb**
 - TASK-010 (callable rate limiting): COMPLETED, MANAGER REVIEW: **APPROVED** — **COMMITTED c04def2** (+scoped functions/** CommonJS lint block)
-- TASK-011 (JOINED_SOLVE author guard + server trustScore): COMPLETED, MANAGER REVIEW: **APPROVED** — worker stalled 21:16→16:30 (lock orphaned), manager completed ProfileScreen half, worker returned and verified; joint implementation APPROVED
-- NEXT (MANDATORY ORDER): TASK-013 (confirm-password — worker skipped it, do it FIRST) → TASK-012 → TASK-014 → TASK-015 → TASK-016
+- TASK-011 (JOINED_SOLVE author guard + server trustScore): COMPLETED, MANAGER REVIEW: **APPROVED** — worker stalled 21:16→16:30 (lock orphaned), manager completed ProfileScreen half, worker returned and verified; joint implementation APPROVED — **COMMITTED ac4881c**
+- TASK-012 (live isAdmin via onIdTokenChanged): COMPLETED, MANAGER REVIEW: **APPROVED** — **COMMITTED** (+jest lint-globals block for **tests**)
+- NEXT (MANDATORY ORDER): **TASK-013 confirm-password — worker has skipped it TWICE (010→011→012); must be NEXT, no exceptions** → TASK-014 → TASK-015 → TASK-016
 - 5-DAY SHIP MODE active (user directive 2026-08-27): see `.agents/ROADMAP-5DAY.md` — Deadline 2026-09-01.
 - Optional follow-up nit: ProfileScreen back button scrolls with content (inside ScrollView) — move outside ScrollView if desired → folded into TASK-014
 - ~~Reviewer note (TASK-007): trigger still awards JOINED_SOLVE to author~~ RESOLVED by TASK-011.
