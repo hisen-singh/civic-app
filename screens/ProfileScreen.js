@@ -42,6 +42,7 @@ export default function ProfileScreen() {
     badges: [],
     followerCount: 0,
     followingCount: 0,
+    trustScore: null,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -81,6 +82,7 @@ export default function ProfileScreen() {
       let rank = "-";
       let followerCount = 0;
       let followingCount = 0;
+      let serverTrustScore = null;
       try {
         const userDocSnap = await getDoc(doc(db, "users", uid));
         if (userDocSnap.exists()) {
@@ -88,6 +90,9 @@ export default function ProfileScreen() {
           rank = userData.rank || "-";
           followerCount = userData.followerCount || 0;
           followingCount = userData.followingCount || 0;
+          if (typeof userData.trustScore === "number") {
+            serverTrustScore = userData.trustScore;
+          }
         }
       } catch (e) {
         console.warn("Failed to fetch rank", e);
@@ -143,6 +148,7 @@ export default function ProfileScreen() {
         badges,
         followerCount,
         followingCount,
+        trustScore: serverTrustScore,
       });
     } catch (e) {
       console.error("Profile stats error:", e);
@@ -199,6 +205,7 @@ export default function ProfileScreen() {
   const initials = displayName.substring(0, 2).toUpperCase();
   const photoURL = isOwnProfile ? user?.photoURL : profilePhotoURL;
   const trustScore =
+    stats.trustScore ??
     stats.reported * 50 + stats.supported * 30 + stats.solved * 100;
   const joinDate =
     isOwnProfile && user?.metadata?.creationTime

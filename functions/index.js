@@ -384,6 +384,8 @@ exports.onIssueUpdated = functions.firestore
       });
 
       for (const solverId of newSolvers) {
+        // Skip author — they should not earn JOINED_SOLVE on their own issue
+        if (solverId === after.authorId) continue;
         await awardImpactPoints(
           solverId,
           TRUST_SCORE.JOINED_SOLVE,

@@ -1,7 +1,7 @@
 TASK-011
 Title: Fix JOINED_SOLVE author award + client/server trustScore divergence
 Priority: HIGH
-Status: PENDING
+Status: IN_PROGRESS
 Day: 1
 
 ## Objective

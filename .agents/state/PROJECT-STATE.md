@@ -51,9 +51,12 @@ Baseline committed at `6348437` (+ style commit `d1794ac`, TASK-001 commit `4bb0
 - TASK-007: COMPLETED (PASS) — incremental trust counters + solver-side JOINED_SOLVE (a3c0d98)
 - TASK-008: COMPLETED (PASS) — eslint.config.js created and lint config working
 - TASK-009: COMPLETED → REQUIRES FIX (stale tab params) → FIX-01 delivered 15:23, MANAGER REVIEW: **APPROVED** (tests 9/9, 55/55 verified) — UserProfile stack route + back button; **COMMITTED 5eaecdb**
-- 5-DAY SHIP MODE active (user directive 2026-08-27): see `.agents/ROADMAP-5DAY.md` — TASK-010..016 queued with full specs + standing autonomous rules. Deadline 2026-09-01.
-- Optional follow-up nit: ProfileScreen back button scrolls with content (inside ScrollView) — move outside ScrollView if desired
-- Reviewer note (TASK-007): trigger still awards JOINED_SOLVE to author at line 346 — pre-existing, self-corrects at daily cron; optional follow-up.
+- TASK-010 (callable rate limiting): COMPLETED, MANAGER REVIEW: **APPROVED** — **COMMITTED c04def2** (+scoped functions/** CommonJS lint block)
+- TASK-011 (JOINED_SOLVE author guard + server trustScore): COMPLETED, MANAGER REVIEW: **APPROVED** — worker stalled 21:16→16:30 (lock orphaned), manager completed ProfileScreen half, worker returned and verified; joint implementation APPROVED
+- NEXT (MANDATORY ORDER): TASK-013 (confirm-password — worker skipped it, do it FIRST) → TASK-012 → TASK-014 → TASK-015 → TASK-016
+- 5-DAY SHIP MODE active (user directive 2026-08-27): see `.agents/ROADMAP-5DAY.md` — Deadline 2026-09-01.
+- Optional follow-up nit: ProfileScreen back button scrolls with content (inside ScrollView) — move outside ScrollView if desired → folded into TASK-014
+- ~~Reviewer note (TASK-007): trigger still awards JOINED_SOLVE to author~~ RESOLVED by TASK-011.
 
 ## Product bugs found (awaiting human/product decision)
 
