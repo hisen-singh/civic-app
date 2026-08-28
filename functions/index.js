@@ -62,14 +62,11 @@ async function getFcmToken(userId) {
 }
 
 /** Send a push notification via Expo + persist to Firestore */
-async function notifyUser(db, admin, {
-  userId,
-  title,
-  body,
-  type,
-  issueId,
-  actorId,
-}) {
+async function notifyUser(
+  db,
+  admin,
+  { userId, title, body, type, issueId, actorId },
+) {
   if (!userId) return;
   try {
     const notifRef = db.collection("notifications").doc();
@@ -195,6 +192,35 @@ async function checkAchievements(userId) {
     }
   } catch (err) {
     console.error("[checkAchievements] Error:", err);
+  }
+}
+
+// ────────────────────────────────────────────────────────────────────────────
+// RATE LIMITER
+// ────────────────────────────────────────────────────────────────────────────
+
+const RATE_BUCKET = new Map(); // uid -> { count, resetAt }
+function enforceRateLimit(context, name, limit, windowMs) {
+  if (!context?.auth?.uid) return; // unauthenticated throws elsewhere
+  const now = Date.now();
+  const key = `${name}:${context.auth.uid}`;
+  const b = RATE_BUCKET.get(key);
+  if (!b || now > b.resetAt) {
+    // Periodic cleanup: prune expired entries when map grows too large
+    if (RATE_BUCKET.size > 10000) {
+      for (const [k, v] of RATE_BUCKET) {
+        if (now > v.resetAt) RATE_BUCKET.delete(k);
+      }
+    }
+    RATE_BUCKET.set(key, { count: 1, resetAt: now + windowMs });
+    return;
+  }
+  b.count += 1;
+  if (b.count > limit) {
+    throw new functions.https.HttpsError(
+      "resource-exhausted",
+      `Rate limit exceeded for ${name}`,
+    );
   }
 }
 
@@ -356,9 +382,13 @@ exports.onIssueUpdated = functions.firestore
         issueId,
         actorId: newSolvers[0],
       });
-      
+
       for (const solverId of newSolvers) {
-        await awardImpactPoints(solverId, TRUST_SCORE.JOINED_SOLVE, "Joined solve");
+        await awardImpactPoints(
+          solverId,
+          TRUST_SCORE.JOINED_SOLVE,
+          "Joined solve",
+        );
       }
     }
 
@@ -816,6 +846,7 @@ exports.cleanupOldFeedItems = functions.pubsub
 // HTTPS CALLABLE: FOLLOW USER
 // ────────────────────────────────────────────────────────────────────────────
 exports.followUser = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "followUser", 10, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -853,6 +884,7 @@ exports.followUser = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: UNFOLLOW USER
 // ────────────────────────────────────────────────────────────────────────────
 exports.unfollowUser = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "unfollowUser", 10, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -878,6 +910,7 @@ exports.unfollowUser = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET HOME FEED
 // ────────────────────────────────────────────────────────────────────────────
 exports.getHomeFeed = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "getHomeFeed", 30, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -925,6 +958,7 @@ exports.getHomeFeed = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET TRENDING ISSUES
 // ────────────────────────────────────────────────────────────────────────────
 exports.getTrendingIssues = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "getTrendingIssues", 30, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -955,6 +989,7 @@ exports.getTrendingIssues = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET LEADERBOARD
 // ────────────────────────────────────────────────────────────────────────────
 exports.getLeaderboard = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "getLeaderboard", 30, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -987,6 +1022,7 @@ exports.getLeaderboard = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET USER RANK
 // ────────────────────────────────────────────────────────────────────────────
 exports.getUserRank = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "getUserRank", 30, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1029,6 +1065,7 @@ exports.getUserRank = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET ACHIEVEMENTS (badge progress for a user)
 // ────────────────────────────────────────────────────────────────────────────
 exports.getAchievements = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "getAchievements", 30, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1143,6 +1180,7 @@ exports.getAchievements = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: SAVE FCM TOKEN
 // ────────────────────────────────────────────────────────────────────────────
 exports.saveFcmToken = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "saveFcmToken", 10, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1173,6 +1211,7 @@ exports.saveFcmToken = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: CHECK ADMIN STATUS
 // ────────────────────────────────────────────────────────────────────────────
 exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "checkAdminStatus", 30, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1185,6 +1224,7 @@ exports.checkAdminStatus = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: SET ADMIN ROLE
 // ────────────────────────────────────────────────────────────────────────────
 exports.setAdminRole = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "setAdminRole", 10, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1225,6 +1265,7 @@ exports.setAdminRole = functions.https.onCall(async (data, context) => {
 // ────────────────────────────────────────────────────────────────────────────
 exports.adminUpdateIssueStatus = functions.https.onCall(
   async (data, context) => {
+    enforceRateLimit(context, "adminUpdateIssueStatus", 10, 60000);
     if (!context.auth)
       throw new functions.https.HttpsError(
         "unauthenticated",
@@ -1269,6 +1310,7 @@ exports.adminUpdateIssueStatus = functions.https.onCall(
 // HTTPS CALLABLE: REPORT CONTENT
 // ────────────────────────────────────────────────────────────────────────────
 exports.reportContent = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "reportContent", 10, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1308,6 +1350,7 @@ exports.reportContent = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: LOG APP CRASH
 // ────────────────────────────────────────────────────────────────────────────
 exports.logAppCrash = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "logAppCrash", 10, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",
@@ -1326,6 +1369,7 @@ exports.logAppCrash = functions.https.onCall(async (data, context) => {
 // HTTPS CALLABLE: GET CLIENT CRASHES (admin)
 // ────────────────────────────────────────────────────────────────────────────
 exports.getClientCrashes = functions.https.onCall(async (data, context) => {
+  enforceRateLimit(context, "getClientCrashes", 30, 60000);
   if (!context.auth)
     throw new functions.https.HttpsError(
       "unauthenticated",

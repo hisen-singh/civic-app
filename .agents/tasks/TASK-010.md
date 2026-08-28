@@ -1,7 +1,7 @@
 TASK-010
 Title: Rate-limit HTTPS callables (Audit #11)
 Priority: HIGH
-Status: PENDING
+Status: COMPLETED
 Day: 1 (see .agents/ROADMAP-5DAY.md for queue + standing rules)
 
 ## Objective
