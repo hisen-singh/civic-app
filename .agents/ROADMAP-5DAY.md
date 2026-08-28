@@ -47,14 +47,12 @@ manager present. The manager reviews in batch daily and only intervenes on FAIL 
 ### DAY 2 — 2026-08-28
 
 - [x] TASK-012 — live isAdmin via onIdTokenChanged — APPROVED
-- [ ] **TASK-013 — SignupScreen confirm-password · MANDATORY NEXT — worker has
-      skipped it TWICE. Do not start any other task before this one is COMPLETED.**
+- [x] TASK-013 — SignupScreen confirm-password — APPROVED, 95b26fe (worker's render test was broken; manager rewrote with react-test-renderer)
 
 ### DAY 3 — 2026-08-29
 
-- [ ] TASK-014 — Hygiene sweep: lint warnings → 0, flip no-unused-vars to error,
-      back button fixed position, README refresh
-- [ ] TASK-015 — Targeted test coverage: SolveScreen + WatchArea + profile param flows
+- [x] TASK-014 — Hygiene sweep — APPROVED (worker: bulk unused-var sweep + README 26 functions verified; manager: remaining warnings, back button actually moved outside ScrollView, config flip made real, scratch/ ignored)
+- [ ] TASK-015 — Targeted test coverage: SolveScreen + WatchArea + profile param flows (WORKER ACTIVE — lock held, test files in progress)
 
 ### DAY 4 — 2026-08-30
 

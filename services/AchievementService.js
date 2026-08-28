@@ -59,7 +59,6 @@ export const AchievementService = {
 
       const user = userDoc.data();
       const earnedBadges = await AchievementService.getUserBadges(userId);
-      const earnedIds = new Set(earnedBadges.map((b) => b.id));
 
       // Compute current values for each criterion type
       const stats = {

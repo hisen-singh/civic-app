@@ -1,6 +1,6 @@
 import "react-native-gesture-handler";
 import "./config/i18n";
-import React, { useCallback, useRef, useEffect, useState } from "react";
+import { useRef, useEffect, useState } from "react";
 import * as Sentry from "@sentry/react-native";
 
 Sentry.init({
@@ -40,7 +40,7 @@ import {
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import * as Font from "expo-font";
-import { Colors, Radius, Shadows } from "./theme";
+import { Colors, Shadows } from "./theme";
 
 // Screens
 import HomeScreen from "./screens/HomeScreen";
@@ -122,10 +122,7 @@ function TabIcon({ name, color, focused }) {
   );
 }
 
-import { useNavigation } from "@react-navigation/native";
-
 function MainTabs() {
-  const navigation = useNavigation();
   const insets = useSafeAreaInsets();
   const tabBarHeight = 64 + Math.max(insets.bottom, 8);
 

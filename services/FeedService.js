@@ -5,8 +5,6 @@ import {
   limit,
   startAfter,
   getDocs,
-  doc,
-  getDoc,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../config/firebaseConfig";

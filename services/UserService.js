@@ -10,8 +10,6 @@ import {
   limit,
   startAfter,
   getDocs,
-  serverTimestamp,
-  increment,
 } from "firebase/firestore";
 import { httpsCallable } from "firebase/functions";
 import { db, functions } from "../config/firebaseConfig";
@@ -282,7 +280,7 @@ export const UserService = {
       );
       const snap = await getDoc(docRef);
       return snap.exists();
-    } catch (error) {
+    } catch {
       return false;
     }
   },

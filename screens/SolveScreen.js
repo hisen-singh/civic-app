@@ -1,4 +1,4 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import {
   View,
   FlatList,
@@ -16,7 +16,7 @@ import FilterPills from "../components/ui/FilterPills";
 import AnimatedPressable from "../components/ui/AnimatedPressable";
 import { IssueService } from "../services/IssueService";
 import { useAuth } from "../contexts/AuthContext";
-import { Colors, Spacing, Radius, Shadows, Gradients } from "../theme";
+import { Colors, Spacing, Radius, Gradients } from "../theme";
 
 const DIFFICULTY_MAP = {
   critical: { label: "Hard", color: Colors.critical, xp: 200, icon: "fire" },
@@ -72,7 +72,6 @@ export default function SolveScreen() {
     try {
       const allIssues = await IssueService.getAllIssues(isRefresh);
       const uid = user?.uid;
-      const name = user?.displayName;
 
       // Issues available to solve: not authored by user, not solved/failed
       const solveable = allIssues.filter(
@@ -261,10 +260,9 @@ export default function SolveScreen() {
     </Animated.View>
   );
 
-  const renderIssueWithReward = ({ item, index }) => {
+  const renderIssueWithReward = ({ item }) => {
     const difficulty = getDifficulty(item.urgency);
     const solverCount = (item.solvers || []).length;
-    const isJoined = user ? (item.solvers || []).includes(user.uid) : false;
 
     return (
       <Animated.View style={{ opacity: fadeAnim }}>

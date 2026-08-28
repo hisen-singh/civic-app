@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   FlatList,
@@ -7,20 +7,17 @@ import {
   StyleSheet,
   ActivityIndicator,
   Image,
+  Animated,
 } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useNavigation, useRoute } from "@react-navigation/native";
-import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { UserService } from "../services/UserService";
-import { useAuth } from "../contexts/AuthContext";
-import { Colors, Spacing, Radius, Typography } from "../theme";
+import { Colors, Spacing, Typography } from "../theme";
 
 export default function FollowListScreen() {
-  const { t } = useTranslation();
   const navigation = useNavigation();
   const route = useRoute();
-  const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const { userId, listType } = route.params; // listType: 'followers' | 'following'
   const [users, setUsers] = useState([]);
@@ -111,8 +108,6 @@ export default function FollowListScreen() {
     </TouchableOpacity>
   );
 
-  const isOwnProfile = user?.uid === userId;
-
   return (
     <Animated.View style={[styles.container, { opacity: fadeAnim }]}>
       <FlatList
@@ -157,8 +152,6 @@ export default function FollowListScreen() {
     </Animated.View>
   );
 }
-
-import { Animated } from "react-native";
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: Colors.background },

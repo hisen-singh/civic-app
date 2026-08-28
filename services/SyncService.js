@@ -79,7 +79,8 @@ export const SyncService = {
 
       for (const item of queue) {
         try {
-          const { _queuedAt, ...issueData } = item;
+          const issueData = { ...item };
+          delete issueData._queuedAt;
 
           // Upload photo if it's a local URI
           if (issueData.photo && !issueData.photo.startsWith("http")) {

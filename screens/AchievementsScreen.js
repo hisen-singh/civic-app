@@ -1,14 +1,12 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   FlatList,
   Text,
   StyleSheet,
-  TouchableOpacity,
   ActivityIndicator,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Animated } from "react-native";
 import { Colors, Spacing, Radius, Typography } from "../theme";
@@ -16,7 +14,6 @@ import { AchievementService } from "../services/AchievementService";
 import { useAuth } from "../contexts/AuthContext";
 
 export default function AchievementsScreen() {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const [badges, setBadges] = useState([]);

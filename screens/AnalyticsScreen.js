@@ -1,11 +1,11 @@
-import React, { useState, useCallback, useRef, useEffect } from "react";
-import { View, ScrollView, Animated, Dimensions } from "react-native";
+import { useState, useCallback, useRef, useEffect } from "react";
+import { View, Animated } from "react-native";
 import { Text, ActivityIndicator } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "@react-navigation/native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { IssueService } from "../services/IssueService";
-import { Colors, Radius, Spacing, Shadows, Gradients } from "../theme";
+import { Colors, Radius, Spacing, Shadows } from "../theme";
 
 export default function AnalyticsScreen() {
   const [loading, setLoading] = useState(true);

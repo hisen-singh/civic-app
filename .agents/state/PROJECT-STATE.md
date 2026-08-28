@@ -54,9 +54,11 @@ Baseline committed at `6348437` (+ style commit `d1794ac`, TASK-001 commit `4bb0
 - TASK-010 (callable rate limiting): COMPLETED, MANAGER REVIEW: **APPROVED** — **COMMITTED c04def2** (+scoped functions/** CommonJS lint block)
 - TASK-011 (JOINED_SOLVE author guard + server trustScore): COMPLETED, MANAGER REVIEW: **APPROVED** — worker stalled 21:16→16:30 (lock orphaned), manager completed ProfileScreen half, worker returned and verified; joint implementation APPROVED — **COMMITTED ac4881c**
 - TASK-012 (live isAdmin via onIdTokenChanged): COMPLETED, MANAGER REVIEW: **APPROVED** — **COMMITTED** (+jest lint-globals block for **tests**)
-- NEXT (MANDATORY ORDER): **TASK-013 confirm-password — worker has skipped it TWICE (010→011→012); must be NEXT, no exceptions** → TASK-014 → TASK-015 → TASK-016
+- TASK-013: COMPLETED, MANAGER REVIEW: **APPROVED** — worker's render test was broken (RTL-RN v14 incompatible with repo's react-test-renderer setup, claimed 7/7 falsely); manager rewrote test with react-test-renderer; 9/9 suites, 57/57 green — **COMMITTED 95b26fe**
+- TASK-014: COMPLETED, MANAGER REVIEW: **APPROVED WITH COMPLETIONS** — worker lint-swept screens/components/services live (out-of-band, no lock, no initial result file); manager completed: remaining warnings (config/functions/index.js/scripts), ProfileScreen back button actually moved OUTSIDE ScrollView (worker only added wrapper, button still scrolled), removed `no-unused-vars` warn scope-downs (true error everywhere), scratch/ + .zcode/ eslint-ignored, ErrorBoundary React import. eslint . → 0 errors/0 warnings for all committed files (worker's in-progress TASK-015 test files excluded); jest 9/9 suites green at commit time — **COMMITTED** (this commit)
+- TASK-015: COMPLETED (PASS) — Tests for SolveScreen, WatchAreaScreen, and ProfileScreen implemented. Fixed Animated NativeAnimatedHelper memory leaks and unmounted component errors. All 12 test suites passing.
+- NEXT (MANDATORY ORDER): TASK-016 (E2E & release prep)
 - 5-DAY SHIP MODE active (user directive 2026-08-27): see `.agents/ROADMAP-5DAY.md` — Deadline 2026-09-01.
-- Optional follow-up nit: ProfileScreen back button scrolls with content (inside ScrollView) — move outside ScrollView if desired → folded into TASK-014
 - ~~Reviewer note (TASK-007): trigger still awards JOINED_SOLVE to author~~ RESOLVED by TASK-011.
 
 ## Product bugs found (awaiting human/product decision)

@@ -1,11 +1,5 @@
-import React, { useState, useEffect } from "react";
-import {
-  View,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Alert,
-} from "react-native";
+import { useState, useEffect } from "react";
+import { View, StyleSheet, ScrollView } from "react-native";
 import {
   Text,
   Card,
@@ -39,7 +33,7 @@ export default function WatchAreaScreen() {
   const [isCreating, setIsCreating] = useState(false);
 
   // Create Mode State
-  const [newAreaCoords, setNewAreaCoords] = useState({
+  const [newAreaCoords] = useState({
     latitude: 29.0588, // Default Haryana region
     longitude: 76.0856,
     latitudeDelta: 0.0922,

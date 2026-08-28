@@ -1,4 +1,3 @@
-import React from "react";
 import renderer, { act } from "react-test-renderer";
 import { AuthProvider, useAuth } from "../contexts/AuthContext";
 import { onAuthStateChanged, onIdTokenChanged } from "firebase/auth";

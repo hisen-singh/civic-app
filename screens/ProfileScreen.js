@@ -293,31 +293,314 @@ export default function ProfileScreen() {
   ];
 
   return (
-    <Animated.ScrollView
-      style={{
-        flex: 1,
-        backgroundColor: Colors.background,
-        opacity: fadeAnim,
-        transform: [{ scale: scaleAnim }],
-      }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={Colors.accent}
-          colors={[Colors.accent]}
-          progressBackgroundColor={Colors.surface}
-        />
-      }
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        paddingBottom: 120,
-        maxWidth: 800,
-        alignSelf: "center",
-        width: "100%",
-      }}
-    >
-      {/* Back button for stack presentation */}
+    <View style={{ flex: 1 }}>
+      <Animated.ScrollView
+        style={{
+          flex: 1,
+          backgroundColor: Colors.background,
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }],
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={Colors.accent}
+            colors={[Colors.accent]}
+            progressBackgroundColor={Colors.surface}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          maxWidth: 800,
+          alignSelf: "center",
+          width: "100%",
+        }}
+      >
+        {/* Profile Header */}
+        <LinearGradient
+          colors={Gradients.heroCard}
+          style={styles.headerSection}
+        >
+          <View style={styles.avatarRow}>
+            {isOwnProfile ? (
+              <AnimatedPressable
+                onPress={() => navigation.navigate("EditProfile")}
+                activeScale={0.95}
+              >
+                <View style={styles.avatarRing}>
+                  {photoURL ? (
+                    <Image source={{ uri: photoURL }} style={styles.avatar} />
+                  ) : (
+                    <LinearGradient
+                      colors={[Colors.accentDark, Colors.accentLight]}
+                      style={styles.avatar}
+                    >
+                      <Text style={styles.avatarText}>{initials}</Text>
+                    </LinearGradient>
+                  )}
+                </View>
+              </AnimatedPressable>
+            ) : (
+              <View style={styles.avatarRing}>
+                {photoURL ? (
+                  <Image source={{ uri: photoURL }} style={styles.avatar} />
+                ) : (
+                  <LinearGradient
+                    colors={[Colors.accentDark, Colors.accentLight]}
+                    style={styles.avatar}
+                  >
+                    <Text style={styles.avatarText}>{initials}</Text>
+                  </LinearGradient>
+                )}
+              </View>
+            )}
+            <View style={{ flex: 1, marginLeft: Spacing.lg }}>
+              <Text style={styles.displayName}>{displayName}</Text>
+              {isOwnProfile && (
+                <Text style={styles.email}>{user?.email || ""}</Text>
+              )}
+              {joinDate ? (
+                <Text style={styles.joinDate}>Member since {joinDate}</Text>
+              ) : null}
+            </View>
+            {isOwnProfile && (
+              <AnimatedPressable
+                onPress={() => navigation.navigate("EditProfile")}
+                activeScale={0.92}
+              >
+                <View style={styles.editBtn}>
+                  <MaterialCommunityIcons
+                    name="pencil-outline"
+                    size={18}
+                    color={Colors.accentLight}
+                  />
+                </View>
+              </AnimatedPressable>
+            )}
+          </View>
+
+          {/* Stats Row */}
+          <View style={styles.statsRow}>
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.accentLight }]}>
+                {trustScore}
+              </Text>
+              <Text style={styles.statLabel}>Trust Score</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.success }]}>
+                #{stats.rank}
+              </Text>
+              <Text style={styles.statLabel}>City Rank</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={styles.statValue}>{stats.reported}</Text>
+              <Text style={styles.statLabel}>Reports</Text>
+            </View>
+            <View style={styles.statDivider} />
+            <View style={styles.statItem}>
+              <Text style={[styles.statValue, { color: Colors.success }]}>
+                {stats.solved}
+              </Text>
+              <Text style={styles.statLabel}>Solved</Text>
+            </View>
+          </View>
+
+          <AnimatedPressable
+            onPress={() =>
+              navigation.navigate("FollowList", {
+                userId: profileUserId,
+                listType: "followers",
+              })
+            }
+            activeScale={0.96}
+          >
+            <View style={{ alignItems: "center", marginTop: Spacing.md }}>
+              <Text
+                style={{
+                  fontSize: 12,
+                  color: Colors.accentLight,
+                  fontWeight: "500",
+                  letterSpacing: 0.3,
+                }}
+              >
+                {stats.followerCount} Followers · {stats.followingCount}{" "}
+                Following
+              </Text>
+            </View>
+          </AnimatedPressable>
+        </LinearGradient>
+
+        <View
+          style={{
+            paddingHorizontal: Spacing.xl,
+            paddingVertical: Spacing.xxl,
+          }}
+        >
+          {/* Activity Cards */}
+          <Text style={styles.sectionTitle}>Activity Overview</Text>
+          <View style={{ flexDirection: "row", marginBottom: Spacing.xxxl }}>
+            <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
+              <View
+                style={[
+                  styles.activityIcon,
+                  { backgroundColor: Colors.infoSurface },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="clipboard-text-outline"
+                  size={22}
+                  color={Colors.info}
+                />
+              </View>
+              <Text style={styles.activityValue}>{stats.reported}</Text>
+              <Text style={styles.activityLabel}>Reports Filed</Text>
+            </View>
+            <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
+              <View
+                style={[
+                  styles.activityIcon,
+                  { backgroundColor: Colors.warningSurface },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="hand-heart-outline"
+                  size={22}
+                  color={Colors.warning}
+                />
+              </View>
+              <Text style={styles.activityValue}>{stats.supported}</Text>
+              <Text style={styles.activityLabel}>Helping On</Text>
+            </View>
+            <View style={styles.activityCard}>
+              <View
+                style={[
+                  styles.activityIcon,
+                  { backgroundColor: Colors.successSurface },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name="check-decagram-outline"
+                  size={22}
+                  color={Colors.success}
+                />
+              </View>
+              <Text style={styles.activityValue}>{stats.solved}</Text>
+              <Text style={styles.activityLabel}>Resolved</Text>
+            </View>
+          </View>
+
+          {/* Badges */}
+          <Text style={styles.sectionTitle}>Achievements</Text>
+          <View style={{ marginBottom: Spacing.xxxl }}>
+            {stats.badges.map((badge) => (
+              <View
+                key={badge.id}
+                style={[styles.badgeRow, !badge.unlocked && { opacity: 0.35 }]}
+              >
+                <View
+                  style={[
+                    styles.badgeIconWrap,
+                    badge.unlocked && { backgroundColor: Colors.accentSurface },
+                  ]}
+                >
+                  <MaterialCommunityIcons
+                    name={badge.icon}
+                    size={22}
+                    color={badge.unlocked ? Colors.accent : Colors.textTertiary}
+                  />
+                </View>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.badgeName}>{badge.name}</Text>
+                  <Text style={styles.badgeDesc}>
+                    {badge.unlocked ? badge.desc : "Locked — keep contributing"}
+                  </Text>
+                </View>
+                {badge.unlocked && (
+                  <View style={styles.unlockedBadge}>
+                    <MaterialCommunityIcons
+                      name="check"
+                      size={12}
+                      color={Colors.success}
+                    />
+                  </View>
+                )}
+              </View>
+            ))}
+          </View>
+
+          {/* Settings — only for own profile */}
+          {isOwnProfile && (
+            <View>
+              <Text style={styles.sectionTitle}>Settings</Text>
+              {settingsItems.map((item, index) => (
+                <AnimatedPressable
+                  key={item.title}
+                  onPress={item.onPress}
+                  activeScale={0.98}
+                  style={{
+                    marginBottom:
+                      index < settingsItems.length - 1
+                        ? Spacing.sm
+                        : Spacing.xxxl,
+                  }}
+                >
+                  <View style={styles.settingsRow}>
+                    <View
+                      style={[
+                        styles.settingsIcon,
+                        { backgroundColor: item.iconBg },
+                      ]}
+                    >
+                      <MaterialCommunityIcons
+                        name={item.icon}
+                        size={20}
+                        color={item.iconColor}
+                      />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <Text style={styles.settingsTitle}>{item.title}</Text>
+                      <Text style={styles.settingsDesc}>{item.desc}</Text>
+                    </View>
+                    <MaterialCommunityIcons
+                      name="chevron-right"
+                      size={20}
+                      color={Colors.textTertiary}
+                    />
+                  </View>
+                </AnimatedPressable>
+              ))}
+            </View>
+          )}
+          {/* Logout — only for own profile */}
+          {isOwnProfile && (
+            <TouchableOpacity
+              onPress={handleLogout}
+              activeOpacity={0.7}
+              style={styles.logoutBtn}
+            >
+              <MaterialCommunityIcons
+                name="logout"
+                size={18}
+                color={Colors.error}
+                style={{ marginRight: 8 }}
+              />
+              <Text style={styles.logoutText}>
+                {t("profile.sign_out", "Sign Out")}
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <Text style={styles.versionText}>Civic v1.0</Text>
+          <View style={{ height: 40 }} />
+        </View>
+      </Animated.ScrollView>
+      {/* Back button for stack presentation — sibling of ScrollView so it
+          stays fixed instead of scrolling with content */}
       {isStackProfile && (
         <TouchableOpacity
           onPress={() => navigation.goBack()}
@@ -344,280 +627,7 @@ export default function ProfileScreen() {
           />
         </TouchableOpacity>
       )}
-      {/* Profile Header */}
-      <LinearGradient colors={Gradients.heroCard} style={styles.headerSection}>
-        <View style={styles.avatarRow}>
-          {isOwnProfile ? (
-            <AnimatedPressable
-              onPress={() => navigation.navigate("EditProfile")}
-              activeScale={0.95}
-            >
-              <View style={styles.avatarRing}>
-                {photoURL ? (
-                  <Image source={{ uri: photoURL }} style={styles.avatar} />
-                ) : (
-                  <LinearGradient
-                    colors={[Colors.accentDark, Colors.accentLight]}
-                    style={styles.avatar}
-                  >
-                    <Text style={styles.avatarText}>{initials}</Text>
-                  </LinearGradient>
-                )}
-              </View>
-            </AnimatedPressable>
-          ) : (
-            <View style={styles.avatarRing}>
-              {photoURL ? (
-                <Image source={{ uri: photoURL }} style={styles.avatar} />
-              ) : (
-                <LinearGradient
-                  colors={[Colors.accentDark, Colors.accentLight]}
-                  style={styles.avatar}
-                >
-                  <Text style={styles.avatarText}>{initials}</Text>
-                </LinearGradient>
-              )}
-            </View>
-          )}
-          <View style={{ flex: 1, marginLeft: Spacing.lg }}>
-            <Text style={styles.displayName}>{displayName}</Text>
-            {isOwnProfile && (
-              <Text style={styles.email}>{user?.email || ""}</Text>
-            )}
-            {joinDate ? (
-              <Text style={styles.joinDate}>Member since {joinDate}</Text>
-            ) : null}
-          </View>
-          {isOwnProfile && (
-            <AnimatedPressable
-              onPress={() => navigation.navigate("EditProfile")}
-              activeScale={0.92}
-            >
-              <View style={styles.editBtn}>
-                <MaterialCommunityIcons
-                  name="pencil-outline"
-                  size={18}
-                  color={Colors.accentLight}
-                />
-              </View>
-            </AnimatedPressable>
-          )}
-        </View>
-
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: Colors.accentLight }]}>
-              {trustScore}
-            </Text>
-            <Text style={styles.statLabel}>Trust Score</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: Colors.success }]}>
-              #{stats.rank}
-            </Text>
-            <Text style={styles.statLabel}>City Rank</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={styles.statValue}>{stats.reported}</Text>
-            <Text style={styles.statLabel}>Reports</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text style={[styles.statValue, { color: Colors.success }]}>
-              {stats.solved}
-            </Text>
-            <Text style={styles.statLabel}>Solved</Text>
-          </View>
-        </View>
-
-        <AnimatedPressable
-          onPress={() =>
-            navigation.navigate("FollowList", {
-              userId: profileUserId,
-              listType: "followers",
-            })
-          }
-          activeScale={0.96}
-        >
-          <View style={{ alignItems: "center", marginTop: Spacing.md }}>
-            <Text
-              style={{
-                fontSize: 12,
-                color: Colors.accentLight,
-                fontWeight: "500",
-                letterSpacing: 0.3,
-              }}
-            >
-              {stats.followerCount} Followers · {stats.followingCount} Following
-            </Text>
-          </View>
-        </AnimatedPressable>
-      </LinearGradient>
-
-      <View
-        style={{ paddingHorizontal: Spacing.xl, paddingVertical: Spacing.xxl }}
-      >
-        {/* Activity Cards */}
-        <Text style={styles.sectionTitle}>Activity Overview</Text>
-        <View style={{ flexDirection: "row", marginBottom: Spacing.xxxl }}>
-          <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
-            <View
-              style={[
-                styles.activityIcon,
-                { backgroundColor: Colors.infoSurface },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="clipboard-text-outline"
-                size={22}
-                color={Colors.info}
-              />
-            </View>
-            <Text style={styles.activityValue}>{stats.reported}</Text>
-            <Text style={styles.activityLabel}>Reports Filed</Text>
-          </View>
-          <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
-            <View
-              style={[
-                styles.activityIcon,
-                { backgroundColor: Colors.warningSurface },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="hand-heart-outline"
-                size={22}
-                color={Colors.warning}
-              />
-            </View>
-            <Text style={styles.activityValue}>{stats.supported}</Text>
-            <Text style={styles.activityLabel}>Helping On</Text>
-          </View>
-          <View style={styles.activityCard}>
-            <View
-              style={[
-                styles.activityIcon,
-                { backgroundColor: Colors.successSurface },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="check-decagram-outline"
-                size={22}
-                color={Colors.success}
-              />
-            </View>
-            <Text style={styles.activityValue}>{stats.solved}</Text>
-            <Text style={styles.activityLabel}>Resolved</Text>
-          </View>
-        </View>
-
-        {/* Badges */}
-        <Text style={styles.sectionTitle}>Achievements</Text>
-        <View style={{ marginBottom: Spacing.xxxl }}>
-          {stats.badges.map((badge) => (
-            <View
-              key={badge.id}
-              style={[styles.badgeRow, !badge.unlocked && { opacity: 0.35 }]}
-            >
-              <View
-                style={[
-                  styles.badgeIconWrap,
-                  badge.unlocked && { backgroundColor: Colors.accentSurface },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name={badge.icon}
-                  size={22}
-                  color={badge.unlocked ? Colors.accent : Colors.textTertiary}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.badgeName}>{badge.name}</Text>
-                <Text style={styles.badgeDesc}>
-                  {badge.unlocked ? badge.desc : "Locked — keep contributing"}
-                </Text>
-              </View>
-              {badge.unlocked && (
-                <View style={styles.unlockedBadge}>
-                  <MaterialCommunityIcons
-                    name="check"
-                    size={12}
-                    color={Colors.success}
-                  />
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-
-        {/* Settings — only for own profile */}
-        {isOwnProfile && (
-          <View>
-            <Text style={styles.sectionTitle}>Settings</Text>
-            {settingsItems.map((item, index) => (
-              <AnimatedPressable
-                key={item.title}
-                onPress={item.onPress}
-                activeScale={0.98}
-                style={{
-                  marginBottom:
-                    index < settingsItems.length - 1
-                      ? Spacing.sm
-                      : Spacing.xxxl,
-                }}
-              >
-                <View style={styles.settingsRow}>
-                  <View
-                    style={[
-                      styles.settingsIcon,
-                      { backgroundColor: item.iconBg },
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={item.icon}
-                      size={20}
-                      color={item.iconColor}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text style={styles.settingsTitle}>{item.title}</Text>
-                    <Text style={styles.settingsDesc}>{item.desc}</Text>
-                  </View>
-                  <MaterialCommunityIcons
-                    name="chevron-right"
-                    size={20}
-                    color={Colors.textTertiary}
-                  />
-                </View>
-              </AnimatedPressable>
-            ))}
-          </View>
-        )}
-        {/* Logout — only for own profile */}
-        {isOwnProfile && (
-          <TouchableOpacity
-            onPress={handleLogout}
-            activeOpacity={0.7}
-            style={styles.logoutBtn}
-          >
-            <MaterialCommunityIcons
-              name="logout"
-              size={18}
-              color={Colors.error}
-              style={{ marginRight: 8 }}
-            />
-            <Text style={styles.logoutText}>
-              {t("profile.sign_out", "Sign Out")}
-            </Text>
-          </TouchableOpacity>
-        )}
-
-        <Text style={styles.versionText}>Civic v1.0</Text>
-        <View style={{ height: 40 }} />
-      </View>
-    </Animated.ScrollView>
+    </View>
   );
 }
 

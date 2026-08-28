@@ -56,7 +56,7 @@ async function getFcmToken(userId) {
       .doc("data")
       .get();
     return tokenDoc.exists ? tokenDoc.data().fcmToken || null : null;
-  } catch (_) {
+  } catch {
     return null;
   }
 }
@@ -170,7 +170,6 @@ async function checkAchievements(userId) {
   try {
     const userDoc = await db.collection("users").doc(userId).get();
     if (!userDoc.exists) return;
-    const user = userDoc.data();
 
     const checks = [
       { badgeId: "first_report", condition: (u) => u.issueCount >= 1 },
@@ -443,7 +442,6 @@ exports.onCommentAdded = functions.firestore
 exports.onReactionAdded = functions.firestore
   .document("issues/{issueId}/reactions/{userId}")
   .onCreate(async (snap, context) => {
-    const reaction = snap.data();
     const { issueId, userId: reactorId } = context.params;
 
     const issueDoc = await db.collection("issues").doc(issueId).get();
@@ -928,11 +926,6 @@ exports.getHomeFeed = functions.https.onCall(async (data, context) => {
     .get();
   const followedIds = followingSnap.docs.map((d) => d.id);
 
-  let queryConstraints = [
-    ["status", "==", "Open"],
-    ["status", "==", "In Progress"],
-  ];
-
   // Fetch trending + recent issues as base
   const issuesSnap = await db
     .collection("issues")
@@ -997,7 +990,7 @@ exports.getLeaderboard = functions.https.onCall(async (data, context) => {
       "unauthenticated",
       "Must be signed in.",
     );
-  const { period = "all_time", city, category, pageSize = 20 } = data;
+  const { city, pageSize = 20 } = data;
 
   let q;
   if (city) {

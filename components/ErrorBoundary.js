@@ -1,4 +1,4 @@
-import React from "react";
+import { Component } from "react";
 import { View, StyleSheet, TouchableOpacity, SafeAreaView } from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -7,7 +7,7 @@ import * as Sentry from "@sentry/react-native";
 
 import { Colors, Spacing, Radius } from "../theme";
 
-export default class ErrorBoundary extends React.Component {
+export default class ErrorBoundary extends Component {
   constructor(props) {
     super(props);
     this.state = { hasError: false, error: null };

@@ -1,8 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { initializeFirestore, persistentLocalCache } from "firebase/firestore";
-import { getAnalytics } from "firebase/analytics";
 import { getStorage } from "firebase/storage";
-import { getRemoteConfig, fetchAndActivate } from "firebase/remote-config";
+import { getRemoteConfig } from "firebase/remote-config";
 import {
   initializeAuth,
   getReactNativePersistence,
@@ -26,7 +25,7 @@ const firebaseConfig = {
 if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
   console.error(
     "[firebaseConfig] FATAL: Missing required Firebase environment variables. " +
-    "Ensure .env file exists with EXPO_PUBLIC_FIREBASE_* variables."
+      "Ensure .env file exists with EXPO_PUBLIC_FIREBASE_* variables.",
   );
 }
 

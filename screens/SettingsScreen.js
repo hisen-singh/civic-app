@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   Text,
@@ -11,7 +11,6 @@ import {
   Linking,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { useTranslation } from "react-i18next";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Animated } from "react-native";
 import Constants from "expo-constants";
@@ -20,16 +19,13 @@ import { useAuth } from "../contexts/AuthContext";
 import { Colors, Spacing, Radius, Typography } from "../theme";
 
 export default function SettingsScreen() {
-  const { t } = useTranslation();
   const { user } = useAuth();
   const insets = useSafeAreaInsets();
   const fadeAnim = useRef(new Animated.Value(0)).current;
 
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [locationEnabled, setLocationEnabled] = useState(true);
-  const [emailVerified, setEmailVerified] = useState(
-    user?.emailVerified || false,
-  );
+  const [emailVerified] = useState(user?.emailVerified || false);
   const [loggingOut, setLoggingOut] = useState(false);
 
   React.useEffect(() => {
@@ -50,7 +46,7 @@ export default function SettingsScreen() {
           setLoggingOut(true);
           try {
             await AuthService.logout();
-          } catch (err) {
+          } catch {
             Alert.alert("Error", "Failed to log out. Please try again.");
             setLoggingOut(false);
           }

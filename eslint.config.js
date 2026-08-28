@@ -8,6 +8,8 @@ module.exports = [
       "functions/node_modules/",
       "admin-dashboard/dist/",
       "coverage/",
+      "scratch/",
+      ".zcode/",
     ],
   },
   {
@@ -29,9 +31,6 @@ module.exports = [
         setInterval: "readonly",
         clearInterval: "readonly",
       },
-    },
-    rules: {
-      "no-unused-vars": "warn",
     },
   },
   {
@@ -57,9 +56,6 @@ module.exports = [
         setTimeout: "readonly",
         clearTimeout: "readonly",
       },
-    },
-    rules: {
-      "no-unused-vars": "warn",
     },
   },
   {
@@ -141,10 +137,7 @@ module.exports = [
       "no-unsafe-negation": "error",
       "no-unsafe-optional-chaining": "error",
       "no-unused-labels": "error",
-      // Rollout-mode: this codebase was never linted, so error-severity
-      // would fail the pre-commit hook on unrelated legacy dead imports.
-      // WARN until a sweep task (TASK-010) flips it to error.
-      "no-unused-vars": "warn",
+      "no-unused-vars": "error",
       "no-useless-backreference": "error",
       "no-useless-catch": "error",
       "no-useless-escape": "error",

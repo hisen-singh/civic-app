@@ -1,8 +1,7 @@
-import React, { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import {
   View,
   StyleSheet,
-  ScrollView,
   TouchableOpacity,
   Alert,
   Platform,
@@ -10,8 +9,6 @@ import {
 } from "react-native";
 import {
   Text,
-  Card,
-  Button,
   IconButton,
   Switch,
   ActivityIndicator,
@@ -317,7 +314,7 @@ export default function WatchAreaScreen() {
             </Text>
           </View>
         ) : (
-          watchAreas.map((area, index) => (
+          watchAreas.map((area) => (
             <Animated.View
               key={area.id}
               style={{

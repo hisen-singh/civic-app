@@ -1,4 +1,4 @@
-import React, { useState, useRef } from "react";
+import { useState, useRef } from "react";
 import {
   View,
   TouchableOpacity,
@@ -121,8 +121,6 @@ export default function IssueCard({
   const [localVotes, setLocalVotes] = useState(issue.votes || 0);
   const [hasVoted, setHasVoted] = useState(alreadyVoted);
   const [localStatus, setLocalStatus] = useState(issue.status || "Open");
-  const [isDeleted, setIsDeleted] = useState(false);
-  const [menuVisible, setMenuVisible] = useState(false);
   const [shareVisible, setShareVisible] = useState(false);
   const [commentSheetVisible, setCommentSheetVisible] = useState(false);
   const initialCommentCount =
@@ -133,9 +131,6 @@ export default function IssueCard({
   // Animation refs
   const scaleAnim = useRef(new Animated.Value(1)).current;
   const voteAnim = useRef(new Animated.Value(1)).current;
-
-  const openMenu = () => setMenuVisible(true);
-  const closeMenu = () => setMenuVisible(false);
 
   const solvers = issue.solvers || [];
   const isAlreadySolving = user ? solvers.includes(user.uid) : false;
@@ -181,7 +176,7 @@ export default function IssueCard({
     try {
       const impactStyle = style ?? Haptics.ImpactFeedbackStyle?.Light;
       Haptics.impactAsync(impactStyle)?.catch(() => {});
-    } catch (e) {
+    } catch {
       // Haptics unavailable (e.g. web, or a build without the native module) — ignore.
     }
   };
@@ -275,32 +270,6 @@ export default function IssueCard({
 
   const ytId = getYouTubeID(issue.youtubeUrl);
   const hasMedia = issue.photo || ytId;
-
-  const handleDelete = () => {
-    closeMenu();
-    Alert.alert(
-      "Delete Report",
-      "This action cannot be undone. The report will be permanently removed.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Delete",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await IssueService.deleteIssue(issue.id);
-              setIsDeleted(true);
-            } catch (e) {
-              console.error("Failed to delete issue:", e);
-              Alert.alert("Error", "Could not delete issue. Please try again.");
-            }
-          },
-        },
-      ],
-    );
-  };
-
-  if (isDeleted) return null;
 
   const urgencyColor =
     {
