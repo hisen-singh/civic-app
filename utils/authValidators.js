@@ -57,6 +57,7 @@ export function mapFirebaseAuthError(code) {
     case "auth/operation-not-allowed":
       return "Email sign-in is temporarily unavailable. Please try again later.";
     case "auth/unauthorized-domain":
+    case "auth/unauthorized-continue-uri":
       return "This app domain is not authorized for sign-in.";
     default:
       return "Authentication failed. Please try again.";

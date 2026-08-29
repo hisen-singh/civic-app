@@ -9,9 +9,13 @@ import {
 import { auth } from "../config/firebaseConfig";
 import * as Sentry from "@sentry/react-native";
 
-// Action code settings — tells Firebase where to redirect after email actions
+// Action code settings — tells Firebase where to redirect after email actions.
+// The continue URL must belong to the ACTIVE project's authorized domains,
+// so derive it from the env authDomain instead of hardcoding one project.
+const AUTH_DOMAIN =
+  process.env.EXPO_PUBLIC_FIREBASE_AUTH_DOMAIN || "civic-d0574.firebaseapp.com";
 const actionCodeSettings = {
-  url: "https://civic-d0574.firebaseapp.com", // Your Firebase authDomain
+  url: `https://${AUTH_DOMAIN}`,
   handleCodeInApp: false, // Open in browser, not deep-link
 };
 
