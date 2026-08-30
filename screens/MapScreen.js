@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { Text } from "react-native-paper";
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
