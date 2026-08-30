@@ -1,0 +1,47 @@
+appId: com.civic.app
+---
+# Profile Flow — E2E Test
+- launchApp
+
+# Wait for the login screen to appear
+- assertVisible: "Sign In"
+
+# Enter email
+- tapOn:
+    id: "email-input"
+- inputText: "test@civichero.app"
+
+# Enter password
+- tapOn:
+    id: "password-input"
+- inputText: "Test123456"
+
+# Tap sign in
+- tapOn: "Sign In"
+
+# Verify we reach the home screen (Feed)
+- assertVisible: "COMMUNITY PULSE"
+
+# Tap on the Profile tab (assumes the bottom tab is labeled 'Profile')
+- tapOn: "Profile"
+
+# Wait for Profile Screen to render and verify key elements
+- assertVisible: "Trust Score"
+- assertVisible: "City Rank"
+- assertVisible: "Reports"
+- assertVisible: "Solved"
+- assertVisible: "Community Impact"
+- assertVisible: "Edit Profile"
+- assertVisible: "Watch Areas"
+- assertVisible: "My Achievements"
+- assertVisible: "Settings"
+
+# Scroll to the bottom to find the Sign Out button
+- scroll
+
+# Sign out to complete the flow
+- assertVisible: "Sign Out"
+- tapOn: "Sign Out"
+
+# Verify we are back on the login screen
+- assertVisible: "Sign In"

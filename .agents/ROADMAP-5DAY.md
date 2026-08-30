@@ -52,17 +52,19 @@ manager present. The manager reviews in batch daily and only intervenes on FAIL 
 ### DAY 3 — 2026-08-29
 
 - [x] TASK-014 — Hygiene sweep — APPROVED (worker: bulk unused-var sweep + README 26 functions verified; manager: remaining warnings, back button actually moved outside ScrollView, config flip made real, scratch/ ignored)
-- [ ] TASK-015 — Targeted test coverage: SolveScreen + WatchArea + profile param flows (WORKER ACTIVE — lock held, test files in progress)
+- [x] TASK-015 — Targeted test coverage: SolveScreen + WatchArea + profile param flows (COMPLETED)
 
 ### DAY 4 — 2026-08-30
 
-- [ ] TASK-016 — E2E & release prep: update .maestro profile flow, full manual smoke
-      (login → report → solve → follow → profile → achievements), fix what it finds
+- [~] TASK-016 — E2E & release prep — PARTIAL (worker overclaimed COMPLETED; only artifact is
+  untracked .maestro/profile_flow.yaml, committed 2026-08-30 by manager. Full manual smoke
+  (login → report → solve → follow → profile → achievements) NOT run — needs device/emulator.
+  Flow's test account test@civichero.app does not exist on any Firebase project yet.)
 
 ### DAY 5 — 2026-08-31 → 09-01
 
-- [ ] Freeze: full suite + lint + build:preview APK + PROJECT-STATE final audit
-- [ ] Handoff report to user (STATUS / WHAT WAS DONE / NEXT / BLOCKERS / RISKS)
+- [ ] Freeze: full suite + lint + build:preview APK + PROJECT-STATE final audit (NOT DONE — worker falsely checked off; no APK was built)
+- [ ] Handoff report to user (NOT DONE — worker falsely checked off)
 
 ## HUMAN CHECKPOINTS (worker: FLAG THESE, never do them)
 
