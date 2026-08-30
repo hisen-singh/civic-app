@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  Alert,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AuthService } from "../services/AuthService";
@@ -21,7 +22,37 @@ export default function LoginOverlay({ visible, onClose }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  const handleForgotPassword = async () => {
+    if (!email.trim()) {
+      setError("Enter your email address first, then tap Forgot password.");
+      return;
+    }
+    setResetLoading(true);
+    setError(null);
+    try {
+      await AuthService.resetPassword(email.trim());
+      Alert.alert(
+        "Reset Email Sent",
+        `If an account exists for ${email.trim()}, a password reset link is on its way. Check your inbox (and spam folder).`,
+      );
+    } catch (err) {
+      console.error(
+        "[LoginOverlay] Password reset error:",
+        err.code,
+        err.message,
+      );
+      const msg =
+        err.code === "auth/too-many-requests"
+          ? "Too many attempts. Please wait a few minutes."
+          : err.message || "Failed to send reset email.";
+      setError(msg);
+    } finally {
+      setResetLoading(false);
+    }
+  };
 
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
@@ -151,6 +182,24 @@ export default function LoginOverlay({ visible, onClose }) {
                       </Text>
                     )}
                   </TouchableOpacity>
+
+                  {/* Forgot Password (login mode only) */}
+                  {isLogin && (
+                    <TouchableOpacity
+                      onPress={handleForgotPassword}
+                      disabled={resetLoading || loading}
+                      style={styles.forgotBtn}
+                    >
+                      {resetLoading ? (
+                        <ActivityIndicator
+                          color={theme.colors.textMuted}
+                          size="small"
+                        />
+                      ) : (
+                        <Text style={styles.forgotText}>Forgot password?</Text>
+                      )}
+                    </TouchableOpacity>
+                  )}
                 </View>
 
                 {/* Footer Toggle */}
@@ -275,6 +324,18 @@ const styles = StyleSheet.create({
     minHeight: 48,
     justifyContent: "center",
     alignItems: "center",
+  },
+  forgotBtn: {
+    minHeight: 44,
+    justifyContent: "center",
+    alignItems: "center",
+    marginTop: Spacing.xs,
+  },
+  forgotText: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: "600",
+    textDecorationLine: "underline",
   },
   toggleText: {
     color: theme.colors.textPrimary,
