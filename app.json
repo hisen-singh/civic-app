@@ -20,6 +20,11 @@
     "android": {
       "package": "com.civic.app",
       "versionCode": 1,
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBL1UYEczdQMFDXPa3s6Wrsb5y_JUgAFtE"
+        }
+      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0E1A"
