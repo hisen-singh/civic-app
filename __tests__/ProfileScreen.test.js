@@ -103,7 +103,9 @@ describe("ProfileScreen Param Flows", () => {
     ).toBeGreaterThan(0);
   });
 
-  test("loads other user profile when route params contain userId", async () => {
+  test("always loads the signed-in user's profile, even if userId params exist", async () => {
+    // Since the main-branch UI swap, other-user profiles render through
+    // PublicProfileScreen; ProfileScreen itself is always the self profile.
     useRoute.mockReturnValue({ params: { userId: "other_456" } });
     getDoc.mockResolvedValue({
       exists: () => true,
@@ -116,13 +118,17 @@ describe("ProfileScreen Param Flows", () => {
       }),
     });
 
+    let tree;
     await act(async () => {
-      renderer.create(<ProfileScreen />);
+      tree = renderer.create(<ProfileScreen />);
     });
 
-    expect(IssueService.getUserStats).toHaveBeenCalledWith("other_456");
+    // Self profile is fetched regardless of the params
+    expect(IssueService.getUserStats).toHaveBeenCalledWith("self_123");
 
-    // Check that we fetched from the other user's doc
-    expect(getDoc).toHaveBeenCalled();
+    const root = tree.root;
+    expect(
+      root.findAllByProps({ children: "Self User" }).length,
+    ).toBeGreaterThan(0);
   });
 });

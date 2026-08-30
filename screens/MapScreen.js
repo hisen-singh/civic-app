@@ -4,10 +4,12 @@ import { Text } from "react-native-paper";
 import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
 import * as Location from "expo-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useAuth } from "../contexts/AuthContext";
 import { IssueService } from "../services/IssueService";
 import { useFocusEffect } from "@react-navigation/native";
 import { LinearGradient } from "expo-linear-gradient";
-import { Colors, Gradients, Spacing, Radius, Shadows } from "../theme";
+import { Colors, Gradients, Spacing, Radius, Shadows, theme } from "../theme";
+import LoginOverlay from "../components/LoginOverlay";
 
 const { width, height } = Dimensions.get("window");
 
@@ -64,17 +66,52 @@ const darkMapStyle = [
 ];
 
 export default function MapScreen({ navigation }) {
+  const { user } = useAuth();
   const mapRef = useRef(null);
   const [issues, setIssues] = useState([]);
   const [location, setLocation] = useState(null);
 
   const [locationLoaded, setLocationLoaded] = useState(false);
+  const [isLoginVisible, setIsLoginVisible] = useState(false);
 
   useFocusEffect(
     React.useCallback(() => {
       const fetchIssues = async () => {
         try {
-          const allIssues = await IssueService.getAllIssues();
+          const allIssuesRaw = await IssueService.getAllIssues();
+
+          const allIssues = allIssuesRaw.filter((issue) => {
+            let isIndia = false;
+            if (issue.latitude && issue.longitude) {
+              if (
+                issue.latitude >= 8.0 &&
+                issue.latitude <= 38.0 &&
+                issue.longitude >= 68.0 &&
+                issue.longitude <= 98.0
+              ) {
+                isIndia = true;
+              }
+            } else if (issue.location) {
+              const locLower = issue.location.toLowerCase();
+              const isUS =
+                locLower.includes("ave") ||
+                locLower.includes("st") ||
+                locLower.includes("chicago") ||
+                locLower.includes("il");
+              if (!isUS) {
+                isIndia = true;
+              }
+            }
+
+            const authorName = issue.authorName || "";
+            if (
+              authorName.toLowerCase().includes("city") ||
+              authorName.toLowerCase().includes("open data")
+            ) {
+              isIndia = false;
+            }
+            return isIndia;
+          });
 
           // Use user's location or fallback
           const baseLat = location ? location.latitude : 28.4595;
@@ -271,7 +308,7 @@ export default function MapScreen({ navigation }) {
                     borderColor:
                       issue.status === "Solved"
                         ? Colors.success
-                        : Colors.accent,
+                        : theme.colors.accentBrand,
                   },
                 ]}
               >
@@ -281,7 +318,7 @@ export default function MapScreen({ navigation }) {
                   color={
                     issue.status === "Solved"
                       ? Colors.success
-                      : Colors.textPrimary
+                      : theme.colors.textPrimary
                   }
                 />
               </View>
@@ -292,7 +329,7 @@ export default function MapScreen({ navigation }) {
                     borderTopColor:
                       issue.status === "Solved"
                         ? Colors.success
-                        : Colors.accent,
+                        : theme.colors.accentBrand,
                   },
                 ]}
               />
@@ -312,7 +349,7 @@ export default function MapScreen({ navigation }) {
             fillColor={
               issue.status === "Solved"
                 ? "rgba(16, 185, 129, 0.1)"
-                : "rgba(99, 102, 241, 0.1)"
+                : "rgba(255, 69, 0, 0.1)"
             }
             strokeWidth={0}
           />
@@ -323,10 +360,24 @@ export default function MapScreen({ navigation }) {
       <LinearGradient
         colors={Gradients.mapOverlay}
         style={styles.headerOverlay}
-        pointerEvents="none"
+        pointerEvents="box-none"
       >
-        <Text style={styles.headerTitle}>Issue Map</Text>
-        <Text style={styles.headerSub}>Tap a marker to view details</Text>
+        <View style={styles.headerRow} pointerEvents="box-none">
+          <View pointerEvents="none">
+            <Text style={styles.headerTitle}>Issue Map</Text>
+            <Text style={styles.headerSub}>Tap a marker to view details</Text>
+          </View>
+
+          {!user && (
+            <TouchableOpacity
+              style={styles.signInBtn}
+              onPress={() => setIsLoginVisible(true)}
+              activeOpacity={0.8}
+            >
+              <Text style={styles.signInText}>SIGN IN</Text>
+            </TouchableOpacity>
+          )}
+        </View>
       </LinearGradient>
 
       {/* Issue count badge */}
@@ -334,13 +385,12 @@ export default function MapScreen({ navigation }) {
         <MaterialCommunityIcons
           name="map-marker-multiple"
           size={16}
-          color={Colors.accent}
+          color={theme.colors.accentBrand}
           style={{ marginRight: 6 }}
         />
         <Text style={styles.countText}>{issues.length} issues</Text>
       </View>
 
-      {/* Recenter Button */}
       <TouchableOpacity
         style={styles.recenterBtn}
         activeOpacity={0.8}
@@ -361,6 +411,11 @@ export default function MapScreen({ navigation }) {
           color={Colors.textPrimary}
         />
       </TouchableOpacity>
+
+      <LoginOverlay
+        visible={isLoginVisible}
+        onClose={() => setIsLoginVisible(false)}
+      />
     </View>
   );
 }
@@ -384,6 +439,11 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: 60,
   },
+  headerRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+  },
   headerTitle: {
     fontSize: 28,
     fontWeight: "800",
@@ -394,6 +454,25 @@ const styles = StyleSheet.create({
   headerSub: {
     fontSize: 13,
     color: Colors.textSecondary,
+  },
+  signInBtn: {
+    backgroundColor: theme.colors.accentBrand,
+    minHeight: 38,
+    paddingHorizontal: Spacing.lg,
+    justifyContent: "center",
+    alignItems: "center",
+    borderRadius: 19,
+    shadowColor: theme.colors.accentBrand,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  signInText: {
+    color: "#FFFFFF",
+    fontWeight: "800",
+    fontSize: 14,
+    letterSpacing: 0.5,
   },
   countBadge: {
     position: "absolute",

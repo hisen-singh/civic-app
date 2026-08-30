@@ -4,20 +4,20 @@ appId: com.civic.app
 - launchApp
 
 # Wait for the login screen to appear
-- assertVisible: "Sign In"
+- assertVisible: 'Sign In'
 
 # Enter email
 - tapOn:
-    id: "email-input"
-- inputText: "test@civichero.app"
+    id: 'email-input'
+- inputText: 'test@civichero.app'
 
 # Enter password
 - tapOn:
-    id: "password-input"
-- inputText: "Test123456"
+    id: 'password-input'
+- inputText: 'Test123456'
 
 # Tap sign in
-- tapOn: "Sign In"
+- tapOn: 'Sign In'
 
 # Verify we reach the home screen
-- assertVisible: "COMMUNITY PULSE"
+- assertVisible: 'COMMUNITY PULSE'

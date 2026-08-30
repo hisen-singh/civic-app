@@ -29,6 +29,16 @@ jest.mock("@expo/vector-icons", () => ({
   MaterialCommunityIcons: "MaterialCommunityIcons",
 }));
 
+// SolveScreen pulls in IssueCard -> ReportBottomSheet, which import the real
+// firebase config; stub it so no native module (AsyncStorage) is required.
+jest.mock("../config/firebaseConfig", () => ({
+  app: {},
+  auth: {},
+  db: {},
+  storage: {},
+  remoteConfig: { settings: {}, defaultConfig: {} },
+}));
+
 import { Animated } from "react-native";
 
 describe("SolveScreen", () => {
@@ -76,9 +86,27 @@ describe("SolveScreen", () => {
 
   test("filters out issues authored by the current user", async () => {
     const mockIssues = [
-      { id: "1", authorId: "other_user", status: "Open", urgency: "critical" },
-      { id: "2", authorId: "user_123", status: "Open", urgency: "medium" }, // authored by us
-      { id: "3", authorId: "other_user", status: "Solved", urgency: "low" }, // solved
+      {
+        id: "1",
+        authorId: "other_user",
+        status: "Open",
+        urgency: "critical",
+        location: "Connaught Place, New Delhi",
+      },
+      {
+        id: "2",
+        authorId: "user_123",
+        status: "Open",
+        urgency: "medium", // authored by us
+        location: "Karol Bagh, New Delhi",
+      },
+      {
+        id: "3",
+        authorId: "other_user",
+        status: "Solved",
+        urgency: "low", // solved
+        location: "Saket, New Delhi",
+      },
     ];
     IssueService.getAllIssues.mockResolvedValue(mockIssues);
 

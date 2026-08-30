@@ -8,7 +8,6 @@ import {
   Animated,
 } from "react-native";
 import { Text, ActivityIndicator } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import IssueCard from "../components/IssueCard";
@@ -16,13 +15,33 @@ import FilterPills from "../components/ui/FilterPills";
 import AnimatedPressable from "../components/ui/AnimatedPressable";
 import { IssueService } from "../services/IssueService";
 import { useAuth } from "../contexts/AuthContext";
-import { Colors, Spacing, Radius, Gradients } from "../theme";
+import { Spacing, theme } from "../theme";
 
 const DIFFICULTY_MAP = {
-  critical: { label: "Hard", color: Colors.critical, xp: 200, icon: "fire" },
-  high: { label: "Hard", color: Colors.high, xp: 150, icon: "alert-circle" },
-  medium: { label: "Medium", color: Colors.warning, xp: 100, icon: "alert" },
-  low: { label: "Easy", color: Colors.success, xp: 50, icon: "check-circle" },
+  critical: {
+    label: "Hard",
+    color: theme.colors.accentBrand,
+    xp: 200,
+    icon: "fire",
+  },
+  high: {
+    label: "Hard",
+    color: theme.colors.accentBrand,
+    xp: 150,
+    icon: "alert-circle",
+  },
+  medium: {
+    label: "Medium",
+    color: theme.colors.textPrimary,
+    xp: 100,
+    icon: "alert",
+  },
+  low: {
+    label: "Easy",
+    color: theme.colors.textMuted,
+    xp: 50,
+    icon: "check-circle",
+  },
 };
 
 const CATEGORY_FILTERS = [
@@ -70,7 +89,39 @@ export default function SolveScreen() {
 
   const fetchIssues = async (isRefresh = false) => {
     try {
-      const allIssues = await IssueService.getAllIssues(isRefresh);
+      const allIssuesRaw = await IssueService.getAllIssues(isRefresh);
+      const allIssues = allIssuesRaw.filter((issue) => {
+        let isIndia = false;
+        if (issue.latitude && issue.longitude) {
+          if (
+            issue.latitude >= 8.0 &&
+            issue.latitude <= 38.0 &&
+            issue.longitude >= 68.0 &&
+            issue.longitude <= 98.0
+          ) {
+            isIndia = true;
+          }
+        } else if (issue.location) {
+          const locLower = issue.location.toLowerCase();
+          const isUS =
+            locLower.includes("ave") ||
+            locLower.includes("st") ||
+            locLower.includes("chicago") ||
+            locLower.includes("il");
+          if (!isUS) {
+            isIndia = true;
+          }
+        }
+
+        const authorName = issue.authorName || "";
+        if (
+          authorName.toLowerCase().includes("city") ||
+          authorName.toLowerCase().includes("open data")
+        ) {
+          isIndia = false;
+        }
+        return isIndia;
+      });
       const uid = user?.uid;
 
       // Issues available to solve: not authored by user, not solved/failed
@@ -180,47 +231,34 @@ export default function SolveScreen() {
     >
       {/* Hero Stats Cards */}
       <View style={styles.statsRow}>
-        <LinearGradient
-          colors={["rgba(99,102,241,0.15)", Colors.surface]}
-          style={[styles.statCard, styles.statCardAccent]}
-        >
+        <View style={[styles.statCard, styles.statCardAccent]}>
           <View style={styles.statIconWrap}>
             <MaterialCommunityIcons
               name="trophy-outline"
               size={20}
-              color={Colors.accentLight}
+              color={theme.colors.accentBrand}
             />
           </View>
           <Text style={styles.statValue}>{solvedCount}</Text>
           <Text style={styles.statLabel}>Solved</Text>
-        </LinearGradient>
+        </View>
         <View style={styles.statCard}>
-          <View
-            style={[
-              styles.statIconWrap,
-              { backgroundColor: Colors.warningSurface },
-            ]}
-          >
+          <View style={styles.statIconWrap}>
             <MaterialCommunityIcons
               name="fire"
               size={20}
-              color={Colors.warning}
+              color={theme.colors.accentBrand}
             />
           </View>
           <Text style={styles.statValue}>{activeStreak}</Text>
           <Text style={styles.statLabel}>Day Streak</Text>
         </View>
         <View style={styles.statCard}>
-          <View
-            style={[
-              styles.statIconWrap,
-              { backgroundColor: Colors.successSurface },
-            ]}
-          >
+          <View style={styles.statIconWrap}>
             <MaterialCommunityIcons
               name="star-four-points"
               size={20}
-              color={Colors.success}
+              color={theme.colors.accentBrand}
             />
           </View>
           <Text style={styles.statValue}>{totalXP}</Text>
@@ -245,7 +283,7 @@ export default function SolveScreen() {
           <MaterialCommunityIcons
             name="star-four-points"
             size={12}
-            color={Colors.warning}
+            color={theme.colors.accentBrand}
           />
           <Text style={styles.xpPreviewText}>
             Up to{" "}
@@ -291,7 +329,7 @@ export default function SolveScreen() {
                 <MaterialCommunityIcons
                   name="account-group-outline"
                   size={12}
-                  color={Colors.textTertiary}
+                  color={theme.colors.textMuted}
                 />
                 <Text style={styles.solversText}>{solverCount} helping</Text>
               </View>
@@ -301,7 +339,7 @@ export default function SolveScreen() {
             <MaterialCommunityIcons
               name="star-four-points"
               size={12}
-              color={Colors.warning}
+              color={theme.colors.accentBrand}
             />
             <Text style={styles.xpText}>+{difficulty.xp} XP</Text>
           </View>
@@ -317,7 +355,7 @@ export default function SolveScreen() {
         <View style={styles.loadingContainer}>
           <ActivityIndicator
             animating={true}
-            color={Colors.accent}
+            color={theme.colors.accentBrand}
             size="large"
           />
           <Text style={styles.loadingText}>Finding tasks for you...</Text>
@@ -331,7 +369,7 @@ export default function SolveScreen() {
           <MaterialCommunityIcons
             name="check-decagram"
             size={40}
-            color={Colors.success}
+            color={theme.colors.accentBrand}
           />
         </View>
         <Text style={styles.emptyTitle}>All Clear! 🎉</Text>
@@ -354,19 +392,21 @@ export default function SolveScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
-      <StatusBar barStyle="light-content" backgroundColor={Colors.background} />
+    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+      <StatusBar
+        barStyle="dark-content"
+        backgroundColor={theme.colors.surface}
+      />
 
       {/* Header */}
-      <LinearGradient
-        colors={Gradients.header}
+      <View
         style={[
           styles.header,
           { maxWidth: 800, alignSelf: "center", width: "100%" },
         ]}
       >
         <View>
-          <Text style={styles.headerTitle}>Solve</Text>
+          <Text style={styles.headerTitle}>SOLVE</Text>
           <Text style={styles.headerSub}>Help your community, earn impact</Text>
         </View>
         <AnimatedPressable
@@ -377,11 +417,11 @@ export default function SolveScreen() {
             <MaterialCommunityIcons
               name="bell-outline"
               size={22}
-              color={Colors.textPrimary}
+              color={theme.colors.textPrimary}
             />
           </View>
         </AnimatedPressable>
-      </LinearGradient>
+      </View>
 
       <FlatList
         data={sortedIssues}
@@ -404,9 +444,9 @@ export default function SolveScreen() {
           <RefreshControl
             refreshing={refreshing}
             onRefresh={onRefresh}
-            tintColor={Colors.accent}
-            colors={[Colors.accent]}
-            progressBackgroundColor={Colors.surface}
+            tintColor={theme.colors.accentBrand}
+            colors={[theme.colors.accentBrand]}
+            progressBackgroundColor={theme.colors.surface}
           />
         }
       />
@@ -423,24 +463,28 @@ const styles = {
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
   },
   headerTitle: {
-    fontSize: 26,
-    fontWeight: "800",
-    color: Colors.textPrimary,
-    letterSpacing: -0.5,
+    fontSize: 28,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
+    letterSpacing: -1,
+    textTransform: "uppercase",
   },
   headerSub: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: theme.colors.textMuted,
     marginTop: 2,
   },
   headerBtn: {
     padding: 10,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
 
   // Stats Section
@@ -455,39 +499,39 @@ const styles = {
   },
   statCard: {
     flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     padding: Spacing.lg,
     alignItems: "center",
     marginHorizontal: 4,
     overflow: "hidden",
   },
   statCardAccent: {
-    borderColor: "rgba(99, 102, 241, 0.25)",
+    borderColor: theme.colors.accentBrand,
   },
   statIconWrap: {
     width: 36,
     height: 36,
-    borderRadius: Radius.sm,
-    backgroundColor: Colors.accentSurface,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surfaceSubtle,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.sm,
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   statLabel: {
     fontSize: 10,
-    color: Colors.textTertiary,
-    fontWeight: "600",
+    color: theme.colors.textMuted,
+    fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
 
   // Filter Chips
@@ -495,26 +539,26 @@ const styles = {
     flexDirection: "row",
     alignItems: "center",
     marginRight: 8,
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     paddingHorizontal: 14,
     paddingVertical: 8,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
     borderWidth: 0,
   },
   filterChipActive: {
-    backgroundColor: Colors.accent,
+    backgroundColor: theme.colors.accentBrand,
   },
   filterText: {
-    color: Colors.textSecondary,
+    color: theme.colors.textMuted,
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   filterTextActive: {
     color: "#FFF",
   },
   filterBadge: {
-    backgroundColor: Colors.critical,
-    borderRadius: 6,
+    backgroundColor: theme.colors.accentBrand,
+    borderRadius: 0,
     paddingHorizontal: 5,
     paddingVertical: 1,
     marginLeft: 6,
@@ -522,7 +566,7 @@ const styles = {
   filterBadgeText: {
     color: "#FFF",
     fontSize: 10,
-    fontWeight: "700",
+    fontWeight: "800",
   },
 
   // Task count
@@ -536,21 +580,24 @@ const styles = {
   },
   taskCountText: {
     fontSize: 13,
-    color: Colors.textTertiary,
-    fontWeight: "600",
+    color: theme.colors.textMuted,
+    fontWeight: "700",
+    textTransform: "uppercase",
   },
   xpPreviewChip: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.warningSurface,
+    backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   xpPreviewText: {
     fontSize: 11,
-    color: Colors.warning,
-    fontWeight: "700",
+    color: theme.colors.accentBrand,
+    fontWeight: "800",
     marginLeft: 4,
   },
 
@@ -572,13 +619,14 @@ const styles = {
     alignItems: "center",
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
   },
   difficultyText: {
     fontSize: 11,
-    fontWeight: "700",
+    fontWeight: "800",
     marginLeft: 4,
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
+    textTransform: "uppercase",
   },
   solversBadge: {
     flexDirection: "row",
@@ -587,22 +635,24 @@ const styles = {
   },
   solversText: {
     fontSize: 11,
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
     marginLeft: 4,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   xpBadge: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.warningSurface,
+    backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 4,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
   xpText: {
     fontSize: 11,
-    color: Colors.warning,
-    fontWeight: "700",
+    color: theme.colors.accentBrand,
+    fontWeight: "800",
     marginLeft: 4,
   },
 
@@ -612,7 +662,7 @@ const styles = {
     paddingTop: 60,
   },
   loadingText: {
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
     fontSize: 13,
     marginTop: 12,
   },
@@ -625,35 +675,39 @@ const styles = {
   emptyIconCircle: {
     width: 72,
     height: 72,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.successSurface,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.xl,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
     textAlign: "center",
     marginBottom: Spacing.sm,
+    textTransform: "uppercase",
   },
   emptyDesc: {
     fontSize: 14,
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
     textAlign: "center",
     lineHeight: 20,
   },
   emptyAction: {
     marginTop: Spacing.xl,
-    backgroundColor: Colors.accent,
+    backgroundColor: theme.colors.accentBrand,
     paddingHorizontal: Spacing.xxl,
     paddingVertical: 10,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
   },
   emptyActionText: {
     color: "#FFF",
     fontSize: 14,
-    fontWeight: "700",
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
 };

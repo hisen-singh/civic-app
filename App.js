@@ -1,14 +1,6 @@
 import "react-native-gesture-handler";
 import "./config/i18n";
 import { useRef, useEffect, useState } from "react";
-import * as Sentry from "@sentry/react-native";
-
-Sentry.init({
-  dsn: process.env.EXPO_PUBLIC_SENTRY_DSN,
-  environment: process.env.APP_ENV || "production",
-  enableNativeStacktraces: true,
-});
-
 import * as Notifications from "expo-notifications";
 try {
   Notifications.setNotificationHandler({
@@ -24,13 +16,15 @@ try {
     e,
   );
 }
-import { View, Text, Animated } from "react-native";
-import { NavigationContainer } from "@react-navigation/native";
+import { View, Text, Animated, Image } from "react-native";
+import {
+  NavigationContainer,
+  DarkTheme as NavDarkTheme,
+} from "@react-navigation/native";
 import { createBottomTabNavigator } from "@react-navigation/bottom-tabs";
 import { createStackNavigator } from "@react-navigation/stack";
 import {
   Provider as PaperProvider,
-  DefaultTheme,
   ActivityIndicator,
 } from "react-native-paper";
 import {
@@ -38,17 +32,14 @@ import {
   useSafeAreaInsets,
 } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { LinearGradient } from "expo-linear-gradient";
 import * as Font from "expo-font";
-import { Colors, Shadows } from "./theme";
+import { Colors, theme } from "./theme";
 
 // Screens
 import HomeScreen from "./screens/HomeScreen";
 import MapScreen from "./screens/MapScreen";
 import LeaderboardScreen from "./screens/LeaderboardScreen";
 import ProfileScreen from "./screens/ProfileScreen";
-import LoginScreen from "./screens/LoginScreen";
-import SignupScreen from "./screens/SignupScreen";
 import ReportIssueScreen from "./screens/ReportIssueScreen";
 import IssueDetailScreen from "./screens/IssueDetailScreen";
 import SolveScreen from "./screens/SolveScreen";
@@ -56,29 +47,25 @@ import WatchAreaScreen from "./screens/WatchAreaScreen";
 import NotificationsScreen from "./screens/NotificationsScreen";
 import EditProfileScreen from "./screens/EditProfileScreen";
 import AnalyticsScreen from "./screens/AnalyticsScreen";
-import AchievementsScreen from "./screens/AchievementsScreen";
-import SettingsScreen from "./screens/SettingsScreen";
-import FollowListScreen from "./screens/FollowListScreen";
+import PublicProfileScreen from "./screens/PublicProfileScreen";
 
 // Auth
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
-import { SyncService } from "./services/SyncService";
 
 const Tab = createBottomTabNavigator();
 const Stack = createStackNavigator();
 
-// Theme Configuration — unified with theme.js
-const theme = {
-  ...DefaultTheme,
+const navTheme = {
+  ...NavDarkTheme,
+  dark: true,
   colors: {
-    ...DefaultTheme.colors,
-    primary: Colors.textPrimary,
-    secondary: Colors.textSecondary,
-    tertiary: Colors.success,
-    background: Colors.background,
-    surface: Colors.surface,
-    onSurface: Colors.textPrimary,
-    onBackground: Colors.textPrimary,
+    ...NavDarkTheme.colors,
+    primary: theme.colors.accentBrand,
+    background: theme.colors.surface,
+    card: theme.colors.surface,
+    text: theme.colors.textPrimary,
+    border: theme.colors.border,
+    notification: theme.colors.accentBrand,
   },
 };
 
@@ -86,25 +73,25 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import NetworkBanner from "./components/NetworkBanner";
 
 // ─── Custom Tab Bar Icon with Active Indicator ────────────────────────────────
-function TabIcon({ name, color, focused }) {
+function TabIcon({ name, focused }) {
   return (
     <View
       style={{ alignItems: "center", justifyContent: "center", minWidth: 48 }}
     >
       <View
         style={{
-          width: focused ? 40 : 36,
-          height: focused ? 40 : 36,
-          borderRadius: focused ? 14 : 12,
-          backgroundColor: focused ? Colors.accentSurface : "transparent",
+          width: 40,
+          height: 40,
+          borderRadius: 9999,
+          backgroundColor: focused ? theme.colors.accentBrand : "transparent",
           alignItems: "center",
           justifyContent: "center",
         }}
       >
         <MaterialCommunityIcons
           name={name}
-          color={focused ? Colors.accentLight : color}
-          size={focused ? 24 : 22}
+          color={focused ? "#FFFFFF" : theme.colors.textPrimary}
+          size={22}
         />
       </View>
       {focused && (
@@ -112,8 +99,8 @@ function TabIcon({ name, color, focused }) {
           style={{
             width: 4,
             height: 4,
-            borderRadius: 2,
-            backgroundColor: Colors.accentLight,
+            borderRadius: 9999,
+            backgroundColor: theme.colors.accentBrand,
             marginTop: 4,
           }}
         />
@@ -127,28 +114,28 @@ function MainTabs() {
   const tabBarHeight = 64 + Math.max(insets.bottom, 8);
 
   return (
-    <View style={{ flex: 1, backgroundColor: Colors.background }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: Colors.surface,
-            borderTopWidth: 1,
-            borderTopColor: Colors.border,
+            backgroundColor: theme.colors.surface,
+            borderTopWidth: 2,
+            borderTopColor: theme.colors.border,
             elevation: 0,
             height: tabBarHeight,
             paddingBottom: Math.max(insets.bottom, 8),
             paddingTop: 8,
             paddingHorizontal: 8,
-            ...Shadows.subtle,
           },
-          tabBarActiveTintColor: Colors.accentLight,
-          tabBarInactiveTintColor: Colors.tabInactive,
+          tabBarActiveTintColor: theme.colors.accentBrand,
+          tabBarInactiveTintColor: theme.colors.textPrimary,
           tabBarLabelStyle: {
             fontSize: 10,
-            fontWeight: "700",
+            fontWeight: "800",
             marginTop: 2,
-            letterSpacing: 0.2,
+            letterSpacing: 0.5,
+            textTransform: "uppercase",
           },
           tabBarHideOnKeyboard: true,
         }}
@@ -158,8 +145,8 @@ function MainTabs() {
           component={HomeScreen}
           options={{
             tabBarLabel: "Feed",
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon name="home-variant" color={color} focused={focused} />
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name="home-variant" focused={focused} />
             ),
           }}
         />
@@ -167,12 +154,8 @@ function MainTabs() {
           name="Map"
           component={MapScreen}
           options={{
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                name="map-marker-radius"
-                color={color}
-                focused={focused}
-              />
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name="map-marker-radius" focused={focused} />
             ),
           }}
         />
@@ -191,33 +174,18 @@ function MainTabs() {
             tabBarIcon: () => (
               <View
                 style={{
-                  width: 52,
-                  height: 52,
-                  borderRadius: 26,
+                  width: 48,
+                  height: 48,
+                  borderRadius: 9999,
                   marginTop: -8,
-                  overflow: "hidden",
-                  ...Shadows.fab,
+                  backgroundColor: theme.colors.accentBrand,
+                  justifyContent: "center",
+                  alignItems: "center",
+                  borderWidth: 3,
+                  borderColor: theme.colors.surface,
                 }}
               >
-                <LinearGradient
-                  colors={[
-                    Colors.accentDark,
-                    Colors.accent,
-                    Colors.accentLight,
-                  ]}
-                  start={{ x: 0, y: 0 }}
-                  end={{ x: 1, y: 1 }}
-                  style={{
-                    flex: 1,
-                    justifyContent: "center",
-                    alignItems: "center",
-                    borderWidth: 3,
-                    borderColor: Colors.surface,
-                    borderRadius: 26,
-                  }}
-                >
-                  <MaterialCommunityIcons name="plus" color="#FFF" size={28} />
-                </LinearGradient>
+                <MaterialCommunityIcons name="plus" color="#FFF" size={28} />
               </View>
             ),
           }}
@@ -227,12 +195,8 @@ function MainTabs() {
           name="Solve"
           component={SolveScreen}
           options={{
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                name="hand-heart-outline"
-                color={color}
-                focused={focused}
-              />
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name="hand-heart-outline" focused={focused} />
             ),
           }}
         />
@@ -240,26 +204,13 @@ function MainTabs() {
           name="Profile"
           component={ProfileScreen}
           options={{
-            tabBarIcon: ({ color, focused }) => (
-              <TabIcon
-                name="account-circle-outline"
-                color={color}
-                focused={focused}
-              />
+            tabBarIcon: ({ focused }) => (
+              <TabIcon name="account-circle-outline" focused={focused} />
             ),
           }}
         />
       </Tab.Navigator>
     </View>
-  );
-}
-
-function AuthStack() {
-  return (
-    <Stack.Navigator screenOptions={{ headerShown: false }}>
-      <Stack.Screen name="Login" component={LoginScreen} />
-      <Stack.Screen name="Signup" component={SignupScreen} />
-    </Stack.Navigator>
   );
 }
 
@@ -273,15 +224,12 @@ function AppStack() {
         options={{ presentation: "modal" }}
       />
       <Stack.Screen name="IssueDetail" component={IssueDetailScreen} />
+      <Stack.Screen name="PublicProfile" component={PublicProfileScreen} />
       <Stack.Screen name="WatchArea" component={WatchAreaScreen} />
       <Stack.Screen name="Notifications" component={NotificationsScreen} />
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="Analytics" component={AnalyticsScreen} />
-      <Stack.Screen name="Achievements" component={AchievementsScreen} />
-      <Stack.Screen name="Settings" component={SettingsScreen} />
-      <Stack.Screen name="FollowList" component={FollowListScreen} />
-      <Stack.Screen name="UserProfile" component={ProfileScreen} />
     </Stack.Navigator>
   );
 }
@@ -317,6 +265,10 @@ function SplashScreen() {
       }}
     >
       <Animated.View style={{ opacity: pulseAnim, alignItems: "center" }}>
+        <Image
+          source={require("./assets/logo.jpg")}
+          style={{ width: 90, height: 90, borderRadius: 45, marginBottom: 16 }}
+        />
         <Text
           style={{
             fontSize: 42,
@@ -384,8 +336,8 @@ function AppContent() {
 
   return (
     <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
-      <NavigationContainer>
-        {user ? <AppStack /> : <AuthStack />}
+      <NavigationContainer theme={navTheme}>
+        <AppStack />
       </NavigationContainer>
     </Animated.View>
   );
@@ -395,12 +347,6 @@ function App() {
   const [fontsLoaded, fontError] = Font.useFonts({
     ...MaterialCommunityIcons.font,
   });
-
-  // Start offline-sync network recovery listener once at startup so queued
-  // issues flush automatically when connectivity returns
-  useEffect(() => {
-    SyncService.initNetworkSync();
-  }, []);
 
   // Proceed if fonts loaded OR if there was an error (don't block forever)
   if (!fontsLoaded && !fontError) {

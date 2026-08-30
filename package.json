@@ -36,7 +36,10 @@
     "expo-linear-gradient": "~15.0.8",
     "expo-localization": "~17.0.9",
     "expo-location": "~19.0.8",
+    "expo-mail-composer": "~15.0.8",
     "expo-notifications": "~0.32.17",
+    "expo-print": "~15.0.8",
+    "expo-sharing": "~14.0.8",
     "expo-status-bar": "~3.0.9",
     "firebase": "^12.6.0",
     "i18next": "^26.3.4",
@@ -52,6 +55,7 @@
     "react-native-safe-area-context": "~5.6.0",
     "react-native-screens": "~4.16.0",
     "react-native-svg": "15.12.1",
+    "react-native-view-shot": "4.0.3",
     "react-native-web": "^0.21.0"
   },
   "private": true,
@@ -80,7 +84,8 @@
       "node_modules/(?!((jest-)?react-native|@react-native(-community)?)|expo(nent)?|@expo(nent)?/.*|@expo-google-fonts/.*|react-navigation|@react-navigation/.*|native-base|react-native-svg|firebase|@firebase|@sentry/.*)"
     ],
     "moduleNameMapper": {
-      "^test-renderer$": "react-test-renderer"
+      "^test-renderer$": "react-test-renderer",
+      "^./postinstall.mjs$": "<rootDir>/tests/mocks/emptyFirebasePostinstall.js"
     }
   },
   "lint-staged": {

@@ -5,7 +5,7 @@ import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { NotificationService } from "../services/NotificationService";
 import { useAuth } from "../contexts/AuthContext";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Colors, Radius, Spacing } from "../theme";
+import { Spacing, theme } from "../theme";
 
 // Time-ago formatter
 const timeAgo = (dateStr) => {
@@ -83,14 +83,14 @@ export default function NotificationsScreen() {
       <View style={styles.header}>
         <IconButton
           icon="arrow-left"
-          iconColor={Colors.textPrimary}
+          iconColor={theme.colors.textPrimary}
           size={24}
           onPress={() => navigation.goBack()}
         />
         <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={styles.headerTitle}>Notifications</Text>
+          <Text style={styles.headerTitle}>NOTIFICATIONS</Text>
           {unreadCount > 0 && (
-            <Text style={styles.unreadBadge}>{unreadCount} new</Text>
+            <Text style={styles.unreadBadge}>{unreadCount} NEW</Text>
           )}
         </View>
         <TouchableOpacity
@@ -102,7 +102,11 @@ export default function NotificationsScreen() {
           <MaterialCommunityIcons
             name="check-all"
             size={22}
-            color={unreadCount > 0 ? Colors.accent : Colors.textTertiary}
+            color={
+              unreadCount > 0
+                ? theme.colors.accentBrand
+                : theme.colors.textMuted
+            }
           />
         </TouchableOpacity>
       </View>
@@ -111,7 +115,7 @@ export default function NotificationsScreen() {
         <View
           style={{ flex: 1, justifyContent: "center", alignItems: "center" }}
         >
-          <ActivityIndicator size="large" color={Colors.accent} />
+          <ActivityIndicator size="large" color={theme.colors.accentBrand} />
         </View>
       ) : (
         <Animated.ScrollView
@@ -123,12 +127,12 @@ export default function NotificationsScreen() {
                 <MaterialCommunityIcons
                   name="bell-check-outline"
                   size={36}
-                  color={Colors.textTertiary}
+                  color={theme.colors.textPrimary}
                 />
               </View>
-              <Text style={styles.emptyTitle}>All caught up!</Text>
+              <Text style={styles.emptyTitle}>ALL CAUGHT UP!</Text>
               <Text style={styles.emptyDesc}>
-                No new alerts in your tracked areas.
+                NO NEW ALERTS IN YOUR TRACKED AREAS.
               </Text>
             </View>
           ) : (
@@ -139,28 +143,29 @@ export default function NotificationsScreen() {
                 activeOpacity={0.7}
               >
                 <View style={[styles.card, !notif.read && styles.unreadCard]}>
-                  <View
-                    style={[
-                      styles.iconContainer,
-                      !notif.read && { backgroundColor: Colors.accentSurface },
-                    ]}
-                  >
+                  <View style={styles.iconContainer}>
                     <MaterialCommunityIcons
                       name={NOTIF_ICONS[notif.type] || "bell-outline"}
                       size={20}
-                      color={!notif.read ? Colors.accent : Colors.textTertiary}
+                      color={
+                        !notif.read
+                          ? theme.colors.accentBrand
+                          : theme.colors.textPrimary
+                      }
                     />
                   </View>
                   <View style={styles.textContainer}>
                     <Text
                       style={[styles.title, !notif.read && styles.unreadText]}
                     >
-                      {notif.title}
+                      {notif.title.toUpperCase()}
                     </Text>
                     <Text style={styles.body} numberOfLines={2}>
                       {notif.body}
                     </Text>
-                    <Text style={styles.time}>{timeAgo(notif.createdAt)}</Text>
+                    <Text style={styles.time}>
+                      {timeAgo(notif.createdAt).toUpperCase()}
+                    </Text>
                   </View>
                   {!notif.read && <View style={styles.unreadDot} />}
                 </View>
@@ -177,7 +182,7 @@ export default function NotificationsScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: theme.colors.surface,
   },
   header: {
     flexDirection: "row",
@@ -185,20 +190,20 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.headerTop,
     paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    letterSpacing: -0.3,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
+    letterSpacing: 0.5,
   },
   unreadBadge: {
     fontSize: 11,
-    fontWeight: "600",
-    color: Colors.accent,
+    fontWeight: "800",
+    color: theme.colors.accentBrand,
     marginTop: 2,
   },
   listContainer: {
@@ -212,41 +217,46 @@ const styles = StyleSheet.create({
   emptyIcon: {
     width: 72,
     height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.lg,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   emptyDesc: {
-    fontSize: 14,
-    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
   },
   card: {
     flexDirection: "row",
     alignItems: "flex-start",
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     marginBottom: Spacing.sm,
-    borderRadius: Radius.lg,
+    borderRadius: 0,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   unreadCard: {
-    borderColor: "rgba(99, 102, 241, 0.2)",
-    backgroundColor: "rgba(99, 102, 241, 0.04)",
+    borderColor: theme.colors.accentBrand,
+    backgroundColor: theme.colors.surface,
   },
   iconContainer: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
     marginRight: Spacing.md,
@@ -255,30 +265,32 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   title: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: "800",
+    color: theme.colors.textMuted,
     marginBottom: 4,
   },
   unreadText: {
-    color: Colors.textPrimary,
-    fontWeight: "700",
+    color: theme.colors.textPrimary,
+    fontWeight: "900",
   },
   body: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: theme.colors.textPrimary,
+    fontWeight: "500",
     marginBottom: Spacing.sm,
     lineHeight: 18,
   },
   time: {
     fontSize: 11,
-    color: Colors.textTertiary,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
   },
   unreadDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent,
+    width: 10,
+    height: 10,
+    borderRadius: 0,
+    backgroundColor: theme.colors.accentBrand,
     marginTop: 8,
     marginLeft: Spacing.sm,
   },

@@ -3,7 +3,6 @@ import {
   View,
   Alert,
   TouchableOpacity,
-  Image,
   KeyboardAvoidingView,
   Platform,
   Animated,
@@ -14,11 +13,12 @@ import { IssueService } from "../services/IssueService";
 import { SyncService } from "../services/SyncService";
 import { useAuth } from "../contexts/AuthContext";
 import * as Location from "expo-location";
-import * as ImagePicker from "expo-image-picker";
 import NetInfo from "@react-native-community/netinfo";
-import { CATEGORIES } from "../data/categories";
-import { Colors, Radius, Spacing, Shadows } from "../theme";
-import { detectUrgency, URGENCY_LEVELS } from "../utils/urgencyDetector";
+import { Colors, Spacing } from "../theme";
+import { detectUrgency } from "../utils/urgencyDetector";
+import CategoryGrid from "../components/ui/CategoryGrid";
+import UrgencySelector from "../components/ui/UrgencySelector";
+import MediaPicker from "../components/ui/MediaPicker";
 
 export default function ReportIssueScreen({ navigation }) {
   const { user } = useAuth();
@@ -57,37 +57,6 @@ export default function ReportIssueScreen({ navigation }) {
       useNativeDriver: true,
     }).start();
   }, []);
-
-  const pickImage = async () => {
-    const result = await ImagePicker.launchImageLibraryAsync({
-      mediaTypes: ["images"],
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.5,
-    });
-    if (!result.canceled) {
-      setPhoto(result.assets[0]);
-    }
-  };
-
-  const takePhoto = async () => {
-    const { status } = await ImagePicker.requestCameraPermissionsAsync();
-    if (status !== "granted") {
-      Alert.alert(
-        "Permission Required",
-        "Camera access is needed to take photos.",
-      );
-      return;
-    }
-    const result = await ImagePicker.launchCameraAsync({
-      allowsEditing: true,
-      aspect: [4, 3],
-      quality: 0.5,
-    });
-    if (!result.canceled) {
-      setPhoto(result.assets[0]);
-    }
-  };
 
   const fetchLocation = async () => {
     setIsFetchingLocation(true);
@@ -192,8 +161,6 @@ export default function ReportIssueScreen({ navigation }) {
     }
   };
 
-  const categories = CATEGORIES;
-
   // Progress calculation
   const getProgress = () => {
     let filled = 0;
@@ -209,19 +176,27 @@ export default function ReportIssueScreen({ navigation }) {
 
   const handleSubmit = async () => {
     if (!title.trim()) {
-      setErrorMsg("Please provide a title for the issue.");
+      setErrorMsg(
+        'Title is required. Please tap the "Issue Title" field and provide a brief name for the issue.',
+      );
       return;
     }
     if (title.trim().length < 5) {
-      setErrorMsg("Title should be at least 5 characters.");
+      setErrorMsg(
+        "Title is too short. Please add more details to the title (minimum 5 characters).",
+      );
       return;
     }
     if (!description.trim()) {
-      setErrorMsg("Please describe the issue.");
+      setErrorMsg(
+        'Description is required. Please type in the "Description" field to explain the issue clearly.',
+      );
       return;
     }
     if (description.trim().length < 10) {
-      setErrorMsg("Description should be at least 10 characters.");
+      setErrorMsg(
+        "Description is too brief. Please type at least 10 characters explaining what needs to be fixed.",
+      );
       return;
     }
 
@@ -243,6 +218,33 @@ export default function ReportIssueScreen({ navigation }) {
     setErrorMsg("");
 
     try {
+      // Rate limit pre-check
+      if (user?.uid) {
+        try {
+          const { doc: firestoreDoc, getDoc } = require("firebase/firestore");
+          const { db: firestoreDb } = require("../config/firebaseConfig");
+          const rateLimitDoc = await getDoc(
+            firestoreDoc(firestoreDb, "userRateLimits", user.uid),
+          );
+          if (rateLimitDoc.exists()) {
+            const data = rateLimitDoc.data();
+            if ((data.issuesThisHour || 0) >= 5) {
+              setErrorMsg(
+                "You've reached the posting limit (5 reports per hour). Please wait before posting again.",
+              );
+              setLoading(false);
+              return;
+            }
+          }
+        } catch (rateLimitError) {
+          // If rate limit check fails, proceed anyway — the backend will catch it
+          console.warn(
+            "[ReportIssue] Rate limit pre-check failed:",
+            rateLimitError,
+          );
+        }
+      }
+
       const netState = await NetInfo.fetch();
       const isOffline = !netState.isConnected;
 
@@ -277,7 +279,7 @@ export default function ReportIssueScreen({ navigation }) {
         }
         await IssueService.addIssue(issueData);
       } catch (networkError) {
-        console.log("Upload failed, queueing offline:", networkError);
+        console.warn("Upload failed, queueing offline:", networkError);
         issueData.photo = photo ? photo.uri : null;
         await SyncService.enqueueIssue(issueData);
         Alert.alert(
@@ -304,6 +306,8 @@ export default function ReportIssueScreen({ navigation }) {
           onPress={() => navigation.goBack()}
           activeOpacity={0.7}
           style={styles.backBtn}
+          accessibilityRole="button"
+          accessibilityLabel="Go Back"
         >
           <MaterialCommunityIcons
             name="arrow-left"
@@ -312,13 +316,24 @@ export default function ReportIssueScreen({ navigation }) {
           />
         </TouchableOpacity>
         <View style={{ flex: 1, alignItems: "center" }}>
-          <Text style={styles.headerTitle}>New Report</Text>
+          <Text style={styles.headerTitle} accessibilityRole="header">
+            New Report
+          </Text>
         </View>
         <TouchableOpacity
           onPress={handleSubmit}
           disabled={loading || progress < 3}
           activeOpacity={0.7}
-          style={{ padding: 8 }}
+          style={{
+            padding: 8,
+            minHeight: 48,
+            minWidth: 48,
+            justifyContent: "center",
+            alignItems: "center",
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Submit Report"
+          accessibilityState={{ disabled: loading || progress < 3 }}
         >
           <Text
             style={[
@@ -363,44 +378,7 @@ export default function ReportIssueScreen({ navigation }) {
             />
             <Text style={styles.sectionLabel}>Category</Text>
           </View>
-          <View style={styles.categoryGrid}>
-            {categories.map((c) => {
-              const isActive = category === c.name;
-              return (
-                <TouchableOpacity
-                  key={c.name}
-                  onPress={() => setCategory(c.name)}
-                  activeOpacity={0.7}
-                  style={[
-                    styles.categoryChip,
-                    isActive && styles.categoryChipActive,
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.categoryIconWrap,
-                      isActive && styles.categoryIconWrapActive,
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={c.icon}
-                      size={18}
-                      color={isActive ? "#FFF" : Colors.textTertiary}
-                    />
-                  </View>
-                  <Text
-                    style={[
-                      styles.categoryText,
-                      isActive && styles.categoryTextActive,
-                    ]}
-                    numberOfLines={1}
-                  >
-                    {c.name}
-                  </Text>
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <CategoryGrid category={category} setCategory={setCategory} />
         </View>
 
         {/* Section: Details */}
@@ -422,13 +400,20 @@ export default function ReportIssueScreen({ navigation }) {
             }}
             mode="outlined"
             style={styles.input}
-            textColor={Colors.textPrimary}
+            textColor="#000000"
             theme={{
-              colors: { primary: Colors.accent, outline: Colors.border },
+              colors: {
+                primary: "#FF4500",
+                outline: "#000000",
+                background: "#FFFFFF",
+              },
+              roundness: 0,
             }}
-            placeholder="What's the issue? (e.g. Deep pothole on Main St.)"
+            label="Issue Title"
+            placeholder="e.g. Deep pothole on Main St."
             placeholderTextColor={Colors.textTertiary}
             maxLength={200}
+            accessibilityLabel="Issue Title Input"
           />
           <TextInput
             value={description}
@@ -438,14 +423,24 @@ export default function ReportIssueScreen({ navigation }) {
             }}
             mode="outlined"
             multiline
-            numberOfLines={4}
-            style={[styles.input, { minHeight: 100 }]}
-            textColor={Colors.textPrimary}
+            numberOfLines={2}
+            style={[
+              styles.input,
+              { minHeight: 60, backgroundColor: "transparent" },
+            ]}
+            textColor="#000000"
             theme={{
-              colors: { primary: Colors.accent, outline: Colors.border },
+              colors: {
+                primary: "#FF4500",
+                outline: "#000000",
+                background: "transparent",
+              },
+              roundness: 0,
             }}
+            label="Description"
             placeholder="Describe the issue and its exact location..."
             placeholderTextColor={Colors.textTertiary}
+            accessibilityLabel="Issue Description Input"
           />
           <View style={styles.charCount}>
             <Text style={styles.charCountText}>
@@ -469,74 +464,14 @@ export default function ReportIssueScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name="lightning-bolt"
                   size={10}
-                  color={Colors.warning}
+                  color="#FF4500"
                   style={{ marginRight: 3 }}
                 />
                 <Text style={styles.autoDetectText}>AUTO-DETECTED</Text>
               </View>
             )}
           </View>
-          <View style={{ marginBottom: Spacing.sm }}>
-            {URGENCY_LEVELS.map((level) => {
-              const isActive = urgency === level.id;
-              return (
-                <TouchableOpacity
-                  key={level.id}
-                  onPress={() => setUrgency(level.id)}
-                  activeOpacity={0.7}
-                  style={[
-                    styles.urgencyRow,
-                    isActive && {
-                      backgroundColor: level.bg,
-                      borderColor: level.color + "40",
-                    },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.urgencyIconWrap,
-                      {
-                        backgroundColor: isActive
-                          ? level.bg
-                          : Colors.surfaceElevated,
-                      },
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name={level.icon}
-                      size={18}
-                      color={isActive ? level.color : Colors.textTertiary}
-                    />
-                  </View>
-                  <View style={{ flex: 1 }}>
-                    <Text
-                      style={[
-                        styles.urgencyLabel,
-                        isActive && { color: level.color },
-                      ]}
-                    >
-                      {level.label}
-                    </Text>
-                    <Text style={styles.urgencyDesc}>{level.desc}</Text>
-                  </View>
-                  {isActive && (
-                    <View
-                      style={[
-                        styles.urgencyCheck,
-                        { backgroundColor: level.color },
-                      ]}
-                    >
-                      <MaterialCommunityIcons
-                        name="check"
-                        size={12}
-                        color="#FFF"
-                      />
-                    </View>
-                  )}
-                </TouchableOpacity>
-              );
-            })}
-          </View>
+          <UrgencySelector urgency={urgency} setUrgency={setUrgency} />
           {autoDetected && autoDetected.matchedKeyword && (
             <View style={styles.detectedHint}>
               <MaterialCommunityIcons
@@ -568,30 +503,35 @@ export default function ReportIssueScreen({ navigation }) {
             onChangeText={setLocationStr}
             mode="outlined"
             style={styles.input}
-            textColor={Colors.textPrimary}
+            textColor="#000000"
             theme={{
-              colors: { primary: Colors.accent, outline: Colors.border },
+              colors: {
+                primary: "#FF4500",
+                outline: "#000000",
+                background: "#FFFFFF",
+              },
+              roundness: 0,
             }}
+            label="Location"
             placeholder="Enter location manually..."
             placeholderTextColor={Colors.textTertiary}
-            left={
-              <TextInput.Icon
-                icon="map-marker-outline"
-                color={Colors.textTertiary}
-              />
-            }
+            left={<TextInput.Icon icon="map-marker-outline" color="#000000" />}
+            accessibilityLabel="Location Input"
           />
           <TouchableOpacity
             onPress={fetchLocation}
             disabled={isFetchingLocation}
             activeOpacity={0.7}
             style={styles.gpsBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Use Current GPS Location"
+            accessibilityState={{ disabled: isFetchingLocation }}
           >
             <View style={styles.gpsBtnIconWrap}>
               <MaterialCommunityIcons
                 name="crosshairs-gps"
                 size={16}
-                color={isFetchingLocation ? Colors.textTertiary : Colors.accent}
+                color={isFetchingLocation ? Colors.textTertiary : "#FFF"}
               />
             </View>
             <Text
@@ -627,59 +567,7 @@ export default function ReportIssueScreen({ navigation }) {
             <Text style={styles.optionalBadge}>Optional</Text>
           </View>
 
-          {photo ? (
-            <View style={styles.photoPreviewWrap}>
-              <Image
-                source={{ uri: photo.uri }}
-                style={styles.photoPreview}
-                resizeMode="cover"
-              />
-              <TouchableOpacity
-                onPress={() => setPhoto(null)}
-                activeOpacity={0.7}
-                style={styles.removePhotoBtn}
-              >
-                <MaterialCommunityIcons
-                  name="close-circle"
-                  size={24}
-                  color="#FFF"
-                />
-              </TouchableOpacity>
-            </View>
-          ) : (
-            <View style={{ flexDirection: "row", marginBottom: Spacing.lg }}>
-              <TouchableOpacity
-                onPress={takePhoto}
-                style={[styles.photoBtn, { marginRight: Spacing.md }]}
-                activeOpacity={0.7}
-              >
-                <View style={styles.photoBtnIcon}>
-                  <MaterialCommunityIcons
-                    name="camera"
-                    size={24}
-                    color={Colors.accent}
-                  />
-                </View>
-                <Text style={styles.photoBtnTitle}>Camera</Text>
-                <Text style={styles.photoBtnSub}>Take a photo</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                onPress={pickImage}
-                style={styles.photoBtn}
-                activeOpacity={0.7}
-              >
-                <View style={styles.photoBtnIcon}>
-                  <MaterialCommunityIcons
-                    name="image-multiple"
-                    size={24}
-                    color={Colors.accent}
-                  />
-                </View>
-                <Text style={styles.photoBtnTitle}>Gallery</Text>
-                <Text style={styles.photoBtnSub}>Choose file</Text>
-              </TouchableOpacity>
-            </View>
-          )}
+          <MediaPicker photo={photo} setPhoto={setPhoto} />
 
           {/* YouTube Link */}
           <View style={styles.dividerRow}>
@@ -692,15 +580,22 @@ export default function ReportIssueScreen({ navigation }) {
             onChangeText={setYoutubeUrl}
             mode="outlined"
             style={styles.input}
-            textColor={Colors.textPrimary}
+            textColor="#000000"
             theme={{
-              colors: { primary: Colors.accent, outline: Colors.border },
+              colors: {
+                primary: "#FF4500",
+                outline: "#000000",
+                background: "#FFFFFF",
+              },
+              roundness: 0,
             }}
+            label="YouTube Link"
             placeholder="Paste YouTube link..."
             placeholderTextColor={Colors.textTertiary}
             autoCapitalize="none"
             autoCorrect={false}
             left={<TextInput.Icon icon="youtube" color="#FF0000" />}
+            accessibilityLabel="YouTube Link Input"
           />
         </View>
 
@@ -727,6 +622,9 @@ export default function ReportIssueScreen({ navigation }) {
               disabled={loading}
               activeOpacity={0.85}
               style={[styles.submitBtn, loading && { opacity: 0.7 }]}
+              accessibilityRole="button"
+              accessibilityLabel="Submit Report"
+              accessibilityState={{ disabled: loading }}
             >
               {loading ? (
                 <ActivityIndicator color="#FFF" size={20} />
@@ -760,132 +658,109 @@ const styles = {
     paddingHorizontal: Spacing.lg,
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.md,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: "#000000",
+    borderBottomWidth: 2,
+    borderBottomColor: "#FFFFFF",
   },
   backBtn: {
-    padding: 8,
+    padding: 12,
+    minWidth: 48,
+    minHeight: 48,
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
     fontSize: 17,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "800",
+    color: "#FFFFFF",
     letterSpacing: -0.2,
+    textTransform: "uppercase",
   },
   submitHeaderText: {
     fontSize: 15,
-    fontWeight: "700",
-    color: Colors.accent,
+    fontWeight: "800",
+    color: "#FF4500",
+    textTransform: "uppercase",
   },
   progressContainer: {
     paddingHorizontal: Spacing.xl,
     paddingVertical: Spacing.md,
-    backgroundColor: Colors.background,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
+    backgroundColor: "#000000",
+    borderBottomWidth: 2,
+    borderBottomColor: "#FFFFFF",
   },
   progressTrack: {
-    height: 3,
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: 2,
+    height: 6,
+    backgroundColor: "#222222",
+    borderRadius: 0,
     overflow: "hidden",
     marginBottom: 6,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
   },
   progressFill: {
     height: "100%",
-    backgroundColor: Colors.accent,
-    borderRadius: 2,
+    backgroundColor: "#FF4500",
+    borderRadius: 0,
   },
   progressText: {
     fontSize: 11,
-    color: Colors.textTertiary,
-    fontWeight: "600",
+    color: "#A0AAB5",
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
   section: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.xxl,
     paddingBottom: Spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.borderSubtle,
+    borderBottomWidth: 2,
+    borderBottomColor: "#FFFFFF",
+    backgroundColor: "#000000",
   },
   sectionHeader: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: Spacing.lg,
+    flexWrap: "wrap", // Prevent clipping
   },
   sectionDot: {
-    width: 8,
-    height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.surfaceElevated,
+    width: 12,
+    height: 12,
+    borderRadius: 0,
+    backgroundColor: "#222222",
     marginRight: 10,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
   sectionDotActive: {
-    backgroundColor: Colors.accent,
-    borderColor: Colors.accent,
+    backgroundColor: "#FF4500",
+    borderColor: "#FF4500",
   },
   sectionLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    letterSpacing: 0.2,
+    fontSize: 16,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    letterSpacing: 0.5,
     textTransform: "uppercase",
   },
   optionalBadge: {
-    fontSize: 10,
-    fontWeight: "600",
-    color: Colors.textTertiary,
-    marginLeft: "auto",
+    fontSize: 11,
+    fontWeight: "800",
+    color: "#FFFFFF",
+    backgroundColor: "#FF4500", // Electric Orange
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    marginLeft: 8,
     textTransform: "uppercase",
     letterSpacing: 0.5,
-  },
-  categoryGrid: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.surface,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    borderRadius: Radius.sm,
-    marginRight: 8,
-    marginBottom: 8,
     borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  categoryChipActive: {
-    backgroundColor: Colors.accentSurface,
-    borderColor: Colors.accent,
-  },
-  categoryIconWrap: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
-    backgroundColor: Colors.surfaceElevated,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 8,
-  },
-  categoryIconWrapActive: {
-    backgroundColor: Colors.accent,
-  },
-  categoryText: {
-    color: Colors.textSecondary,
-    fontWeight: "600",
-    fontSize: 13,
-  },
-  categoryTextActive: {
-    color: Colors.accent,
-    fontWeight: "700",
+    borderColor: "#FFFFFF",
   },
   input: {
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: "#FFFFFF",
     marginBottom: Spacing.md,
+    borderWidth: 2,
+    borderColor: "#000000",
   },
   charCount: {
     alignItems: "flex-end",
@@ -894,83 +769,41 @@ const styles = {
   },
   charCountText: {
     fontSize: 11,
-    color: Colors.textTertiary,
+    fontWeight: "800",
+    color: "#A0AAB5",
   },
   gpsBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surface,
+    backgroundColor: "#000000",
     paddingHorizontal: 14,
     paddingVertical: 12,
-    borderRadius: Radius.sm,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    minHeight: 48,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    shadowColor: "#FFFFFF",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
   },
   gpsBtnIconWrap: {
     width: 28,
     height: 28,
-    borderRadius: 8,
-    backgroundColor: Colors.accentSurface,
+    borderRadius: 0,
+    backgroundColor: "#FF4500",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
   },
   gpsBtnText: {
-    color: Colors.accent,
-    fontSize: 13,
-    fontWeight: "600",
-  },
-  photoPreviewWrap: {
-    position: "relative",
-    marginBottom: Spacing.lg,
-    borderRadius: Radius.lg,
-    overflow: "hidden",
-  },
-  photoPreview: {
-    width: "100%",
-    height: 220,
-    borderRadius: Radius.lg,
-    backgroundColor: Colors.surfaceElevated,
-  },
-  removePhotoBtn: {
-    position: "absolute",
-    top: 10,
-    right: 10,
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: "rgba(0,0,0,0.5)",
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  photoBtn: {
-    flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1.5,
-    borderColor: Colors.border,
-    borderStyle: "dashed",
-    paddingVertical: 20,
-    alignItems: "center",
-  },
-  photoBtnIcon: {
-    width: 48,
-    height: 48,
-    borderRadius: 14,
-    backgroundColor: Colors.accentSurface,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: 8,
-  },
-  photoBtnTitle: {
-    color: Colors.textPrimary,
-    fontWeight: "700",
-    fontSize: 13,
-    marginBottom: 2,
-  },
-  photoBtnSub: {
-    color: Colors.textTertiary,
-    fontSize: 11,
+    color: "#FFFFFF",
+    fontSize: 14,
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
   dividerRow: {
     flexDirection: "row",
@@ -979,13 +812,13 @@ const styles = {
   },
   dividerLine: {
     flex: 1,
-    height: 1,
-    backgroundColor: Colors.border,
+    height: 2,
+    backgroundColor: "#FFFFFF",
   },
   dividerText: {
-    color: Colors.textTertiary,
-    fontSize: 11,
-    fontWeight: "600",
+    color: "#FFFFFF",
+    fontSize: 12,
+    fontWeight: "800",
     marginHorizontal: 12,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -993,89 +826,72 @@ const styles = {
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.errorSurface,
+    backgroundColor: "#FF4500",
     padding: 12,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
     marginHorizontal: Spacing.xl,
     marginBottom: Spacing.lg,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
   },
   submitBtn: {
-    backgroundColor: Colors.accent,
-    borderRadius: Radius.md,
+    backgroundColor: "#FF4500",
+    borderRadius: 0,
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
-    ...Shadows.fab,
+    borderWidth: 2,
+    borderColor: "#FFFFFF",
+    shadowColor: "#FFFFFF",
+    shadowOffset: { width: 4, height: 4 },
+    shadowOpacity: 1,
+    shadowRadius: 0,
+    elevation: 0,
   },
   submitBtnText: {
-    color: "#FFF",
+    color: "#FFFFFF",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "800",
+    textTransform: "uppercase",
   },
   disclaimer: {
-    color: Colors.textTertiary,
+    color: "#A0AAB5",
     fontSize: 11,
     textAlign: "center",
-    marginTop: Spacing.md,
+    marginTop: Spacing.lg,
     lineHeight: 16,
-  },
-  urgencyRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: Colors.surface,
-    padding: 14,
-    borderRadius: Radius.sm,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: Colors.border,
-  },
-  urgencyIconWrap: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: 12,
-  },
-  urgencyLabel: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    marginBottom: 1,
-  },
-  urgencyDesc: { fontSize: 11, color: Colors.textTertiary },
-  urgencyCheck: {
-    width: 22,
-    height: 22,
-    borderRadius: 7,
-    justifyContent: "center",
-    alignItems: "center",
+    fontWeight: "600",
   },
   autoDetectBadge: {
     flexDirection: "row",
     alignItems: "center",
     marginLeft: "auto",
-    backgroundColor: Colors.warningSurface,
+    backgroundColor: "#FF4500",
     paddingHorizontal: 8,
     paddingVertical: 3,
-    borderRadius: 6,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
   },
   autoDetectText: {
-    fontSize: 9,
+    fontSize: 10,
     fontWeight: "800",
-    color: Colors.warning,
+    color: "#FFFFFF",
     letterSpacing: 0.5,
   },
   detectedHint: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: "#222222",
     padding: 10,
-    borderRadius: Radius.sm,
+    borderRadius: 0,
+    borderWidth: 1,
+    borderColor: "#FFFFFF",
   },
   detectedHintText: {
     fontSize: 12,
-    color: Colors.textTertiary,
+    color: "#FFFFFF",
     fontStyle: "italic",
+    fontWeight: "600",
   },
 };

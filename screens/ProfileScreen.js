@@ -7,47 +7,55 @@ import {
   Image,
 } from "react-native";
 import { Text, ActivityIndicator } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import {
-  useFocusEffect,
-  useNavigation,
-  useRoute,
-} from "@react-navigation/native";
+import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
 import { AuthService } from "../services/AuthService";
 import { useAuth } from "../contexts/AuthContext";
 import { IssueService } from "../services/IssueService";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import AnimatedPressable from "../components/ui/AnimatedPressable";
+import LoginOverlay from "../components/LoginOverlay";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
-import AnimatedPressable from "../components/ui/AnimatedPressable";
-import { useSafeAreaInsets } from "react-native-safe-area-context";
-import { Colors, Radius, Spacing, Gradients } from "../theme";
+import { theme, Spacing } from "../theme";
+import IssueCard from "../components/IssueCard";
 
 export default function ProfileScreen() {
   const { t, i18n } = useTranslation();
   const { user } = useAuth();
   const navigation = useNavigation();
-  const route = useRoute();
-  const profileUserId = route.params?.userId || user?.uid;
-  const isOwnProfile =
-    !route.params?.userId || route.params?.userId === user?.uid;
-  const isStackProfile = route.name === "UserProfile";
-  const insets = useSafeAreaInsets();
   const [stats, setStats] = useState({
     reported: 0,
     supported: 0,
     solved: 0,
     rank: "-",
     badges: [],
-    followerCount: 0,
-    followingCount: 0,
-    trustScore: null,
   });
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
+  const [isLoginVisible, setIsLoginVisible] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.97)).current;
+  const [myIssues, setMyIssues] = useState([]);
+  const scrollViewRef = useRef(null);
+  const [reportsY, setReportsY] = useState(0);
+
+  const scrollToReports = () => {
+    if (scrollViewRef.current && reportsY > 0) {
+      scrollViewRef.current.scrollTo({ y: reportsY - 20, animated: true });
+    }
+  };
+
+  const loadMyIssues = async () => {
+    if (!user) return;
+    try {
+      const allIssues = await IssueService.getAllIssues(true);
+      const filtered = allIssues.filter((i) => i.authorId === user.uid);
+      setMyIssues(filtered);
+    } catch (e) {
+      console.warn("Failed to load user issues:", e);
+    }
+  };
 
   useEffect(() => {
     if (!loading) {
@@ -67,32 +75,29 @@ export default function ProfileScreen() {
   }, [loading]);
 
   const loadStats = async (isRefresh = false) => {
+    // Guest Guard: Prevent undefined query crashes
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+
     // Only show full loading screen on initial load
     if (!isRefresh && stats.reported === 0 && stats.supported === 0) {
       setLoading(true);
     }
     try {
-      const uid = profileUserId;
+      const uid = user?.uid;
 
       // Get user stats directly from server count aggregates
       const userStats = await IssueService.getUserStats(uid);
       const { reported, supported, solved, roadsSolved, ecoSolved } = userStats;
 
-      // Get rank and social counts from user profile (updated via cron / Cloud Functions)
+      // Get rank from user profile (updated via cron)
       let rank = "-";
-      let followerCount = 0;
-      let followingCount = 0;
-      let serverTrustScore = null;
       try {
         const userDocSnap = await getDoc(doc(db, "users", uid));
         if (userDocSnap.exists()) {
-          const userData = userDocSnap.data();
-          rank = userData.rank || "-";
-          followerCount = userData.followerCount || 0;
-          followingCount = userData.followingCount || 0;
-          if (typeof userData.trustScore === "number") {
-            serverTrustScore = userData.trustScore;
-          }
+          rank = userDocSnap.data().rank || "-";
         }
       } catch (e) {
         console.warn("Failed to fetch rank", e);
@@ -140,16 +145,7 @@ export default function ProfileScreen() {
         .sort((a, b) => b.unlocked - a.unlocked)
         .slice(0, 4);
 
-      setStats({
-        reported,
-        supported,
-        solved,
-        rank,
-        badges,
-        followerCount,
-        followingCount,
-        trustScore: serverTrustScore,
-      });
+      setStats({ reported, supported, solved, rank, badges });
     } catch (e) {
       console.error("Profile stats error:", e);
     } finally {
@@ -161,7 +157,8 @@ export default function ProfileScreen() {
   useFocusEffect(
     useCallback(() => {
       loadStats();
-    }, [user, profileUserId]),
+      loadMyIssues();
+    }, [user]),
   );
 
   const onRefresh = useCallback(() => {
@@ -169,6 +166,7 @@ export default function ProfileScreen() {
     fadeAnim.setValue(0.5);
     scaleAnim.setValue(0.99);
     loadStats(true);
+    loadMyIssues();
   }, []);
 
   const handleLogout = async () => {
@@ -179,53 +177,103 @@ export default function ProfileScreen() {
     }
   };
 
-  const [profileDisplayName, setProfileDisplayName] = useState(null);
-  const [profilePhotoURL, setProfilePhotoURL] = useState(null);
-
-  useEffect(() => {
-    if (!isOwnProfile && profileUserId) {
-      (async () => {
-        try {
-          const snap = await getDoc(doc(db, "users", profileUserId));
-          if (snap.exists()) {
-            const d = snap.data();
-            setProfileDisplayName(d.displayName || d.username || "User");
-            setProfilePhotoURL(d.avatarUrl || d.photoURL || null);
-          }
-        } catch (e) {
-          console.warn("Failed to fetch profile user data", e);
-        }
-      })();
-    }
-  }, [isOwnProfile, profileUserId]);
-
-  const displayName = isOwnProfile
-    ? user?.displayName || user?.email?.split("@")[0] || "User"
-    : profileDisplayName || "User";
+  const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
   const initials = displayName.substring(0, 2).toUpperCase();
-  const photoURL = isOwnProfile ? user?.photoURL : profilePhotoURL;
   const trustScore =
-    stats.trustScore ??
     stats.reported * 50 + stats.supported * 30 + stats.solved * 100;
-  const joinDate =
-    isOwnProfile && user?.metadata?.creationTime
-      ? new Date(user.metadata.creationTime).toLocaleDateString("en-US", {
-          month: "short",
-          year: "numeric",
-        })
-      : "";
+  const joinDate = user?.metadata?.creationTime
+    ? new Date(user.metadata.creationTime).toLocaleDateString("en-US", {
+        month: "short",
+        year: "numeric",
+      })
+    : "";
 
   if (loading) {
     return (
       <View
         style={{
           flex: 1,
-          backgroundColor: Colors.background,
+          backgroundColor: theme.colors.surface,
           justifyContent: "center",
           alignItems: "center",
         }}
       >
-        <ActivityIndicator size="large" color={Colors.accent} />
+        <ActivityIndicator size="large" color={theme.colors.accentBrand} />
+      </View>
+    );
+  }
+
+  if (!user) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: theme.colors.surfaceSubtle,
+          justifyContent: "center",
+          alignItems: "center",
+          padding: 24,
+        }}
+      >
+        <MaterialCommunityIcons
+          name="account-circle-outline"
+          size={64}
+          color={theme.colors.textMuted}
+          style={{ marginBottom: 16 }}
+        />
+        <Text
+          style={{
+            fontSize: 28,
+            fontWeight: "800",
+            color: theme.colors.textPrimary,
+            marginBottom: 12,
+            textAlign: "center",
+            textTransform: "uppercase",
+            letterSpacing: -0.5,
+          }}
+        >
+          {t("profile.guest_title", "Guest Profile")}
+        </Text>
+        <Text
+          style={{
+            fontSize: 14,
+            color: theme.colors.textMuted,
+            textAlign: "center",
+            marginBottom: 32,
+            lineHeight: 20,
+          }}
+        >
+          Sign in to track your community impact, earn badges, and join the city
+          leaderboard.
+        </Text>
+        <TouchableOpacity
+          onPress={() => setIsLoginVisible(true)}
+          style={{
+            backgroundColor: theme.colors.accentBrand,
+            paddingVertical: 14,
+            paddingHorizontal: 24,
+            borderRadius: 0,
+            width: "100%",
+            alignItems: "center",
+          }}
+          activeOpacity={0.8}
+        >
+          <Text
+            style={{
+              color: "#FFFFFF",
+              fontSize: 16,
+              fontWeight: "800",
+              textTransform: "uppercase",
+              letterSpacing: 0.5,
+            }}
+          >
+            SIGN IN
+          </Text>
+        </TouchableOpacity>
+
+        <LoginOverlay
+          visible={isLoginVisible}
+          onClose={() => setIsLoginVisible(false)}
+        />
       </View>
     );
   }
@@ -235,32 +283,32 @@ export default function ProfileScreen() {
       title: "Community Impact",
       desc: "Leaderboard, rankings & trending issues",
       icon: "chart-timeline-variant-shimmer",
-      iconBg: Colors.successSurface,
-      iconColor: Colors.success,
+      iconBg: theme.colors.surfaceSubtle,
+      iconColor: theme.colors.accentBrand,
       onPress: () => navigation.navigate("Analytics"),
     },
     {
       title: "Edit Profile",
       desc: "Photo, name & account settings",
       icon: "account-edit-outline",
-      iconBg: Colors.accentSurface,
-      iconColor: Colors.accent,
+      iconBg: theme.colors.surfaceSubtle,
+      iconColor: theme.colors.accentBrand,
       onPress: () => navigation.navigate("EditProfile"),
     },
     {
       title: "Watch Areas",
       desc: "Neighborhood alerts & tracking",
       icon: "map-marker-radius",
-      iconBg: "rgba(59, 130, 246, 0.12)",
-      iconColor: Colors.info,
+      iconBg: theme.colors.surfaceSubtle,
+      iconColor: theme.colors.textPrimary,
       onPress: () => navigation.navigate("WatchArea"),
     },
     {
       title: "Notifications",
       desc: "Manage your alert preferences",
       icon: "bell-outline",
-      iconBg: Colors.warningSurface,
-      iconColor: Colors.warning,
+      iconBg: theme.colors.surfaceSubtle,
+      iconColor: theme.colors.textPrimary,
       onPress: () => navigation.navigate("Notifications"),
     },
     {
@@ -270,364 +318,326 @@ export default function ProfileScreen() {
           ? "English (Switch to Hindi)"
           : "हिन्दी (Switch to English)",
       icon: "translate",
-      iconBg: Colors.surfaceElevated,
-      iconColor: Colors.textSecondary,
+      iconBg: theme.colors.surfaceSubtle,
+      iconColor: theme.colors.textPrimary,
       onPress: () => i18n.changeLanguage(i18n.language === "en" ? "hi" : "en"),
-    },
-    {
-      title: "My Achievements",
-      desc: "Badges, tiers & progress",
-      icon: "medal-outline",
-      iconBg: Colors.accentSurface,
-      iconColor: Colors.accent,
-      onPress: () => navigation.navigate("Achievements"),
-    },
-    {
-      title: "Settings",
-      desc: "Account, notifications & support",
-      icon: "cog-outline",
-      iconBg: Colors.surfaceElevated,
-      iconColor: Colors.textSecondary,
-      onPress: () => navigation.navigate("Settings"),
     },
   ];
 
   return (
-    <View style={{ flex: 1 }}>
-      <Animated.ScrollView
-        style={{
-          flex: 1,
-          backgroundColor: Colors.background,
-          opacity: fadeAnim,
-          transform: [{ scale: scaleAnim }],
-        }}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={onRefresh}
-            tintColor={Colors.accent}
-            colors={[Colors.accent]}
-            progressBackgroundColor={Colors.surface}
-          />
-        }
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: 120,
-          maxWidth: 800,
-          alignSelf: "center",
-          width: "100%",
-        }}
-      >
-        {/* Profile Header */}
-        <LinearGradient
-          colors={Gradients.heroCard}
-          style={styles.headerSection}
-        >
-          <View style={styles.avatarRow}>
-            {isOwnProfile ? (
-              <AnimatedPressable
-                onPress={() => navigation.navigate("EditProfile")}
-                activeScale={0.95}
-              >
-                <View style={styles.avatarRing}>
-                  {photoURL ? (
-                    <Image source={{ uri: photoURL }} style={styles.avatar} />
-                  ) : (
-                    <LinearGradient
-                      colors={[Colors.accentDark, Colors.accentLight]}
-                      style={styles.avatar}
-                    >
-                      <Text style={styles.avatarText}>{initials}</Text>
-                    </LinearGradient>
-                  )}
-                </View>
-              </AnimatedPressable>
-            ) : (
-              <View style={styles.avatarRing}>
-                {photoURL ? (
-                  <Image source={{ uri: photoURL }} style={styles.avatar} />
-                ) : (
-                  <LinearGradient
-                    colors={[Colors.accentDark, Colors.accentLight]}
-                    style={styles.avatar}
-                  >
-                    <Text style={styles.avatarText}>{initials}</Text>
-                  </LinearGradient>
-                )}
-              </View>
-            )}
-            <View style={{ flex: 1, marginLeft: Spacing.lg }}>
-              <Text style={styles.displayName}>{displayName}</Text>
-              {isOwnProfile && (
-                <Text style={styles.email}>{user?.email || ""}</Text>
-              )}
-              {joinDate ? (
-                <Text style={styles.joinDate}>Member since {joinDate}</Text>
-              ) : null}
-            </View>
-            {isOwnProfile && (
-              <AnimatedPressable
-                onPress={() => navigation.navigate("EditProfile")}
-                activeScale={0.92}
-              >
-                <View style={styles.editBtn}>
-                  <MaterialCommunityIcons
-                    name="pencil-outline"
-                    size={18}
-                    color={Colors.accentLight}
-                  />
-                </View>
-              </AnimatedPressable>
-            )}
-          </View>
-
-          {/* Stats Row */}
-          <View style={styles.statsRow}>
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: Colors.accentLight }]}>
-                {trustScore}
-              </Text>
-              <Text style={styles.statLabel}>Trust Score</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: Colors.success }]}>
-                #{stats.rank}
-              </Text>
-              <Text style={styles.statLabel}>City Rank</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={styles.statValue}>{stats.reported}</Text>
-              <Text style={styles.statLabel}>Reports</Text>
-            </View>
-            <View style={styles.statDivider} />
-            <View style={styles.statItem}>
-              <Text style={[styles.statValue, { color: Colors.success }]}>
-                {stats.solved}
-              </Text>
-              <Text style={styles.statLabel}>Solved</Text>
-            </View>
-          </View>
-
+    <Animated.ScrollView
+      ref={scrollViewRef}
+      style={{
+        flex: 1,
+        backgroundColor: theme.colors.surface,
+        opacity: fadeAnim,
+        transform: [{ scale: scaleAnim }],
+      }}
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          tintColor={theme.colors.accentBrand}
+          colors={[theme.colors.accentBrand]}
+          progressBackgroundColor={theme.colors.surface}
+        />
+      }
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={{
+        paddingBottom: 120,
+        maxWidth: 800,
+        alignSelf: "center",
+        width: "100%",
+      }}
+    >
+      {/* Profile Header */}
+      <View style={styles.headerSection}>
+        <View style={styles.avatarRow}>
           <AnimatedPressable
-            onPress={() =>
-              navigation.navigate("FollowList", {
-                userId: profileUserId,
-                listType: "followers",
-              })
-            }
-            activeScale={0.96}
+            onPress={() => navigation.navigate("EditProfile")}
+            activeScale={0.95}
           >
-            <View style={{ alignItems: "center", marginTop: Spacing.md }}>
-              <Text
-                style={{
-                  fontSize: 12,
-                  color: Colors.accentLight,
-                  fontWeight: "500",
-                  letterSpacing: 0.3,
-                }}
-              >
-                {stats.followerCount} Followers · {stats.followingCount}{" "}
-                Following
-              </Text>
+            <View style={styles.avatarRing}>
+              {user?.photoURL ? (
+                <Image source={{ uri: user.photoURL }} style={styles.avatar} />
+              ) : (
+                <View style={styles.avatar}>
+                  <Text style={styles.avatarText}>{initials}</Text>
+                </View>
+              )}
             </View>
           </AnimatedPressable>
-        </LinearGradient>
-
-        <View
-          style={{
-            paddingHorizontal: Spacing.xl,
-            paddingVertical: Spacing.xxl,
-          }}
-        >
-          {/* Activity Cards */}
-          <Text style={styles.sectionTitle}>Activity Overview</Text>
-          <View style={{ flexDirection: "row", marginBottom: Spacing.xxxl }}>
-            <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
-              <View
-                style={[
-                  styles.activityIcon,
-                  { backgroundColor: Colors.infoSurface },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="clipboard-text-outline"
-                  size={22}
-                  color={Colors.info}
-                />
-              </View>
-              <Text style={styles.activityValue}>{stats.reported}</Text>
-              <Text style={styles.activityLabel}>Reports Filed</Text>
-            </View>
-            <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
-              <View
-                style={[
-                  styles.activityIcon,
-                  { backgroundColor: Colors.warningSurface },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="hand-heart-outline"
-                  size={22}
-                  color={Colors.warning}
-                />
-              </View>
-              <Text style={styles.activityValue}>{stats.supported}</Text>
-              <Text style={styles.activityLabel}>Helping On</Text>
-            </View>
-            <View style={styles.activityCard}>
-              <View
-                style={[
-                  styles.activityIcon,
-                  { backgroundColor: Colors.successSurface },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name="check-decagram-outline"
-                  size={22}
-                  color={Colors.success}
-                />
-              </View>
-              <Text style={styles.activityValue}>{stats.solved}</Text>
-              <Text style={styles.activityLabel}>Resolved</Text>
-            </View>
+          <View style={{ flex: 1, marginLeft: Spacing.lg }}>
+            <Text style={styles.displayName}>{displayName}</Text>
+            <Text style={styles.email}>{user?.email || ""}</Text>
+            {joinDate ? (
+              <Text style={styles.joinDate}>Member since {joinDate}</Text>
+            ) : null}
           </View>
-
-          {/* Badges */}
-          <Text style={styles.sectionTitle}>Achievements</Text>
-          <View style={{ marginBottom: Spacing.xxxl }}>
-            {stats.badges.map((badge) => (
-              <View
-                key={badge.id}
-                style={[styles.badgeRow, !badge.unlocked && { opacity: 0.35 }]}
-              >
-                <View
-                  style={[
-                    styles.badgeIconWrap,
-                    badge.unlocked && { backgroundColor: Colors.accentSurface },
-                  ]}
-                >
-                  <MaterialCommunityIcons
-                    name={badge.icon}
-                    size={22}
-                    color={badge.unlocked ? Colors.accent : Colors.textTertiary}
-                  />
-                </View>
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.badgeName}>{badge.name}</Text>
-                  <Text style={styles.badgeDesc}>
-                    {badge.unlocked ? badge.desc : "Locked — keep contributing"}
-                  </Text>
-                </View>
-                {badge.unlocked && (
-                  <View style={styles.unlockedBadge}>
-                    <MaterialCommunityIcons
-                      name="check"
-                      size={12}
-                      color={Colors.success}
-                    />
-                  </View>
-                )}
-              </View>
-            ))}
-          </View>
-
-          {/* Settings — only for own profile */}
-          {isOwnProfile && (
-            <View>
-              <Text style={styles.sectionTitle}>Settings</Text>
-              {settingsItems.map((item, index) => (
-                <AnimatedPressable
-                  key={item.title}
-                  onPress={item.onPress}
-                  activeScale={0.98}
-                  style={{
-                    marginBottom:
-                      index < settingsItems.length - 1
-                        ? Spacing.sm
-                        : Spacing.xxxl,
-                  }}
-                >
-                  <View style={styles.settingsRow}>
-                    <View
-                      style={[
-                        styles.settingsIcon,
-                        { backgroundColor: item.iconBg },
-                      ]}
-                    >
-                      <MaterialCommunityIcons
-                        name={item.icon}
-                        size={20}
-                        color={item.iconColor}
-                      />
-                    </View>
-                    <View style={{ flex: 1 }}>
-                      <Text style={styles.settingsTitle}>{item.title}</Text>
-                      <Text style={styles.settingsDesc}>{item.desc}</Text>
-                    </View>
-                    <MaterialCommunityIcons
-                      name="chevron-right"
-                      size={20}
-                      color={Colors.textTertiary}
-                    />
-                  </View>
-                </AnimatedPressable>
-              ))}
+          <AnimatedPressable
+            onPress={() => navigation.navigate("EditProfile")}
+            activeScale={0.92}
+          >
+            <View style={styles.editBtn}>
+              <MaterialCommunityIcons
+                name="pencil-outline"
+                size={18}
+                color={theme.colors.accentBrand}
+              />
             </View>
-          )}
-          {/* Logout — only for own profile */}
-          {isOwnProfile && (
-            <TouchableOpacity
-              onPress={handleLogout}
-              activeOpacity={0.7}
-              style={styles.logoutBtn}
+          </AnimatedPressable>
+        </View>
+
+        {/* Stats Row */}
+        <View style={styles.statsRow}>
+          <View style={styles.statItem}>
+            <Text
+              style={{
+                fontSize: 64,
+                fontWeight: "900",
+                color: theme.colors.textPrimary,
+                letterSpacing: -2,
+                lineHeight: 68,
+              }}
+            >
+              {trustScore}
+            </Text>
+            <Text style={styles.statLabel}>TRUST SCORE</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text
+              style={[styles.statValue, { color: theme.colors.textPrimary }]}
+            >
+              #{stats.rank}
+            </Text>
+            <Text style={styles.statLabel}>City Rank</Text>
+          </View>
+          <View style={styles.statDivider} />
+          <TouchableOpacity
+            style={styles.statItem}
+            activeOpacity={0.7}
+            onPress={scrollToReports}
+          >
+            <Text style={styles.statValue}>{stats.reported}</Text>
+            <Text style={styles.statLabel}>Reports</Text>
+          </TouchableOpacity>
+          <View style={styles.statDivider} />
+          <View style={styles.statItem}>
+            <Text
+              style={[styles.statValue, { color: theme.colors.accentBrand }]}
+            >
+              {stats.solved}
+            </Text>
+            <Text style={styles.statLabel}>Solved</Text>
+          </View>
+        </View>
+      </View>
+
+      <View
+        style={{ paddingHorizontal: Spacing.xl, paddingVertical: Spacing.xxl }}
+      >
+        {/* Activity Cards */}
+        <Text style={styles.sectionTitle}>Activity Overview</Text>
+        <View style={{ flexDirection: "row", marginBottom: Spacing.xxxl }}>
+          <TouchableOpacity
+            style={[styles.activityCard, { marginRight: Spacing.md }]}
+            activeOpacity={0.7}
+            onPress={scrollToReports}
+          >
+            <View
+              style={[
+                styles.activityIcon,
+                { backgroundColor: theme.colors.surfaceSubtle },
+              ]}
             >
               <MaterialCommunityIcons
-                name="logout"
-                size={18}
-                color={Colors.error}
-                style={{ marginRight: 8 }}
+                name="clipboard-text-outline"
+                size={22}
+                color={theme.colors.textPrimary}
               />
-              <Text style={styles.logoutText}>
-                {t("profile.sign_out", "Sign Out")}
-              </Text>
-            </TouchableOpacity>
-          )}
-
-          <Text style={styles.versionText}>Civic v1.0</Text>
-          <View style={{ height: 40 }} />
+            </View>
+            <Text style={styles.activityValue}>{stats.reported}</Text>
+            <Text style={styles.activityLabel}>Reports Filed</Text>
+          </TouchableOpacity>
+          <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
+            <View
+              style={[
+                styles.activityIcon,
+                { backgroundColor: theme.colors.surfaceSubtle },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="hand-heart-outline"
+                size={22}
+                color={theme.colors.accentBrand}
+              />
+            </View>
+            <Text style={styles.activityValue}>{stats.supported}</Text>
+            <Text style={styles.activityLabel}>Helping On</Text>
+          </View>
+          <View style={styles.activityCard}>
+            <View
+              style={[
+                styles.activityIcon,
+                { backgroundColor: theme.colors.surfaceSubtle },
+              ]}
+            >
+              <MaterialCommunityIcons
+                name="check-decagram-outline"
+                size={22}
+                color={theme.colors.accentBrand}
+              />
+            </View>
+            <Text style={styles.activityValue}>{stats.solved}</Text>
+            <Text style={styles.activityLabel}>Resolved</Text>
+          </View>
         </View>
-      </Animated.ScrollView>
-      {/* Back button for stack presentation — sibling of ScrollView so it
-          stays fixed instead of scrolling with content */}
-      {isStackProfile && (
+
+        {/* Badges */}
+        <Text style={styles.sectionTitle}>Achievements</Text>
+        <View style={{ marginBottom: Spacing.xxxl }}>
+          {stats.badges.map((badge) => (
+            <View
+              key={badge.id}
+              style={[styles.badgeRow, !badge.unlocked && { opacity: 0.35 }]}
+            >
+              <View
+                style={[
+                  styles.badgeIconWrap,
+                  badge.unlocked && {
+                    backgroundColor: theme.colors.surfaceSubtle,
+                  },
+                ]}
+              >
+                <MaterialCommunityIcons
+                  name={badge.icon}
+                  size={22}
+                  color={
+                    badge.unlocked
+                      ? theme.colors.accentBrand
+                      : theme.colors.textMuted
+                  }
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.badgeName}>{badge.name}</Text>
+                <Text style={styles.badgeDesc}>
+                  {badge.unlocked ? badge.desc : "Locked — keep contributing"}
+                </Text>
+              </View>
+              {badge.unlocked && (
+                <View style={styles.unlockedBadge}>
+                  <MaterialCommunityIcons
+                    name="check"
+                    size={12}
+                    color={theme.colors.accentBrand}
+                  />
+                </View>
+              )}
+            </View>
+          ))}
+        </View>
+
+        {/* Settings */}
+        <Text style={styles.sectionTitle}>Settings</Text>
+        {settingsItems.map((item, index) => (
+          <AnimatedPressable
+            key={item.title}
+            onPress={item.onPress}
+            activeScale={0.98}
+            style={{
+              marginBottom:
+                index < settingsItems.length - 1 ? Spacing.sm : Spacing.xxxl,
+            }}
+          >
+            <View style={styles.settingsRow}>
+              <View
+                style={[styles.settingsIcon, { backgroundColor: item.iconBg }]}
+              >
+                <MaterialCommunityIcons
+                  name={item.icon}
+                  size={20}
+                  color={item.iconColor}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={styles.settingsTitle}>{item.title}</Text>
+                <Text style={styles.settingsDesc}>{item.desc}</Text>
+              </View>
+              <MaterialCommunityIcons
+                name="chevron-right"
+                size={20}
+                color={theme.colors.textMuted}
+              />
+            </View>
+          </AnimatedPressable>
+        ))}
+      </View>
+
+      {/* My Reports Feed */}
+      <View
+        onLayout={(event) => {
+          const layout = event.nativeEvent.layout;
+          setReportsY(layout.y);
+        }}
+        style={{ paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl }}
+      >
+        <Text style={styles.sectionTitle}>My Reports</Text>
+        {myIssues.length === 0 ? (
+          <View
+            style={{
+              alignItems: "center",
+              paddingVertical: Spacing.xl,
+              backgroundColor: theme.colors.surfaceSubtle,
+              borderRadius: theme.radius.inner,
+              borderWidth: 1,
+              borderColor: theme.colors.border,
+            }}
+          >
+            <MaterialCommunityIcons
+              name="clipboard-text-off-outline"
+              size={24}
+              color={theme.colors.textMuted}
+              style={{ marginBottom: 8 }}
+            />
+            <Text
+              style={{
+                color: theme.colors.textMuted,
+                fontSize: 13,
+                fontWeight: "700",
+              }}
+            >
+              No reports filed yet
+            </Text>
+          </View>
+        ) : (
+          myIssues.map((issue) => <IssueCard key={issue.id} issue={issue} />)
+        )}
+      </View>
+
+      {/* Footer / Logout */}
+      <View style={{ paddingHorizontal: Spacing.xl, paddingBottom: 40 }}>
         <TouchableOpacity
-          onPress={() => navigation.goBack()}
+          onPress={handleLogout}
           activeOpacity={0.7}
-          style={{
-            position: "absolute",
-            top: insets.top + 8,
-            left: Spacing.lg,
-            zIndex: 10,
-            width: 36,
-            height: 36,
-            borderRadius: 12,
-            backgroundColor: Colors.surface,
-            borderWidth: 1,
-            borderColor: Colors.border,
-            justifyContent: "center",
-            alignItems: "center",
-          }}
+          style={styles.logoutBtn}
         >
           <MaterialCommunityIcons
-            name="chevron-left"
-            size={22}
-            color={Colors.textPrimary}
+            name="logout"
+            size={18}
+            color="#FFFFFF"
+            style={{ marginRight: 8 }}
           />
+          <Text style={styles.logoutText}>
+            {t("profile.sign_out", "SIGN OUT")}
+          </Text>
         </TouchableOpacity>
-      )}
-    </View>
+
+        <Text style={styles.versionText}>Civic v1.0</Text>
+        <View style={{ height: 40 }} />
+      </View>
+    </Animated.ScrollView>
   );
 }
 
@@ -636,8 +646,9 @@ const styles = {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.headerTop + 16,
     paddingBottom: Spacing.xxl,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   avatarRow: {
     flexDirection: "row",
@@ -646,55 +657,58 @@ const styles = {
   },
   avatarRing: {
     padding: 3,
-    borderRadius: 26,
+    borderRadius: 0,
     borderWidth: 2,
-    borderColor: "rgba(99, 102, 241, 0.4)",
+    borderColor: theme.colors.border,
   },
   avatar: {
     width: 68,
     height: 68,
-    borderRadius: 22,
-    backgroundColor: Colors.accent,
+    borderRadius: 0,
+    backgroundColor: theme.colors.accentBrand,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
     fontSize: 24,
-    fontWeight: "700",
+    fontWeight: "900",
     color: "#FFF",
   },
   displayName: {
     fontSize: 22,
-    fontWeight: "800",
-    color: Colors.textPrimary,
-    letterSpacing: -0.3,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.5,
     marginBottom: 2,
+    textTransform: "uppercase",
   },
   email: {
     fontSize: 13,
-    color: Colors.textSecondary,
+    color: theme.colors.textMuted,
     marginBottom: 2,
   },
   joinDate: {
     fontSize: 11,
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
   },
   editBtn: {
     width: 36,
     height: 36,
-    borderRadius: 12,
-    backgroundColor: Colors.accentSurface,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
   },
   statsRow: {
     width: "100%",
     flexDirection: "row",
-    backgroundColor: "rgba(10, 14, 26, 0.6)",
-    borderRadius: Radius.lg,
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderRadius: 0,
     padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   statItem: {
     alignItems: "center",
@@ -702,119 +716,122 @@ const styles = {
   },
   statValue: {
     fontSize: 20,
-    fontWeight: "800",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: 4,
   },
   statLabel: {
     fontSize: 10,
-    color: Colors.textTertiary,
-    fontWeight: "700",
+    color: theme.colors.textMuted,
+    fontWeight: "800",
     textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
   statDivider: {
     width: 1,
-    backgroundColor: Colors.border,
+    backgroundColor: theme.colors.border,
   },
   sectionTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
     marginBottom: Spacing.lg,
-    letterSpacing: 0.2,
+    letterSpacing: 1,
     textTransform: "uppercase",
   },
   activityCard: {
     flex: 1,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     padding: Spacing.lg,
     alignItems: "center",
   },
   activityIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 0,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.sm,
   },
   activityValue: {
     fontSize: 20,
-    fontWeight: "800",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   activityLabel: {
     fontSize: 10,
-    color: Colors.textSecondary,
-    fontWeight: "600",
+    color: theme.colors.textMuted,
+    fontWeight: "700",
     textAlign: "center",
+    textTransform: "uppercase",
   },
   badgeRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
-    borderRadius: Radius.md,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     marginBottom: Spacing.sm,
   },
   badgeIconWrap: {
     width: 40,
     height: 40,
-    borderRadius: 12,
-    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surfaceSubtle,
     justifyContent: "center",
     alignItems: "center",
     marginRight: Spacing.md,
   },
   badgeName: {
     fontSize: 14,
-    fontWeight: "600",
-    color: Colors.textPrimary,
+    fontWeight: "700",
+    color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   badgeDesc: {
     fontSize: 12,
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
   },
   unlockedBadge: {
     width: 24,
     height: 24,
-    borderRadius: 8,
-    backgroundColor: Colors.successSurface,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
   },
   settingsRow: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   settingsIcon: {
     width: 40,
     height: 40,
-    borderRadius: 12,
+    borderRadius: 0,
     justifyContent: "center",
     alignItems: "center",
     marginRight: Spacing.md,
   },
   settingsTitle: {
-    color: Colors.textPrimary,
+    color: theme.colors.textPrimary,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "700",
   },
   settingsDesc: {
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
     fontSize: 12,
   },
   logoutBtn: {
@@ -823,18 +840,19 @@ const styles = {
     justifyContent: "center",
     paddingVertical: 16,
     marginTop: Spacing.xxl,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.error,
-    backgroundColor: Colors.errorSurface,
+    borderRadius: 0,
+    borderWidth: 0,
+    backgroundColor: theme.colors.accentBrand,
   },
   logoutText: {
-    color: Colors.error,
+    color: "#FFFFFF",
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "800",
+    textTransform: "uppercase",
+    letterSpacing: 0.5,
   },
   versionText: {
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
     fontSize: 11,
     textAlign: "center",
     marginTop: Spacing.xxl,

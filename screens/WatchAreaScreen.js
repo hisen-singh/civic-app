@@ -29,7 +29,7 @@ import {
 import { db } from "../config/firebaseConfig";
 import { useAuth } from "../contexts/AuthContext";
 import MapView, { Circle, PROVIDER_GOOGLE } from "react-native-maps";
-import { Colors, Radius, Spacing } from "../theme";
+import { Spacing, theme } from "../theme";
 
 export default function WatchAreaScreen() {
   const { user } = useAuth();
@@ -38,14 +38,13 @@ export default function WatchAreaScreen() {
   const [loading, setLoading] = useState(true);
   const [isCreating, setIsCreating] = useState(false);
 
-  // Create Mode State
   const [newAreaCoords, setNewAreaCoords] = useState({
-    latitude: 29.0588, // Default Haryana region
+    latitude: 29.0588,
     longitude: 76.0856,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-  const [radius, setRadius] = useState(2000); // 2km default
+  const [radius, setRadius] = useState(2000);
   const [snackbarVisible, setSnackbarVisible] = useState(false);
   const [snackbarMsg, setSnackbarMsg] = useState("");
   const fadeAnim = useRef(new Animated.Value(0)).current;
@@ -88,7 +87,7 @@ export default function WatchAreaScreen() {
         userId: user.uid,
         latitude: newAreaCoords.latitude,
         longitude: newAreaCoords.longitude,
-        radius: Math.min(Math.max(radius, 100), 5000), // Clamp to 100m–5km (enforced by rules)
+        radius: radius,
         active: true,
         createdAt: new Date().toISOString(),
       });
@@ -149,7 +148,7 @@ export default function WatchAreaScreen() {
           { justifyContent: "center", alignItems: "center" },
         ]}
       >
-        <ActivityIndicator size="large" color={Colors.accent} />
+        <ActivityIndicator size="large" color={theme.colors.accentBrand} />
       </View>
     );
   }
@@ -160,11 +159,11 @@ export default function WatchAreaScreen() {
         <View style={styles.header}>
           <IconButton
             icon="arrow-left"
-            iconColor={Colors.textPrimary}
+            iconColor={theme.colors.textPrimary}
             size={24}
             onPress={() => setIsCreating(false)}
           />
-          <Text style={styles.headerTitle}>Set Watch Area</Text>
+          <Text style={styles.headerTitle}>SET WATCH AREA</Text>
           <View style={{ width: 48 }} />
         </View>
 
@@ -177,7 +176,7 @@ export default function WatchAreaScreen() {
             <View
               style={{
                 flex: 1,
-                backgroundColor: Colors.surfaceElevated,
+                backgroundColor: theme.colors.surface,
                 justifyContent: "center",
                 alignItems: "center",
               }}
@@ -185,14 +184,20 @@ export default function WatchAreaScreen() {
               <MaterialCommunityIcons
                 name="map-marker-radius"
                 size={48}
-                color={Colors.textTertiary}
+                color={theme.colors.textMuted}
               />
-              <Text style={{ color: Colors.textSecondary, marginTop: 12 }}>
+              <Text
+                style={{
+                  color: theme.colors.textPrimary,
+                  marginTop: 12,
+                  fontWeight: "700",
+                }}
+              >
                 Map preview not available on web.
               </Text>
               <Text
                 style={{
-                  color: Colors.textTertiary,
+                  color: theme.colors.textMuted,
                   marginTop: 4,
                   fontSize: 12,
                 }}
@@ -211,8 +216,8 @@ export default function WatchAreaScreen() {
                 center={newAreaCoords}
                 radius={radius}
                 strokeWidth={2}
-                strokeColor={Colors.accent}
-                fillColor="rgba(99, 102, 241, 0.15)"
+                strokeColor={theme.colors.accentBrand}
+                fillColor="rgba(255, 69, 0, 0.15)"
               />
             </MapView>
           )}
@@ -262,7 +267,7 @@ export default function WatchAreaScreen() {
               color="#FFF"
               style={{ marginRight: 8 }}
             />
-            <Text style={styles.confirmBtnText}>Confirm Area</Text>
+            <Text style={styles.confirmBtnText}>CONFIRM AREA</Text>
           </TouchableOpacity>
         </View>
       </View>
@@ -274,11 +279,11 @@ export default function WatchAreaScreen() {
       <View style={styles.header}>
         <IconButton
           icon="arrow-left"
-          iconColor={Colors.textPrimary}
+          iconColor={theme.colors.textPrimary}
           size={24}
           onPress={() => navigation.goBack()}
         />
-        <Text style={styles.headerTitle}>Watch Areas</Text>
+        <Text style={styles.headerTitle}>WATCH AREAS</Text>
         <View style={{ width: 48 }} />
       </View>
 
@@ -289,12 +294,12 @@ export default function WatchAreaScreen() {
           <MaterialCommunityIcons
             name="bell-ring-outline"
             size={20}
-            color={Colors.accent}
+            color={theme.colors.accentBrand}
             style={{ marginRight: 12 }}
           />
           <Text style={styles.description}>
-            Get notified when critical issues are reported in your tracked
-            neighborhoods.
+            GET NOTIFIED WHEN CRITICAL ISSUES ARE REPORTED IN YOUR TRACKED
+            NEIGHBORHOODS.
           </Text>
         </View>
 
@@ -304,13 +309,13 @@ export default function WatchAreaScreen() {
               <MaterialCommunityIcons
                 name="map-marker-plus-outline"
                 size={40}
-                color={Colors.accent}
+                color={theme.colors.accentBrand}
               />
             </View>
-            <Text style={styles.emptyTitle}>No Watch Areas Yet</Text>
+            <Text style={styles.emptyTitle}>NO WATCH AREAS YET</Text>
             <Text style={styles.emptyDesc}>
-              Add your home, office, or any neighborhood you want to keep an eye
-              on.
+              ADD YOUR HOME, OFFICE, OR ANY NEIGHBORHOOD YOU WANT TO KEEP AN EYE
+              ON.
             </Text>
           </View>
         ) : (
@@ -340,13 +345,17 @@ export default function WatchAreaScreen() {
                     <MaterialCommunityIcons
                       name="map-marker-radius"
                       size={22}
-                      color={area.active ? Colors.accent : Colors.textTertiary}
+                      color={
+                        area.active
+                          ? theme.colors.accentBrand
+                          : theme.colors.textMuted
+                      }
                     />
                   </View>
                   <View style={styles.areaInfo}>
-                    <Text style={styles.areaTitle}>Tracked Area</Text>
+                    <Text style={styles.areaTitle}>TRACKED AREA</Text>
                     <Text style={styles.areaSub}>
-                      {(area.radius / 1000).toFixed(1)} km radius ·{" "}
+                      {(area.radius / 1000).toFixed(1)} KM RADIUS ·{" "}
                       {area.latitude.toFixed(3)}°, {area.longitude.toFixed(3)}°
                     </Text>
                   </View>
@@ -356,7 +365,7 @@ export default function WatchAreaScreen() {
                       onValueChange={() =>
                         toggleAreaStatus(area.id, area.active)
                       }
-                      color={Colors.success}
+                      color={theme.colors.accentBrand}
                       style={{
                         transform: [{ scaleX: 0.85 }, { scaleY: 0.85 }],
                       }}
@@ -369,7 +378,7 @@ export default function WatchAreaScreen() {
                       <MaterialCommunityIcons
                         name="trash-can-outline"
                         size={18}
-                        color={Colors.error}
+                        color={theme.colors.accentBrand}
                       />
                     </TouchableOpacity>
                   </View>
@@ -387,10 +396,10 @@ export default function WatchAreaScreen() {
           <MaterialCommunityIcons
             name="plus"
             size={20}
-            color={Colors.accent}
+            color={theme.colors.accentBrand}
             style={{ marginRight: 8 }}
           />
-          <Text style={styles.addBtnText}>Add Watch Area</Text>
+          <Text style={styles.addBtnText}>ADD WATCH AREA</Text>
         </TouchableOpacity>
 
         <View style={{ height: 40 }} />
@@ -401,11 +410,21 @@ export default function WatchAreaScreen() {
         onDismiss={() => setSnackbarVisible(false)}
         duration={3000}
         style={{
-          backgroundColor: Colors.surfaceElevated,
-          borderRadius: Radius.md,
+          backgroundColor: theme.colors.surface,
+          borderRadius: 0,
+          borderWidth: 2,
+          borderColor: theme.colors.border,
         }}
       >
-        <Text style={{ color: Colors.textPrimary }}>{snackbarMsg}</Text>
+        <Text
+          style={{
+            color: theme.colors.textPrimary,
+            fontWeight: "700",
+            textTransform: "uppercase",
+          }}
+        >
+          {snackbarMsg}
+        </Text>
       </Snackbar>
     </View>
   );
@@ -414,7 +433,7 @@ export default function WatchAreaScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: Colors.background,
+    backgroundColor: theme.colors.surface,
   },
   header: {
     flexDirection: "row",
@@ -423,15 +442,15 @@ const styles = StyleSheet.create({
     paddingTop: Spacing.headerTop,
     paddingBottom: Spacing.lg,
     paddingHorizontal: Spacing.sm,
-    backgroundColor: Colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderBottomWidth: 2,
+    borderBottomColor: theme.colors.border,
   },
   headerTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    letterSpacing: -0.3,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
+    letterSpacing: 0.5,
   },
   listContainer: {
     flex: 1,
@@ -440,16 +459,17 @@ const styles = StyleSheet.create({
   infoBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.accentSurface,
+    backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
-    borderRadius: Radius.md,
+    borderRadius: 0,
     marginBottom: Spacing.xxl,
-    borderWidth: 1,
-    borderColor: "rgba(99, 102, 241, 0.15)",
+    borderWidth: 2,
+    borderColor: theme.colors.accentBrand,
   },
   description: {
-    color: Colors.textSecondary,
+    color: theme.colors.textPrimary,
     fontSize: 13,
+    fontWeight: "700",
     flex: 1,
     lineHeight: 18,
   },
@@ -457,30 +477,33 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 56,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: 0,
     marginBottom: Spacing.xxl,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   emptyIconContainer: {
     width: 72,
     height: 72,
-    borderRadius: 36,
-    backgroundColor: Colors.accentSurface,
+    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.lg,
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: Spacing.sm,
   },
   emptyDesc: {
-    fontSize: 14,
-    color: Colors.textSecondary,
+    fontSize: 13,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
     textAlign: "center",
     paddingHorizontal: 40,
     lineHeight: 20,
@@ -490,23 +513,23 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
-    borderRadius: Radius.md,
-    borderWidth: 1.5,
-    borderColor: Colors.accent,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.accentBrand,
     borderStyle: "dashed",
     marginTop: Spacing.sm,
   },
   addBtnText: {
-    color: Colors.accent,
+    color: theme.colors.accentBrand,
     fontSize: 15,
-    fontWeight: "600",
+    fontWeight: "900",
   },
   areaCard: {
-    backgroundColor: Colors.surface,
+    backgroundColor: theme.colors.surface,
     marginBottom: Spacing.md,
-    borderRadius: Radius.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
     overflow: "hidden",
   },
   areaCardInactive: {
@@ -520,8 +543,10 @@ const styles = StyleSheet.create({
   areaIconWrap: {
     width: 42,
     height: 42,
-    borderRadius: 21,
-    backgroundColor: Colors.accentSurface,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
     justifyContent: "center",
     alignItems: "center",
     marginRight: Spacing.md,
@@ -531,13 +556,14 @@ const styles = StyleSheet.create({
   },
   areaTitle: {
     fontSize: 15,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontWeight: "900",
+    color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   areaSub: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    fontWeight: "700",
+    color: theme.colors.textMuted,
   },
   areaActions: {
     alignItems: "center",
@@ -550,12 +576,12 @@ const styles = StyleSheet.create({
   mapContainer: {
     flex: 1,
     position: "relative",
-    borderRadius: Radius.lg,
+    borderRadius: 0,
     overflow: "hidden",
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
   },
   map: {
     flex: 1,
@@ -570,45 +596,45 @@ const styles = StyleSheet.create({
   crosshairOuter: {
     width: 32,
     height: 32,
-    borderRadius: 16,
+    borderRadius: 0,
     borderWidth: 2,
-    borderColor: Colors.accent,
+    borderColor: theme.colors.accentBrand,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(99, 102, 241, 0.1)",
+    backgroundColor: "rgba(255, 69, 0, 0.1)",
   },
   crosshairInner: {
     width: 8,
     height: 8,
-    borderRadius: 4,
-    backgroundColor: Colors.accent,
+    borderRadius: 0,
+    backgroundColor: theme.colors.accentBrand,
   },
   helperText: {
-    color: Colors.textSecondary,
-    fontSize: 14,
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: "700",
     textAlign: "center",
     padding: Spacing.lg,
+    textTransform: "uppercase",
   },
   controlsContainer: {
     padding: Spacing.xxl,
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: Radius.xl,
-    borderTopRightRadius: Radius.xl,
-    borderTopWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.surface,
+    borderTopWidth: 2,
+    borderColor: theme.colors.border,
   },
   label: {
-    color: Colors.textSecondary,
+    color: theme.colors.textMuted,
     fontSize: 12,
-    fontWeight: "600",
+    fontWeight: "800",
     textTransform: "uppercase",
     letterSpacing: 0.5,
     marginBottom: 4,
   },
   radiusValue: {
-    color: Colors.textPrimary,
+    color: theme.colors.textPrimary,
     fontSize: 28,
-    fontWeight: "800",
+    fontWeight: "900",
     marginBottom: Spacing.lg,
   },
   radiusButtons: {
@@ -619,34 +645,34 @@ const styles = StyleSheet.create({
   radiusChip: {
     paddingHorizontal: 18,
     paddingVertical: 10,
-    borderRadius: Radius.pill,
-    borderWidth: 1,
-    borderColor: Colors.border,
-    backgroundColor: Colors.surfaceElevated,
+    borderRadius: 0,
+    borderWidth: 2,
+    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.surface,
   },
   radiusChipActive: {
-    borderColor: Colors.accent,
-    backgroundColor: Colors.accentSurface,
+    borderColor: theme.colors.accentBrand,
+    backgroundColor: theme.colors.accentBrand,
   },
   radiusChipText: {
-    color: Colors.textSecondary,
+    color: theme.colors.textPrimary,
     fontSize: 13,
-    fontWeight: "600",
+    fontWeight: "800",
   },
   radiusChipTextActive: {
-    color: Colors.accent,
+    color: "#FFF",
   },
   confirmBtn: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "center",
     paddingVertical: 16,
-    borderRadius: Radius.md,
-    backgroundColor: Colors.success,
+    borderRadius: 0,
+    backgroundColor: theme.colors.accentBrand,
   },
   confirmBtnText: {
     color: "#FFF",
     fontSize: 16,
-    fontWeight: "700",
+    fontWeight: "900",
   },
 });

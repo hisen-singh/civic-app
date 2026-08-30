@@ -91,7 +91,7 @@ describe("WatchAreaScreen", () => {
     expect(getDocs).toHaveBeenCalled();
     const root = tree.root;
     // Look for the "Tracked Area" text which is rendered for a fetched watch area
-    const titles = root.findAllByProps({ children: "Tracked Area" });
+    const titles = root.findAllByProps({ children: "TRACKED AREA" });
     expect(titles.length).toBeGreaterThan(0);
   });
 

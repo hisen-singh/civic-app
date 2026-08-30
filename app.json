@@ -8,7 +8,7 @@
     "userInterfaceStyle": "dark",
     "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/splash.png",
       "resizeMode": "contain",
       "backgroundColor": "#0A0E1A"
     },
@@ -19,12 +19,8 @@
     },
     "android": {
       "package": "com.civic.app",
+      "googleServicesFile": "./google-services.json",
       "versionCode": 1,
-      "config": {
-        "googleMaps": {
-          "apiKey": "AIzaSyBL1UYEczdQMFDXPa3s6Wrsb5y_JUgAFtE"
-        }
-      },
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#0A0E1A"
@@ -36,10 +32,15 @@
         "CAMERA",
         "READ_EXTERNAL_STORAGE",
         "INTERNET"
-      ]
+      ],
+      "config": {
+        "googleMaps": {
+          "apiKey": "AIzaSyBWMXZGwMOr7r2wZ-_xMyPr2aHp8_XwV-0"
+        }
+      }
     },
     "web": {
-      "favicon": "./assets/favicon.png",
+      "favicon": "./assets/logo.jpg",
       "name": "Civic"
     },
     "extra": {
@@ -52,7 +53,8 @@
       "expo-location",
       "expo-image-picker",
       "expo-notifications",
-      "expo-font"
+      "expo-font",
+      "expo-mail-composer"
     ]
   }
 }

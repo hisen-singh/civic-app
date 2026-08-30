@@ -8,16 +8,17 @@ import {
   Animated,
 } from "react-native";
 import { Card, Text } from "react-native-paper";
-import { LinearGradient } from "expo-linear-gradient";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../contexts/AuthContext";
 import { IssueService } from "../services/IssueService";
 import { useNavigation } from "@react-navigation/native";
-import { Colors, Radius, Spacing, Shadows } from "../theme";
+import { Spacing, Shadows, theme } from "../theme";
 import { timeAgo, isValidYouTubeUrl } from "../utils/timeAgo";
 import ShareModal from "./ShareModal";
 import CommentBottomSheet from "./CommentBottomSheet";
+import BottomSheet from "./BottomSheet";
+import ReportBottomSheet from "./ReportBottomSheet";
 import AnimatedPressable from "./ui/AnimatedPressable";
 
 const getYouTubeID = (url) => {
@@ -27,75 +28,48 @@ const getYouTubeID = (url) => {
   return match && match[2].length === 11 ? match[2] : null;
 };
 
-const ImpactBadge = ({ impact }) => {
-  const impacts = {
-    critical: {
-      label: "CRITICAL",
-      color: Colors.critical,
-      bg: Colors.criticalBg,
-    },
-    high: { label: "HIGH", color: Colors.high, bg: Colors.highBg },
-    medium: { label: "MEDIUM", color: Colors.medium, bg: Colors.mediumBg },
-    low: { label: "LOW", color: Colors.low, bg: Colors.lowBg },
-  };
-  const data = impacts[impact] || impacts.medium;
-  return (
-    <View
-      style={{
-        backgroundColor: data.bg,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 6,
-      }}
-    >
-      <Text
-        style={{
-          color: data.color,
-          fontSize: 10,
-          fontWeight: "800",
-          letterSpacing: 0.5,
-        }}
-      >
-        {data.label}
-      </Text>
-    </View>
-  );
-};
-
 const StatusBadge = ({ status }) => {
   const statuses = {
     Open: {
       label: "OPEN",
-      color: Colors.textSecondary,
-      bg: "rgba(148, 163, 184, 0.15)",
+      color: theme.colors.textPrimary,
+      bg: theme.colors.surface,
+      borderColor: theme.colors.border,
     },
     "In Progress": {
       label: "IN PROGRESS",
-      color: Colors.info,
-      bg: Colors.infoSurface,
+      color: theme.colors.textPrimary,
+      bg: theme.colors.surface,
+      borderColor: theme.colors.accentBrand,
     },
     Solved: {
       label: "RESOLVED",
-      color: Colors.success,
-      bg: Colors.successSurface,
+      color: "#FFFFFF",
+      bg: theme.colors.accentBrand,
     },
-    Failed: { label: "FAILED", color: Colors.error, bg: Colors.errorSurface },
+    Failed: {
+      label: "FAILED",
+      color: "#FFFFFF",
+      bg: theme.colors.statusCritical,
+    },
   };
   const data = statuses[status] || statuses["Open"];
   return (
     <View
       style={{
         backgroundColor: data.bg,
+        borderWidth: 1,
+        borderColor: data.borderColor || data.bg,
         paddingHorizontal: 8,
         paddingVertical: 3,
-        borderRadius: 6,
+        borderRadius: 9999,
       }}
     >
       <Text
         style={{
           color: data.color,
           fontSize: 10,
-          fontWeight: "800",
+          fontWeight: "900",
           letterSpacing: 0.5,
         }}
       >
@@ -123,6 +97,8 @@ export default function IssueCard({
   const [localStatus, setLocalStatus] = useState(issue.status || "Open");
   const [shareVisible, setShareVisible] = useState(false);
   const [commentSheetVisible, setCommentSheetVisible] = useState(false);
+  const [solveSheetVisible, setSolveSheetVisible] = useState(false);
+  const [reportSheetVisible, setReportSheetVisible] = useState(false);
   const initialCommentCount =
     issue.commentsCount ?? (issue.comments || []).length;
   const [localCommentCount, setLocalCommentCount] =
@@ -265,43 +241,109 @@ export default function IssueCard({
     setShareVisible(true);
   };
 
+  const handleSelectSolveOption = (option) => {
+    setSolveSheetVisible(false);
+    if (option === "fund" || option === "FUND THE FIX") {
+      Alert.alert(
+        "Fund the Fix",
+        "Thank you for supporting this issue! Funding feature coming soon.",
+      );
+    } else if (option === "labor" || option === "PLEDGE YOUR TIME") {
+      handleSolve();
+    } else if (option === "amplify" || option === "AMPLIFY ISSUE") {
+      handleShare();
+    }
+  };
+
   const authorName = issue.authorName || "Citizen";
   const initials = authorName.substring(0, 2).toUpperCase();
+
+  const getAvatarColor = (name) => {
+    let hash = 0;
+    for (let i = 0; i < name.length; i++) {
+      hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    }
+    const colors = [
+      theme.colors.accentBrand,
+      theme.colors.statusLow,
+      theme.colors.statusMedium,
+      theme.colors.statusCritical,
+      "#3B82F6", // Blue
+      "#8B5CF6", // Violet
+      "#EC4899", // Pink
+      "#10B981", // Emerald
+    ];
+    return colors[Math.abs(hash) % colors.length];
+  };
+  const avatarBg = getAvatarColor(authorName);
 
   const ytId = getYouTubeID(issue.youtubeUrl);
   const hasMedia = issue.photo || ytId;
 
   const urgencyColor =
     {
-      critical: Colors.critical,
-      high: Colors.high,
-      medium: Colors.medium,
-      low: Colors.low,
-    }[issue.urgency] || Colors.medium;
+      critical: theme.colors.statusCritical,
+      high: theme.colors.statusMedium,
+      medium: theme.colors.statusMedium,
+      low: theme.colors.statusLow,
+    }[issue.urgency] || theme.colors.statusMedium;
+
+  const urgencyBgColor = theme.colors.surfaceCard;
+  const urgencyLabel = (issue.urgency || "medium").toUpperCase() + " URGENCY";
+
+  const textColor = "#FFFFFF";
+  const textMuted = "rgba(255, 255, 255, 0.9)";
+  const surfaceSubtle = hasMedia
+    ? "rgba(255,255,255,0.15)"
+    : theme.colors.surfaceSubtle;
+  const borderColor = hasMedia ? "rgba(255,255,255,0.2)" : theme.colors.border;
+  const accentColor = hasMedia ? "#FFFFFF" : urgencyColor;
+
+  // urgencyColor moved up
 
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <Card style={styles.card}>
+      <Card
+        style={[
+          styles.card,
+          {
+            backgroundColor: urgencyBgColor,
+            backdropFilter: "blur(16px)",
+            WebkitBackdropFilter: "blur(16px)",
+          },
+          hasMedia && { borderWidth: 0 },
+        ]}
+      >
+        {hasMedia && (
+          <View
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+            }}
+          >
+            <Image
+              source={{
+                uri:
+                  issue.photo ||
+                  `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
+              }}
+              style={{ width: "100%", height: "100%" }}
+              resizeMode="cover"
+            />
+          </View>
+        )}
+
         {/* Media Section (Top) */}
         <TouchableOpacity
           activeOpacity={disablePress ? 1 : 0.92}
           onPress={handleCardPress}
+          style={hasMedia ? { height: 180 } : {}}
         >
           {hasMedia ? (
-            <View>
-              <Image
-                source={{
-                  uri:
-                    issue.photo ||
-                    `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
-                }}
-                style={styles.media}
-                resizeMode="cover"
-              />
-              <LinearGradient
-                colors={["transparent", "rgba(10, 14, 26, 0.85)"]}
-                style={styles.mediaGradient}
-              />
+            <View style={{ flex: 1 }}>
               {ytId && (
                 <TouchableOpacity
                   style={styles.playOverlay}
@@ -324,9 +366,7 @@ export default function IssueCard({
                       { backgroundColor: urgencyColor },
                     ]}
                   />
-                  <Text style={styles.categoryChipText}>
-                    {issue.category || "Issue"}
-                  </Text>
+                  <Text style={styles.categoryChipText}>{urgencyLabel}</Text>
                 </View>
                 <StatusBadge status={localStatus} />
               </View>
@@ -340,10 +380,10 @@ export default function IssueCard({
                 <Text
                   style={[
                     styles.categoryChipText,
-                    { color: Colors.textPrimary },
+                    { color: theme.colors.textPrimary },
                   ]}
                 >
-                  {issue.category || "Issue"}
+                  {urgencyLabel}
                 </Text>
               </View>
               <StatusBadge status={localStatus} />
@@ -352,38 +392,131 @@ export default function IssueCard({
         </TouchableOpacity>
 
         {/* Content & Actions */}
-        <View style={styles.contentSection}>
+        <View
+          style={[
+            styles.contentSection,
+            hasMedia && styles.contentSectionGlass,
+          ]}
+        >
           <View style={styles.authorRow}>
-            <View style={styles.authorAvatar}>
-              <Text style={styles.authorInitials}>{initials}</Text>
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.authorName}>{authorName}</Text>
-              <Text style={styles.authorMeta}>{timeAgo(issue.createdAt)}</Text>
-            </View>
-            <ImpactBadge impact={issue.urgency || "medium"} />
+            <TouchableOpacity
+              style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
+              activeOpacity={0.7}
+              onPress={() => {
+                if (issue.authorId) {
+                  navigation.navigate("PublicProfile", {
+                    userId: issue.authorId,
+                    userName: issue.authorName || "User",
+                  });
+                }
+              }}
+            >
+              <View
+                style={[
+                  styles.authorAvatar,
+                  { backgroundColor: avatarBg, borderColor: avatarBg },
+                ]}
+              >
+                <Text style={[styles.authorInitials, { color: "#FFFFFF" }]}>
+                  {initials}
+                </Text>
+              </View>
+              <View style={{ flex: 1, marginRight: 8 }}>
+                <Text style={[styles.authorName, { color: textColor }]}>
+                  {authorName}
+                </Text>
+                <View
+                  style={{
+                    flexDirection: "row",
+                    alignItems: "center",
+                    marginTop: 2,
+                  }}
+                >
+                  <Text
+                    style={[
+                      styles.authorMeta,
+                      { color: textMuted, marginRight: 8 },
+                    ]}
+                  >
+                    {timeAgo(issue.createdAt)}
+                  </Text>
+
+                  <View
+                    style={[
+                      styles.metaRow,
+                      {
+                        backgroundColor: surfaceSubtle,
+                        marginBottom: 0,
+                        paddingVertical: 2,
+                        paddingHorizontal: 6,
+                      },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="map-marker-outline"
+                      size={11}
+                      color={accentColor}
+                    />
+                    <Text
+                      style={[
+                        styles.metaText,
+                        { color: textMuted, fontSize: 10, marginLeft: 3 },
+                      ]}
+                      numberOfLines={1}
+                    >
+                      {issue.location || "Location not set"}
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </TouchableOpacity>
           </View>
 
-          <Text style={styles.titleText} numberOfLines={2}>
+          <Text
+            style={[styles.titleText, { color: textColor }]}
+            numberOfLines={2}
+          >
             {issue.title}
+            {!issue.description && (
+              <Text
+                style={{
+                  color: theme.colors.accentBrand,
+                  fontWeight: "900",
+                  fontSize: 12,
+                }}
+              >
+                {`  [${(issue.category || "General").toUpperCase()}]`}
+              </Text>
+            )}
           </Text>
 
-          <View style={styles.metaRow}>
-            <MaterialCommunityIcons
-              name="map-marker-outline"
-              size={14}
-              color={Colors.accentLight}
-            />
-            <Text style={styles.metaText} numberOfLines={1}>
-              {issue.location || "Location not set"}
+          {issue.description ? (
+            <Text
+              style={[styles.descriptionText, { color: textMuted }]}
+              numberOfLines={3}
+            >
+              {issue.description}
+              <Text
+                style={{
+                  color: theme.colors.accentBrand,
+                  fontWeight: "900",
+                  fontSize: 12,
+                }}
+              >
+                {`  [${(issue.category || "General").toUpperCase()}]`}
+              </Text>
             </Text>
-          </View>
+          ) : null}
 
-          <View style={styles.actionsRow}>
+          <View style={[styles.actionsRow, { borderTopColor: borderColor }]}>
             <View style={styles.socialActions}>
               <AnimatedPressable onPress={handleUpvote} activeScale={0.92}>
                 <View
-                  style={[styles.actionBtn, hasVoted && styles.actionBtnActive]}
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: surfaceSubtle, borderColor },
+                    hasVoted && styles.actionBtnActive,
+                  ]}
                 >
                   <Animated.View style={{ transform: [{ scale: voteAnim }] }}>
                     <MaterialCommunityIcons
@@ -391,15 +524,14 @@ export default function IssueCard({
                         hasVoted ? "arrow-up-bold" : "arrow-up-bold-outline"
                       }
                       size={20}
-                      color={
-                        hasVoted ? Colors.accentLight : Colors.textSecondary
-                      }
+                      color={hasVoted ? accentColor : textMuted}
                     />
                   </Animated.View>
                   <Text
                     style={[
                       styles.actionCount,
-                      hasVoted && styles.actionCountActive,
+                      { color: textMuted },
+                      hasVoted && { color: accentColor },
                     ]}
                   >
                     {localVotes}
@@ -408,25 +540,57 @@ export default function IssueCard({
               </AnimatedPressable>
 
               <AnimatedPressable onPress={handleComment} activeScale={0.92}>
-                <View style={styles.actionBtn}>
+                <View
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: surfaceSubtle, borderColor },
+                  ]}
+                >
                   <MaterialCommunityIcons
                     name="comment-text-outline"
                     size={19}
-                    color={Colors.textSecondary}
+                    color={textMuted}
                   />
-                  <Text style={styles.actionCount}>{localCommentCount}</Text>
+                  <Text style={[styles.actionCount, { color: textMuted }]}>
+                    {localCommentCount}
+                  </Text>
                 </View>
               </AnimatedPressable>
 
               <AnimatedPressable onPress={handleShare} activeScale={0.92}>
-                <View style={styles.actionBtn}>
+                <View
+                  style={[
+                    styles.actionBtn,
+                    { backgroundColor: surfaceSubtle, borderColor },
+                  ]}
+                >
                   <MaterialCommunityIcons
                     name="share-variant-outline"
                     size={19}
-                    color={Colors.textSecondary}
+                    color={textMuted}
                   />
                 </View>
               </AnimatedPressable>
+
+              {!isAuthor && (
+                <AnimatedPressable
+                  onPress={() => setReportSheetVisible(true)}
+                  activeScale={0.92}
+                >
+                  <View
+                    style={[
+                      styles.actionBtn,
+                      { backgroundColor: surfaceSubtle, borderColor },
+                    ]}
+                  >
+                    <MaterialCommunityIcons
+                      name="flag-outline"
+                      size={19}
+                      color={textMuted}
+                    />
+                  </View>
+                </AnimatedPressable>
+              )}
             </View>
 
             {showActions &&
@@ -434,7 +598,7 @@ export default function IssueCard({
               localStatus !== "Failed" &&
               !isAuthor && (
                 <AnimatedPressable
-                  onPress={handleSolve}
+                  onPress={() => setSolveSheetVisible(true)}
                   disabled={isSolving}
                   activeScale={0.95}
                 >
@@ -443,32 +607,39 @@ export default function IssueCard({
                       style={[
                         styles.primaryActionBtn,
                         styles.primaryActionBtnActive,
+                        { borderColor: theme.colors.accentBrand },
                       ]}
                     >
-                      <MaterialCommunityIcons
-                        name="hand-heart"
-                        size={14}
-                        color={Colors.success}
-                        style={{ marginRight: 4 }}
+                      <FontAwesome5
+                        name="fist-raised"
+                        size={12}
+                        color={theme.colors.accentBrand}
+                        style={{ marginRight: 6 }}
                       />
                       <Text
                         style={[
                           styles.primaryActionText,
-                          { color: Colors.success },
+                          { color: theme.colors.accentBrand },
                         ]}
                       >
-                        Helping
+                        Solving
                       </Text>
                     </View>
                   ) : (
-                    <LinearGradient
-                      colors={[Colors.accentDark, Colors.accent]}
-                      start={{ x: 0, y: 0 }}
-                      end={{ x: 1, y: 0 }}
-                      style={styles.primaryActionBtn}
+                    <View
+                      style={[
+                        styles.primaryActionBtn,
+                        { backgroundColor: theme.colors.accentBrand },
+                      ]}
                     >
+                      <FontAwesome5
+                        name="fist-raised"
+                        size={12}
+                        color="#FFFFFF"
+                        style={{ marginRight: 6 }}
+                      />
                       <Text style={styles.primaryActionText}>Help Solve</Text>
-                    </LinearGradient>
+                    </View>
                   )}
                 </AnimatedPressable>
               )}
@@ -485,13 +656,13 @@ export default function IssueCard({
                     <MaterialCommunityIcons
                       name="check-circle-outline"
                       size={14}
-                      color={Colors.success}
+                      color={theme.colors.accentBrand}
                       style={{ marginRight: 4 }}
                     />
                     <Text
                       style={[
                         styles.primaryActionText,
-                        { color: Colors.success },
+                        { color: theme.colors.accentBrand },
                       ]}
                     >
                       Mark Fixed
@@ -514,6 +685,18 @@ export default function IssueCard({
         initialComments={issue.comments || []}
         onCommentAdded={() => setLocalCommentCount((prev) => prev + 1)}
       />
+      <BottomSheet
+        visible={solveSheetVisible}
+        onClose={() => setSolveSheetVisible(false)}
+        onSelectOption={handleSelectSolveOption}
+        issue={issue}
+      />
+      <ReportBottomSheet
+        visible={reportSheetVisible}
+        onClose={() => setReportSheetVisible(false)}
+        contentType="issue"
+        issueId={issue.id}
+      />
     </Animated.View>
   );
 }
@@ -522,17 +705,17 @@ const styles = {
   card: {
     marginBottom: Spacing.lg,
     marginHorizontal: Spacing.lg,
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.lg,
+    backgroundColor: theme.colors.surfaceCard,
+    borderRadius: theme.radius.outer,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: theme.colors.border,
     overflow: "hidden",
     ...Shadows.card,
   },
   media: {
     width: "100%",
     height: 200,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: theme.colors.surfaceSubtle,
   },
   mediaGradient: {
     position: "absolute",
@@ -556,24 +739,24 @@ const styles = {
     backgroundColor: "rgba(0, 0, 0, 0.55)",
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: Radius.pill,
+    borderRadius: 0,
     borderWidth: 1,
     borderColor: "rgba(255,255,255,0.1)",
   },
   categoryChipInline: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 5,
-    borderRadius: Radius.pill,
+    borderRadius: 0,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: theme.colors.border,
   },
   urgencyDot: {
     width: 6,
     height: 6,
-    borderRadius: 3,
+    borderRadius: 9999,
     marginRight: 6,
   },
   categoryChipText: {
@@ -595,6 +778,10 @@ const styles = {
     paddingTop: Spacing.md,
     paddingBottom: Spacing.lg,
   },
+  contentSectionGlass: {
+    backgroundColor: "transparent",
+    borderTopWidth: 0,
+  },
   authorRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -603,50 +790,63 @@ const styles = {
   authorAvatar: {
     width: 32,
     height: 32,
-    borderRadius: 10,
-    backgroundColor: Colors.accentSurface,
+    borderRadius: 9999,
+    backgroundColor: theme.colors.accentBrandSubtle,
     alignItems: "center",
     justifyContent: "center",
     marginRight: Spacing.sm,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: theme.colors.border,
   },
   authorInitials: {
     fontSize: 11,
     fontWeight: "800",
-    color: Colors.accentLight,
+    color: theme.colors.accentBrand,
   },
   authorName: {
     fontSize: 13,
     fontWeight: "700",
-    color: Colors.textPrimary,
+    color: theme.colors.textPrimary,
   },
   authorMeta: {
     fontSize: 11,
-    color: Colors.textTertiary,
+    color: theme.colors.textMuted,
     marginTop: 1,
   },
   titleText: {
-    fontSize: 16,
-    fontWeight: "700",
-    color: Colors.textPrimary,
-    lineHeight: 22,
+    fontSize: 18,
+    fontWeight: "900",
+    color: "#FFFFFF",
+    lineHeight: 24,
     marginBottom: Spacing.sm,
     letterSpacing: -0.2,
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
+  },
+  descriptionText: {
+    fontSize: 15,
+    fontWeight: "700",
+    color: "rgba(255,255,255,0.9)",
+    lineHeight: 22,
+    marginBottom: Spacing.md,
+    textShadowColor: "rgba(0, 0, 0, 0.8)",
+    textShadowOffset: { width: 0, height: 1 },
+    textShadowRadius: 3,
   },
   metaRow: {
     flexDirection: "row",
     alignItems: "center",
     marginBottom: Spacing.lg,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: theme.colors.surfaceSubtle,
     paddingHorizontal: 10,
     paddingVertical: 6,
-    borderRadius: Radius.sm,
+    borderRadius: theme.radius.inner,
     alignSelf: "flex-start",
   },
   metaText: {
     fontSize: 12,
-    color: Colors.textSecondary,
+    color: theme.colors.textMuted,
     marginLeft: 4,
     flexShrink: 1,
     fontWeight: "500",
@@ -657,7 +857,7 @@ const styles = {
     justifyContent: "space-between",
     paddingTop: Spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: Colors.borderSubtle,
+    borderTopColor: theme.colors.border,
   },
   socialActions: {
     flexDirection: "row",
@@ -666,43 +866,46 @@ const styles = {
   actionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.surfaceElevated,
-    paddingHorizontal: 10,
-    paddingVertical: 7,
-    borderRadius: Radius.pill,
+    justifyContent: "center",
+    backgroundColor: theme.colors.surfaceSubtle,
+    paddingHorizontal: 12,
+    minHeight: 44,
+    minWidth: 44,
+    borderRadius: 9999,
     marginRight: 6,
     borderWidth: 1,
-    borderColor: Colors.borderSubtle,
+    borderColor: theme.colors.border,
   },
   actionBtnActive: {
-    backgroundColor: Colors.accentSurface,
-    borderColor: "rgba(99, 102, 241, 0.3)",
+    backgroundColor: theme.colors.accentBrandSubtle,
+    borderColor: "rgba(37, 99, 235, 0.3)",
   },
   actionCount: {
-    color: Colors.textSecondary,
+    color: theme.colors.textMuted,
     fontSize: 12,
     fontWeight: "700",
     marginLeft: 4,
   },
   actionCountActive: {
-    color: Colors.accentLight,
+    color: theme.colors.accentBrand,
   },
   primaryActionBtn: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 14,
-    paddingVertical: 9,
-    borderRadius: Radius.pill,
+    justifyContent: "center",
+    paddingHorizontal: 16,
+    minHeight: 44,
+    borderRadius: 9999,
   },
   primaryActionBtnActive: {
-    backgroundColor: Colors.successSurface,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.25)",
+    borderColor: theme.colors.accentBrand,
   },
   markFixedBtn: {
-    backgroundColor: Colors.successSurface,
+    backgroundColor: theme.colors.surface,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.25)",
+    borderColor: theme.colors.accentBrand,
   },
   primaryActionText: {
     color: "#FFF",
@@ -722,7 +925,7 @@ const styles = {
   playButton: {
     width: 56,
     height: 56,
-    borderRadius: 28,
+    borderRadius: 9999,
     backgroundColor: "rgba(0,0,0,0.7)",
     justifyContent: "center",
     alignItems: "center",

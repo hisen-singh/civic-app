@@ -1,26 +1,18 @@
 export default ({ config }) => {
-  const APP_ENV = process.env.APP_ENV || "development";
-  let appName = config.name || "Civic";
-  let identifier = "com.civic.app";
-
-  if (APP_ENV === "development") {
-    appName = "Civic Dev";
-    identifier = "com.civic.app.dev";
-  } else if (APP_ENV === "staging") {
-    appName = "Civic Staging";
-    identifier = "com.civic.app.staging";
-  }
+  const existingPlugins = config.plugins || [];
+  const plugins = existingPlugins.includes("expo-mail-composer")
+    ? existingPlugins
+    : [...existingPlugins, "expo-mail-composer"];
 
   return {
     ...config,
-    name: appName,
-    ios: {
-      ...config.ios,
-      bundleIdentifier: identifier,
-    },
+    plugins,
     android: {
       ...config.android,
-      package: identifier,
+      googleServicesFile:
+        process.env.GOOGLE_SERVICES_FILE ||
+        config.android?.googleServicesFile ||
+        "./google-services.json",
       config: {
         ...config.android?.config,
         googleMaps: {

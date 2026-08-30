@@ -11,11 +11,6 @@ import { Text, TextInput } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AuthService } from "../services/AuthService";
-import {
-  validateEmail,
-  validatePassword,
-  mapFirebaseAuthError,
-} from "../utils/authValidators";
 import GradientButton from "../components/ui/GradientButton";
 import { Colors, Gradients, Radius, Spacing } from "../theme";
 
@@ -27,7 +22,6 @@ export default function SignupScreen({ navigation }) {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const shakeAnim = useRef(new Animated.Value(0)).current;
 
@@ -73,26 +67,32 @@ export default function SignupScreen({ navigation }) {
       shake();
       return;
     }
-    const emailRes = validateEmail(email);
-    if (!emailRes.ok) {
-      setErrorMsg(emailRes.error);
+    if (!email.trim()) {
+      setErrorMsg("Please enter your email address.");
       shake();
       return;
     }
-
-    const passRes = validatePassword(password, 6);
-    if (!passRes.ok) {
-      setErrorMsg(passRes.error);
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrorMsg("Please enter a valid email address.");
       shake();
       return;
     }
-
+    if (!password) {
+      setErrorMsg("Please create a password.");
+      shake();
+      return;
+    }
+    if (password.length < 6) {
+      setErrorMsg("Password must be at least 6 characters.");
+      shake();
+      return;
+    }
     if (!/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
       setErrorMsg("Password must contain both letters and numbers.");
       shake();
       return;
     }
-
     if (password !== confirmPassword) {
       setErrorMsg("Passwords do not match.");
       shake();
@@ -107,9 +107,13 @@ export default function SignupScreen({ navigation }) {
       // and automatically navigate to the main app
     } catch (error) {
       const msg =
-        mapFirebaseAuthError(error.code) ||
-        error.message ||
-        "Signup failed. Please try again.";
+        error.code === "auth/email-already-in-use"
+          ? "An account with this email already exists."
+          : error.code === "auth/weak-password"
+            ? "Password is too weak. Use at least 6 characters."
+            : error.code === "auth/invalid-email"
+              ? "Invalid email format."
+              : error.message || "Signup failed. Please try again.";
       setErrorMsg(msg);
       shake();
     } finally {
@@ -251,8 +255,8 @@ export default function SignupScreen({ navigation }) {
                 setErrorMsg("");
               }}
               mode="outlined"
-              secureTextEntry={!showConfirmPassword}
-              style={[styles.input, { marginBottom: 8 }]}
+              secureTextEntry={!showPassword}
+              style={styles.input}
               textColor={Colors.textPrimary}
               theme={{
                 colors: { primary: Colors.accent, outline: Colors.border },
@@ -261,13 +265,6 @@ export default function SignupScreen({ navigation }) {
                 <TextInput.Icon
                   icon="lock-check-outline"
                   color={Colors.textTertiary}
-                />
-              }
-              right={
-                <TextInput.Icon
-                  icon={showConfirmPassword ? "eye-off-outline" : "eye-outline"}
-                  color={Colors.textTertiary}
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                 />
               }
             />

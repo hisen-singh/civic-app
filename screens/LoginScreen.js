@@ -11,11 +11,6 @@ import { Text, TextInput } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AuthService } from "../services/AuthService";
-import {
-  validateEmail,
-  validatePassword,
-  mapFirebaseAuthError,
-} from "../utils/authValidators";
 import GradientButton from "../components/ui/GradientButton";
 import { Colors, Gradients, Radius, Spacing } from "../theme";
 
@@ -60,20 +55,18 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleLogin = async () => {
-    const emailRes = validateEmail(email);
-    if (!emailRes.ok) {
-      setErrorMsg(emailRes.error);
+    if (!email.trim() || !password) {
+      setErrorMsg("Please enter both email and password.");
       shake();
       return;
     }
-
-    const passRes = validatePassword(password, 6);
-    if (!passRes.ok) {
-      setErrorMsg(passRes.error);
+    // Basic email format check
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      setErrorMsg("Please enter a valid email address.");
       shake();
       return;
     }
-
     setLoading(true);
     setErrorMsg("");
     setResetSent(false);
@@ -81,9 +74,15 @@ export default function LoginScreen({ navigation }) {
       await AuthService.login(email.trim(), password);
     } catch (error) {
       const msg =
-        mapFirebaseAuthError(error.code) ||
-        error.message ||
-        "Login failed. Please try again.";
+        error.code === "auth/user-not-found"
+          ? "No account found with this email."
+          : error.code === "auth/wrong-password"
+            ? "Incorrect password. Try again."
+            : error.code === "auth/too-many-requests"
+              ? "Too many attempts. Please wait."
+              : error.code === "auth/invalid-credential"
+                ? "Invalid email or password."
+                : error.message || "Login failed. Please try again.";
       setErrorMsg(msg);
       shake();
     } finally {
@@ -92,8 +91,7 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleForgotPassword = async () => {
-    const emailRes = validateEmail(email);
-    if (!emailRes.ok) {
+    if (!email.trim()) {
       setErrorMsg("Enter your email address first, then tap Reset.");
       shake();
       return;
@@ -110,9 +108,11 @@ export default function LoginScreen({ navigation }) {
         error.message,
       );
       const msg =
-        mapFirebaseAuthError(error.code) ||
-        error.message ||
-        "Failed to send reset email.";
+        error.code === "auth/user-not-found"
+          ? "No account found with this email."
+          : error.code === "auth/too-many-requests"
+            ? "Too many attempts. Please wait a few minutes."
+            : error.message || "Failed to send reset email.";
       setErrorMsg(msg);
       shake();
     } finally {
