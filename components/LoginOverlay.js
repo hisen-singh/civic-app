@@ -10,10 +10,12 @@ import {
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
+  ScrollView,
   Alert,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { AuthService } from "../services/AuthService";
+import { mapFirebaseAuthError } from "../utils/authValidators";
 import { Spacing, theme } from "../theme";
 
 export default function LoginOverlay({ visible, onClose }) {
@@ -21,17 +23,21 @@ export default function LoginOverlay({ visible, onClose }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [errCode, setErrCode] = useState(null);
 
   const handleForgotPassword = async () => {
     if (!email.trim()) {
       setError("Enter your email address first, then tap Forgot password.");
+      setErrCode(null);
       return;
     }
     setResetLoading(true);
     setError(null);
+    setErrCode(null);
     try {
       await AuthService.resetPassword(email.trim());
       Alert.alert(
@@ -44,11 +50,12 @@ export default function LoginOverlay({ visible, onClose }) {
         err.code,
         err.message,
       );
-      const msg =
-        err.code === "auth/too-many-requests"
-          ? "Too many attempts. Please wait a few minutes."
-          : err.message || "Failed to send reset email.";
-      setError(msg);
+      setError(
+        mapFirebaseAuthError(err.code) ||
+          err.message ||
+          "Failed to send reset email.",
+      );
+      setErrCode(err.code || null);
     } finally {
       setResetLoading(false);
     }
@@ -57,15 +64,18 @@ export default function LoginOverlay({ visible, onClose }) {
   const handleSubmit = async () => {
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required.");
+      setErrCode(null);
       return;
     }
     if (!isLogin && !name.trim()) {
       setError("Name is required for signup.");
+      setErrCode(null);
       return;
     }
 
     setLoading(true);
     setError(null);
+    setErrCode(null);
     try {
       if (isLogin) {
         await AuthService.login(email.trim(), password);
@@ -75,18 +85,15 @@ export default function LoginOverlay({ visible, onClose }) {
       // Success! Close the modal.
       onClose();
     } catch (err) {
-      console.error("Auth error:", err);
-      // Simple generic error message handling
-      if (
-        err.code === "auth/wrong-password" ||
-        err.code === "auth/user-not-found"
-      ) {
-        setError("Invalid credentials. Try again.");
-      } else if (err.code === "auth/email-already-in-use") {
-        setError("Email is already registered.");
-      } else {
-        setError(err.message || "An error occurred.");
-      }
+      console.error("[LoginOverlay] Auth error:", err.code, err.message);
+      // Firebase v12 reports bad credentials as auth/invalid-credential;
+      // mapFirebaseAuthError covers that plus network/config/verify-email cases.
+      setError(
+        mapFirebaseAuthError(err.code) ||
+          err.message ||
+          "An error occurred. Please try again.",
+      );
+      setErrCode(err.code || null);
     } finally {
       setLoading(false);
     }
@@ -103,122 +110,154 @@ export default function LoginOverlay({ visible, onClose }) {
         <View style={styles.overlayBackground}>
           <TouchableWithoutFeedback>
             <KeyboardAvoidingView
-              behavior={Platform.OS === "ios" ? "padding" : "height"}
+              behavior={Platform.OS === "ios" ? "padding" : undefined}
               style={styles.containerWrap}
             >
-              <View style={styles.modalBox}>
-                {/* Header */}
-                <View style={styles.header}>
-                  <Text style={styles.title}>
-                    {isLogin ? "SIGN IN" : "JOIN THE FIGHT"}
-                  </Text>
-                  <TouchableOpacity
-                    onPress={onClose}
-                    style={styles.closeBtn}
-                    accessibilityRole="button"
-                    accessibilityLabel="Close overlay"
-                  >
-                    <MaterialCommunityIcons
-                      name="close"
-                      size={28}
-                      color={theme.colors.textPrimary}
-                    />
-                  </TouchableOpacity>
-                </View>
-
-                {/* Error Banner */}
-                {error && (
-                  <View style={styles.errorBanner}>
-                    <Text style={styles.errorText}>{error}</Text>
+              <ScrollView
+                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled"
+                showsVerticalScrollIndicator={false}
+              >
+                <View style={styles.modalBox}>
+                  {/* Header */}
+                  <View style={styles.header}>
+                    <Text style={styles.title}>
+                      {isLogin ? "SIGN IN" : "JOIN THE FIGHT"}
+                    </Text>
+                    <TouchableOpacity
+                      onPress={onClose}
+                      style={styles.closeBtn}
+                      accessibilityRole="button"
+                      accessibilityLabel="Close overlay"
+                    >
+                      <MaterialCommunityIcons
+                        name="close"
+                        size={28}
+                        color={theme.colors.textPrimary}
+                      />
+                    </TouchableOpacity>
                   </View>
-                )}
 
-                {/* Inputs */}
-                <View style={styles.form}>
-                  {!isLogin && (
+                  {/* Error Banner */}
+                  {error && (
+                    <View style={styles.errorBanner}>
+                      <Text style={styles.errorText}>{error}</Text>
+                      {errCode ? (
+                        <Text style={styles.errorCodeText}>
+                          code: {errCode}
+                        </Text>
+                      ) : null}
+                    </View>
+                  )}
+
+                  {/* Inputs */}
+                  <View style={styles.form}>
+                    {!isLogin && (
+                      <TextInput
+                        style={styles.input}
+                        placeholder="DISPLAY NAME"
+                        placeholderTextColor={theme.colors.textMuted}
+                        value={name}
+                        onChangeText={setName}
+                        autoCapitalize="words"
+                        editable={!loading}
+                      />
+                    )}
                     <TextInput
                       style={styles.input}
-                      placeholder="DISPLAY NAME"
+                      placeholder="EMAIL ADDRESS"
                       placeholderTextColor={theme.colors.textMuted}
-                      value={name}
-                      onChangeText={setName}
-                      autoCapitalize="words"
+                      value={email}
+                      onChangeText={setEmail}
+                      keyboardType="email-address"
+                      autoCapitalize="none"
                       editable={!loading}
                     />
-                  )}
-                  <TextInput
-                    style={styles.input}
-                    placeholder="EMAIL ADDRESS"
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={email}
-                    onChangeText={setEmail}
-                    keyboardType="email-address"
-                    autoCapitalize="none"
-                    editable={!loading}
-                  />
-                  <TextInput
-                    style={styles.input}
-                    placeholder="PASSWORD"
-                    placeholderTextColor={theme.colors.textMuted}
-                    value={password}
-                    onChangeText={setPassword}
-                    secureTextEntry
-                    autoCapitalize="none"
-                    editable={!loading}
-                  />
-
-                  {/* Submit Button */}
-                  <TouchableOpacity
-                    style={styles.submitBtn}
-                    activeOpacity={0.8}
-                    onPress={handleSubmit}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <ActivityIndicator color="#FFFFFF" size="small" />
-                    ) : (
-                      <Text style={styles.submitText}>
-                        {isLogin ? "AUTHORIZE" : "CREATE ACCOUNT"}
-                      </Text>
-                    )}
-                  </TouchableOpacity>
-
-                  {/* Forgot Password (login mode only) */}
-                  {isLogin && (
-                    <TouchableOpacity
-                      onPress={handleForgotPassword}
-                      disabled={resetLoading || loading}
-                      style={styles.forgotBtn}
-                    >
-                      {resetLoading ? (
-                        <ActivityIndicator
+                    <View>
+                      <TextInput
+                        style={styles.input}
+                        placeholder="PASSWORD"
+                        placeholderTextColor={theme.colors.textMuted}
+                        value={password}
+                        onChangeText={setPassword}
+                        secureTextEntry={!showPassword}
+                        autoCapitalize="none"
+                        editable={!loading}
+                      />
+                      <TouchableOpacity
+                        onPress={() => setShowPassword((s) => !s)}
+                        style={styles.eyeBtn}
+                        accessibilityRole="button"
+                        accessibilityLabel={
+                          showPassword ? "Hide password" : "Show password"
+                        }
+                      >
+                        <MaterialCommunityIcons
+                          name={
+                            showPassword ? "eye-off-outline" : "eye-outline"
+                          }
+                          size={20}
                           color={theme.colors.textMuted}
-                          size="small"
                         />
+                      </TouchableOpacity>
+                    </View>
+
+                    {/* Submit Button */}
+                    <TouchableOpacity
+                      style={styles.submitBtn}
+                      activeOpacity={0.8}
+                      onPress={handleSubmit}
+                      disabled={loading}
+                    >
+                      {loading ? (
+                        <ActivityIndicator color="#FFFFFF" size="small" />
                       ) : (
-                        <Text style={styles.forgotText}>Forgot password?</Text>
+                        <Text style={styles.submitText}>
+                          {isLogin ? "AUTHORIZE" : "CREATE ACCOUNT"}
+                        </Text>
                       )}
                     </TouchableOpacity>
-                  )}
-                </View>
 
-                {/* Footer Toggle */}
-                <TouchableOpacity
-                  style={styles.toggleBtn}
-                  onPress={() => {
-                    setIsLogin(!isLogin);
-                    setError(null);
-                  }}
-                  disabled={loading}
-                >
-                  <Text style={styles.toggleText}>
-                    {isLogin ? "No account? " : "Already registered? "}
-                    <Text style={styles.toggleTextHighlight}>
-                      {isLogin ? "Sign up here." : "Sign in."}
+                    {/* Forgot Password (login mode only) */}
+                    {isLogin && (
+                      <TouchableOpacity
+                        onPress={handleForgotPassword}
+                        disabled={resetLoading || loading}
+                        style={styles.forgotBtn}
+                      >
+                        {resetLoading ? (
+                          <ActivityIndicator
+                            color={theme.colors.textMuted}
+                            size="small"
+                          />
+                        ) : (
+                          <Text style={styles.forgotText}>
+                            Forgot password?
+                          </Text>
+                        )}
+                      </TouchableOpacity>
+                    )}
+                  </View>
+
+                  {/* Footer Toggle */}
+                  <TouchableOpacity
+                    style={styles.toggleBtn}
+                    onPress={() => {
+                      setIsLogin(!isLogin);
+                      setError(null);
+                      setErrCode(null);
+                    }}
+                    disabled={loading}
+                  >
+                    <Text style={styles.toggleText}>
+                      {isLogin ? "No account? " : "Already registered? "}
+                      <Text style={styles.toggleTextHighlight}>
+                        {isLogin ? "Sign up here." : "Sign in."}
+                      </Text>
                     </Text>
-                  </Text>
-                </TouchableOpacity>
-              </View>
+                  </TouchableOpacity>
+                </View>
+              </ScrollView>
             </KeyboardAvoidingView>
           </TouchableWithoutFeedback>
         </View>
@@ -238,6 +277,26 @@ const styles = StyleSheet.create({
   containerWrap: {
     width: "100%",
     maxWidth: 400,
+  },
+  scrollContent: {
+    flexGrow: 1,
+    justifyContent: "center",
+  },
+  eyeBtn: {
+    position: "absolute",
+    right: 12,
+    top: 0,
+    bottom: 0,
+    width: 40,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  errorCodeText: {
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 10,
+    fontWeight: "500",
+    textAlign: "center",
+    marginTop: 4,
   },
   modalBox: {
     backgroundColor: theme.colors.surface,

@@ -20,6 +20,7 @@ import SkeletonCard from "../components/ui/SkeletonCard";
 import FilterPills from "../components/ui/FilterPills";
 import GradientButton from "../components/ui/GradientButton";
 import AnimatedPressable from "../components/ui/AnimatedPressable";
+import LoginOverlay from "../components/LoginOverlay";
 import { IssueService } from "../services/IssueService";
 import { useAuth } from "../contexts/AuthContext";
 import { Spacing, theme } from "../theme";
@@ -58,6 +59,7 @@ export default function HomeScreen() {
   const [lastDoc, setLastDoc] = useState(null);
   const [loadingMore, setLoadingMore] = useState(false);
   const [hasMore, setHasMore] = useState(true);
+  const [isLoginVisible, setIsLoginVisible] = useState(false);
   const [loadError, setLoadError] = useState(false);
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [locationName, setLocationName] = useState("Your Area");
@@ -370,6 +372,55 @@ export default function HomeScreen() {
 
   const renderHeader = () => (
     <View style={{ paddingTop: 12, paddingBottom: 16 }}>
+      {/* Signed-out prompt: sign in from the Feed itself */}
+      {!user && (
+        <TouchableOpacity
+          onPress={() => setIsLoginVisible(true)}
+          activeOpacity={0.85}
+          style={{
+            marginHorizontal: Spacing.lg,
+            marginBottom: Spacing.lg,
+            flexDirection: "row",
+            alignItems: "center",
+            backgroundColor: theme.colors.surfaceSubtle,
+            borderRadius: 14,
+            borderWidth: 1,
+            borderColor: theme.colors.border,
+            paddingVertical: 12,
+            paddingHorizontal: 14,
+          }}
+        >
+          <MaterialCommunityIcons
+            name="account-circle-outline"
+            size={26}
+            color={theme.colors.accentBrand}
+          />
+          <Text
+            style={{
+              flex: 1,
+              color: theme.colors.textPrimary,
+              fontSize: 13,
+              fontWeight: "600",
+              marginLeft: 10,
+              lineHeight: 18,
+            }}
+            numberOfLines={2}
+          >
+            Sign in to report issues, earn XP, and appear on the leaderboard.
+          </Text>
+          <Text
+            style={{
+              color: theme.colors.accentBrand,
+              fontSize: 12,
+              fontWeight: "900",
+              letterSpacing: 0.5,
+              marginLeft: 8,
+            }}
+          >
+            SIGN IN
+          </Text>
+        </TouchableOpacity>
+      )}
       {/* Instagram-style Stories bar for active contributors */}
       <View style={{ marginBottom: Spacing.xl, paddingHorizontal: Spacing.lg }}>
         <Text
@@ -772,6 +823,11 @@ export default function HomeScreen() {
             progressBackgroundColor={theme.colors.surface}
           />
         }
+      />
+
+      <LoginOverlay
+        visible={isLoginVisible}
+        onClose={() => setIsLoginVisible(false)}
       />
     </View>
   );
