@@ -217,7 +217,7 @@ export default function WatchAreaScreen() {
                 radius={radius}
                 strokeWidth={2}
                 strokeColor={theme.colors.accentBrand}
-                fillColor="rgba(255, 69, 0, 0.15)"
+                fillColor="rgba(59, 130, 246, 0.15)"
               />
             </MapView>
           )}
@@ -234,7 +234,7 @@ export default function WatchAreaScreen() {
             {(radius / 1000).toFixed(1)} km
           </Text>
           <View style={styles.radiusButtons}>
-            {[1000, 2000, 5000, 10000].map((r) => (
+            {[500, 1000, 2000, 5000].map((r) => (
               <TouchableOpacity
                 key={r}
                 onPress={() => setRadius(r)}
@@ -601,7 +601,7 @@ const styles = StyleSheet.create({
     borderColor: theme.colors.accentBrand,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(255, 69, 0, 0.1)",
+    backgroundColor: "rgba(59, 130, 246, 0.1)",
   },
   crosshairInner: {
     width: 8,

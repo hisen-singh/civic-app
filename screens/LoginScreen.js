@@ -10,7 +10,9 @@ import {
 import { Text, TextInput } from "react-native-paper";
 import { LinearGradient } from "expo-linear-gradient";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import NetInfo from "@react-native-community/netinfo";
 import { AuthService } from "../services/AuthService";
+import { mapFirebaseAuthError } from "../utils/authValidators";
 import GradientButton from "../components/ui/GradientButton";
 import { Colors, Gradients, Radius, Spacing } from "../theme";
 
@@ -19,6 +21,7 @@ export default function LoginScreen({ navigation }) {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [errCode, setErrCode] = useState(null);
   const [resetSent, setResetSent] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,22 +30,22 @@ export default function LoginScreen({ navigation }) {
   const shake = () => {
     Animated.sequence([
       Animated.timing(shakeAnim, {
-        toValue: 10,
+        toValue: 5,
         duration: 60,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
-        toValue: -10,
+        toValue: -5,
         duration: 60,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
-        toValue: 8,
+        toValue: 4,
         duration: 50,
         useNativeDriver: true,
       }),
       Animated.timing(shakeAnim, {
-        toValue: -8,
+        toValue: -4,
         duration: 50,
         useNativeDriver: true,
       }),
@@ -55,8 +58,17 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleLogin = async () => {
+    const networkState = await NetInfo.fetch();
+    if (!networkState.isConnected) {
+      setErrorMsg("No internet connection. Please try again when online.");
+      setErrCode(null);
+      shake();
+      return;
+    }
+
     if (!email.trim() || !password) {
       setErrorMsg("Please enter both email and password.");
+      setErrCode(null);
       shake();
       return;
     }
@@ -69,21 +81,17 @@ export default function LoginScreen({ navigation }) {
     }
     setLoading(true);
     setErrorMsg("");
+    setErrCode(null);
     setResetSent(false);
     try {
       await AuthService.login(email.trim(), password);
     } catch (error) {
-      const msg =
-        error.code === "auth/user-not-found"
-          ? "No account found with this email."
-          : error.code === "auth/wrong-password"
-            ? "Incorrect password. Try again."
-            : error.code === "auth/too-many-requests"
-              ? "Too many attempts. Please wait."
-              : error.code === "auth/invalid-credential"
-                ? "Invalid email or password."
-                : error.message || "Login failed. Please try again.";
-      setErrorMsg(msg);
+      setErrorMsg(
+        mapFirebaseAuthError(error.code) ||
+          error.message ||
+          "Login failed. Please try again."
+      );
+      setErrCode(error.code || null);
       shake();
     } finally {
       setLoading(false);
@@ -91,13 +99,23 @@ export default function LoginScreen({ navigation }) {
   };
 
   const handleForgotPassword = async () => {
+    const networkState = await NetInfo.fetch();
+    if (!networkState.isConnected) {
+      setErrorMsg("No internet connection. Please try again when online.");
+      setErrCode(null);
+      shake();
+      return;
+    }
+
     if (!email.trim()) {
       setErrorMsg("Enter your email address first, then tap Reset.");
+      setErrCode(null);
       shake();
       return;
     }
     setResetLoading(true);
     setErrorMsg("");
+    setErrCode(null);
     try {
       await AuthService.resetPassword(email.trim());
       setResetSent(true);
@@ -107,13 +125,12 @@ export default function LoginScreen({ navigation }) {
         error.code,
         error.message,
       );
-      const msg =
-        error.code === "auth/user-not-found"
-          ? "No account found with this email."
-          : error.code === "auth/too-many-requests"
-            ? "Too many attempts. Please wait a few minutes."
-            : error.message || "Failed to send reset email.";
-      setErrorMsg(msg);
+      setErrorMsg(
+        mapFirebaseAuthError(error.code) ||
+          error.message ||
+          "Failed to send reset email."
+      );
+      setErrCode(error.code || null);
       shake();
     } finally {
       setResetLoading(false);
@@ -172,6 +189,7 @@ export default function LoginScreen({ navigation }) {
               onChangeText={(t) => {
                 setEmail(t);
                 setErrorMsg("");
+                setErrCode(null);
               }}
               mode="outlined"
               style={styles.input}
@@ -188,36 +206,35 @@ export default function LoginScreen({ navigation }) {
                 />
               }
             />
-            <View style={{ position: "relative" }}>
-              <TextInput
-                label="Password"
-                value={password}
-                onChangeText={(t) => {
-                  setPassword(t);
-                  setErrorMsg("");
-                }}
-                mode="outlined"
-                secureTextEntry={!showPassword}
-                style={[styles.input, { marginBottom: 8 }]}
-                textColor={Colors.textPrimary}
-                theme={{
-                  colors: { primary: Colors.accent, outline: Colors.border },
-                }}
-                left={
-                  <TextInput.Icon
-                    icon="lock-outline"
-                    color={Colors.textTertiary}
-                  />
-                }
-                right={
-                  <TextInput.Icon
-                    icon={showPassword ? "eye-off-outline" : "eye-outline"}
-                    color={Colors.textTertiary}
-                    onPress={() => setShowPassword(!showPassword)}
-                  />
-                }
-              />
-            </View>
+            <TextInput
+              label="Password"
+              value={password}
+              onChangeText={(t) => {
+                setPassword(t);
+                setErrorMsg("");
+                setErrCode(null);
+              }}
+              mode="outlined"
+              secureTextEntry={!showPassword}
+              style={styles.input}
+              textColor={Colors.textPrimary}
+              theme={{
+                colors: { primary: Colors.accent, outline: Colors.border },
+              }}
+              left={
+                <TextInput.Icon
+                  icon="lock-outline"
+                  color={Colors.textTertiary}
+                />
+              }
+              right={
+                <TextInput.Icon
+                  icon={showPassword ? "eye-off-outline" : "eye-outline"}
+                  color={Colors.textTertiary}
+                  onPress={() => setShowPassword(!showPassword)}
+                />
+              }
+            />
 
             {/* Forgot Password */}
             <TouchableOpacity
@@ -240,10 +257,15 @@ export default function LoginScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name="alert-circle-outline"
                   size={16}
-                  color={Colors.error}
+                  color="#FFFFFF"
                   style={{ marginRight: 8 }}
                 />
-                <Text style={styles.errorText}>{errorMsg}</Text>
+                <View style={{ flex: 1 }}>
+                  <Text style={styles.errorText}>{errorMsg}</Text>
+                  {errCode ? (
+                    <Text style={styles.errorCodeText}>code: {errCode}</Text>
+                  ) : null}
+                </View>
               </View>
             ) : null}
             {resetSent ? (
@@ -251,7 +273,7 @@ export default function LoginScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name="check-circle-outline"
                   size={16}
-                  color={Colors.success}
+                  color="#FFFFFF"
                   style={{ marginRight: 8 }}
                 />
                 <Text style={styles.successText}>
@@ -356,30 +378,37 @@ const styles = {
   input: {
     backgroundColor: Colors.surfaceElevated,
     marginBottom: 16,
+    height: 48,
   },
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.errorSurface,
+    backgroundColor: Colors.error,
     padding: 12,
     borderRadius: Radius.sm,
     marginBottom: 16,
   },
   errorText: {
-    color: Colors.error,
+    color: "#FFFFFF",
     fontSize: 13,
-    flex: 1,
+    fontWeight: "600",
+  },
+  errorCodeText: {
+    color: "rgba(255, 255, 255, 0.85)",
+    fontSize: 10,
+    fontWeight: "500",
+    marginTop: 2,
   },
   successBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: Colors.successSurface,
+    backgroundColor: Colors.success,
     padding: 12,
     borderRadius: Radius.sm,
     marginBottom: 16,
   },
   successText: {
-    color: Colors.success,
+    color: "#FFFFFF",
     fontSize: 13,
     fontWeight: "600",
     flex: 1,

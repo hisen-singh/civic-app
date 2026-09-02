@@ -1,7 +1,7 @@
 import { ScrollView, View, Text } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AnimatedPressable from "./AnimatedPressable";
-import { Colors, Radius, Spacing } from "../../theme";
+import { theme, Spacing } from "../../theme";
 
 export default function FilterPills({
   items,
@@ -9,7 +9,59 @@ export default function FilterPills({
   onSelect,
   style,
   contentStyle,
+  variant = "pill",
 }) {
+  const pillItems = items || [];
+
+  if (variant === "underline") {
+    return (
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={[{ paddingHorizontal: Spacing.lg }, contentStyle]}
+        style={style}
+      >
+        {pillItems.map((cat) => {
+          const isSelected = selected === cat.id;
+          const label = cat.title || cat.label;
+
+          return (
+            <AnimatedPressable
+              key={cat.id}
+              onPress={() => onSelect(cat.id)}
+              activeScale={0.95}
+              style={{ marginRight: Spacing.xl, alignItems: "stretch" }}
+            >
+              <Text
+                style={{
+                  color: isSelected
+                    ? theme.colors.textPrimary
+                    : theme.colors.textMuted,
+                  fontSize: 16,
+                  fontFamily: theme.type?.meta?.fontFamily,
+                  fontWeight: isSelected ? "600" : "400",
+                  paddingBottom: 7,
+                  textAlign: "center",
+                }}
+              >
+                {label}
+              </Text>
+              <View
+                style={{
+                  height: 2,
+                  borderRadius: 1,
+                  backgroundColor: isSelected
+                    ? theme.colors.accentBrand
+                    : "transparent",
+                }}
+              />
+            </AnimatedPressable>
+          );
+        })}
+      </ScrollView>
+    );
+  }
+
   return (
     <ScrollView
       horizontal
@@ -17,7 +69,7 @@ export default function FilterPills({
       contentContainerStyle={[{ paddingHorizontal: Spacing.lg }, contentStyle]}
       style={style}
     >
-      {items.map((cat) => {
+      {pillItems.map((cat) => {
         const isSelected = selected === cat.id;
         const label = cat.title || cat.label;
 
@@ -29,29 +81,28 @@ export default function FilterPills({
             style={{ marginRight: 8 }}
           >
             <View
-              style={{
+              style={[{
                 flexDirection: "row",
                 alignItems: "center",
-                backgroundColor: isSelected
-                  ? Colors.accentSurface
-                  : Colors.surface,
-                borderWidth: 1.5,
-                borderColor: isSelected ? Colors.accent : Colors.border,
+                backgroundColor: theme.colors.surface,
+                borderWidth: 1,
+                borderColor: isSelected ? theme.colors.accentBrand : theme.colors.borderSubtle,
                 paddingHorizontal: 14,
                 paddingVertical: 9,
-                borderRadius: Radius.pill,
-              }}
+                borderRadius: theme.radius.xl,
+              }]}
             >
               <MaterialCommunityIcons
                 name={cat.icon}
                 size={14}
-                color={isSelected ? Colors.accentLight : Colors.textTertiary}
+                color={isSelected ? theme.colors.accentBrand : theme.colors.textMuted}
                 style={{ marginRight: 6 }}
               />
               <Text
                 style={{
-                  color: isSelected ? Colors.textPrimary : Colors.textSecondary,
+                  color: isSelected ? theme.colors.textPrimary : theme.colors.textMuted,
                   fontSize: 13,
+                  fontFamily: theme.type?.meta?.fontFamily,
                   fontWeight: "600",
                 }}
               >
@@ -60,7 +111,7 @@ export default function FilterPills({
               {cat.badge != null && cat.badge > 0 ? (
                 <View
                   style={{
-                    backgroundColor: Colors.critical,
+                    backgroundColor: theme.colors.statusCritical,
                     borderRadius: 6,
                     paddingHorizontal: 5,
                     paddingVertical: 1,

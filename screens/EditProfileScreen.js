@@ -58,7 +58,19 @@ export default function EditProfileScreen({ navigation }) {
     ]).start(() => setSuccessMsg(""));
   };
 
-  const pickAvatar = () => {
+  const pickAvatar = async () => {
+    if (Platform.OS === "web") {
+      // Alert with multiple buttons doesn't work on Web, just open gallery directly
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.5,
+      });
+      if (!result.canceled) setLocalPhoto(result.assets[0]);
+      return;
+    }
+
     Alert.alert("Change Photo", "Choose your profile photo", [
       {
         text: "Camera",
@@ -148,9 +160,32 @@ export default function EditProfileScreen({ navigation }) {
   };
 
   const avatarSource = localPhoto?.uri || photoURL;
-  const initials = (displayName || user?.email || "U")
-    .substring(0, 2)
-    .toUpperCase();
+  const initialName = displayName || user?.email || "User";
+  const initials = initialName.substring(0, 2).toUpperCase();
+  
+  const getAvatarColor = (name) => {
+    const colors = [
+      "#E53935",
+      "#D81B60",
+      "#8E24AA",
+      "#5E35B1",
+      "#3949AB",
+      "#1E88E5",
+      "#00ACC1",
+      "#00897B",
+      "#43A047",
+      "#7CB342",
+      "#F4511E",
+      "#FB8C00",
+    ];
+    let hash = 0;
+    for (let i = 0; i < (name || "").length; i++) {
+      hash = (name || "").charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+  const avatarBgColor = getAvatarColor(initialName);
+
   const isVerified = user?.emailVerified;
   const hasChanges =
     displayName.trim() !== (user?.displayName || "") || localPhoto !== null;
@@ -250,7 +285,7 @@ export default function EditProfileScreen({ navigation }) {
               {avatarSource ? (
                 <Image source={{ uri: avatarSource }} style={styles.avatar} />
               ) : (
-                <View style={[styles.avatar, styles.avatarPlaceholder]}>
+                <View style={[styles.avatar, styles.avatarPlaceholder, { backgroundColor: avatarBgColor }]}>
                   <Text style={styles.avatarInitials}>{initials}</Text>
                 </View>
               )}
@@ -483,7 +518,6 @@ const styles = {
   avatarPlaceholder: {
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: theme.colors.accentBrand,
   },
   avatarInitials: { fontSize: 36, fontWeight: "900", color: "#FFF" },
   cameraIcon: {

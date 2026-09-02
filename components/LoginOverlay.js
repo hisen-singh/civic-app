@@ -14,8 +14,9 @@ import {
   Alert,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import NetInfo from "@react-native-community/netinfo";
 import { AuthService } from "../services/AuthService";
-import { mapFirebaseAuthError } from "../utils/authValidators";
+import { mapFirebaseAuthError, validateEmail } from "../utils/authValidators";
 import { Spacing, theme } from "../theme";
 
 export default function LoginOverlay({ visible, onClose }) {
@@ -30,6 +31,13 @@ export default function LoginOverlay({ visible, onClose }) {
   const [errCode, setErrCode] = useState(null);
 
   const handleForgotPassword = async () => {
+    const networkState = await NetInfo.fetch();
+    if (!networkState.isConnected) {
+      setError("No internet connection. Please try again when online.");
+      setErrCode(null);
+      return;
+    }
+
     if (!email.trim()) {
       setError("Enter your email address first, then tap Forgot password.");
       setErrCode(null);
@@ -62,8 +70,22 @@ export default function LoginOverlay({ visible, onClose }) {
   };
 
   const handleSubmit = async () => {
+    const networkState = await NetInfo.fetch();
+    if (!networkState.isConnected) {
+      setError("No internet connection. Please try again when online.");
+      setErrCode(null);
+      return;
+    }
+
     if (!email.trim() || !password.trim()) {
       setError("Email and password are required.");
+      setErrCode(null);
+      return;
+    }
+    
+    const emailValidation = validateEmail(email.trim());
+    if (!emailValidation.ok) {
+      setError(emailValidation.error);
       setErrCode(null);
       return;
     }
@@ -122,7 +144,7 @@ export default function LoginOverlay({ visible, onClose }) {
                   {/* Header */}
                   <View style={styles.header}>
                     <Text style={styles.title}>
-                      {isLogin ? "SIGN IN" : "JOIN THE FIGHT"}
+                      {isLogin ? "Sign In" : "Join Civic"}
                     </Text>
                     <TouchableOpacity
                       onPress={onClose}
@@ -155,7 +177,7 @@ export default function LoginOverlay({ visible, onClose }) {
                     {!isLogin && (
                       <TextInput
                         style={styles.input}
-                        placeholder="DISPLAY NAME"
+                        placeholder="Display Name"
                         placeholderTextColor={theme.colors.textMuted}
                         value={name}
                         onChangeText={setName}
@@ -165,7 +187,7 @@ export default function LoginOverlay({ visible, onClose }) {
                     )}
                     <TextInput
                       style={styles.input}
-                      placeholder="EMAIL ADDRESS"
+                      placeholder="Email Address"
                       placeholderTextColor={theme.colors.textMuted}
                       value={email}
                       onChangeText={setEmail}
@@ -176,7 +198,7 @@ export default function LoginOverlay({ visible, onClose }) {
                     <View>
                       <TextInput
                         style={styles.input}
-                        placeholder="PASSWORD"
+                        placeholder="Password"
                         placeholderTextColor={theme.colors.textMuted}
                         value={password}
                         onChangeText={setPassword}
@@ -202,18 +224,17 @@ export default function LoginOverlay({ visible, onClose }) {
                       </TouchableOpacity>
                     </View>
 
-                    {/* Submit Button */}
                     <TouchableOpacity
                       style={styles.submitBtn}
                       activeOpacity={0.8}
                       onPress={handleSubmit}
-                      disabled={loading}
+                      disabled={loading || resetLoading}
                     >
                       {loading ? (
                         <ActivityIndicator color="#FFFFFF" size="small" />
                       ) : (
                         <Text style={styles.submitText}>
-                          {isLogin ? "AUTHORIZE" : "CREATE ACCOUNT"}
+                          {isLogin ? "Sign In" : "Create Account"}
                         </Text>
                       )}
                     </TouchableOpacity>
@@ -299,16 +320,12 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   modalBox: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 2,
+    backgroundColor: theme.colors.surfaceElevated,
+    borderWidth: 1,
     borderColor: theme.colors.border,
-    borderRadius: 0, // Strict brutalism
+    borderRadius: theme.radius.lg,
     padding: Spacing.xl,
-    shadowColor: theme.colors.border,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
+    ...theme.shadows.card,
   },
   header: {
     flexDirection: "row",
@@ -318,30 +335,31 @@ const styles = StyleSheet.create({
   },
   title: {
     color: theme.colors.textPrimary,
-    fontSize: 24,
-    fontWeight: "900",
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 22,
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: theme.type?.title?.fontWeight,
+    letterSpacing: -0.3,
   },
   closeBtn: {
-    width: 48,
-    height: 48,
+    width: 44,
+    height: 44,
     justifyContent: "center",
     alignItems: "center",
-    marginRight: -12, // Offset to align visually while maintaining touch target
+    marginRight: -12,
     marginTop: -12,
   },
   errorBanner: {
-    backgroundColor: theme.colors.accentBrand, // Electric Orange for errors too
-    borderWidth: 2,
-    borderColor: theme.colors.border,
+    backgroundColor: theme.colors.statusCriticalBg,
+    borderWidth: 1,
+    borderColor: theme.colors.statusCritical,
+    borderRadius: theme.radius.md,
     padding: Spacing.md,
     marginBottom: Spacing.md,
   },
   errorText: {
-    color: "#FFFFFF",
+    color: theme.colors.statusCritical,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
     textAlign: "center",
   },
   form: {
@@ -349,43 +367,37 @@ const styles = StyleSheet.create({
   },
   input: {
     backgroundColor: theme.colors.surface,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
+    borderRadius: theme.radius.md,
     color: theme.colors.textPrimary,
-    height: 48, // 48x48 min touch target
+    height: 48,
     paddingHorizontal: Spacing.md,
-    fontSize: 16,
-    fontWeight: "600",
+    fontSize: 15,
+    fontFamily: theme.type?.body?.fontFamily,
   },
   submitBtn: {
     backgroundColor: theme.colors.accentBrand,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
     height: 48,
     justifyContent: "center",
     alignItems: "center",
     marginTop: Spacing.sm,
-    shadowColor: theme.colors.border,
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
   },
   submitText: {
     color: "#FFFFFF",
-    fontSize: 16,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 1,
+    fontSize: 15,
+    fontFamily: theme.type?.meta?.fontFamily,
+    fontWeight: "600",
   },
   toggleBtn: {
     marginTop: Spacing.xl,
-    minHeight: 48,
+    minHeight: 44,
     justifyContent: "center",
     alignItems: "center",
   },
   forgotBtn: {
-    minHeight: 44,
+    minHeight: 40,
     justifyContent: "center",
     alignItems: "center",
     marginTop: Spacing.xs,
@@ -393,17 +405,15 @@ const styles = StyleSheet.create({
   forgotText: {
     color: theme.colors.textMuted,
     fontSize: 13,
-    fontWeight: "600",
-    textDecorationLine: "underline",
+    fontWeight: "500",
   },
   toggleText: {
-    color: theme.colors.textPrimary,
-    fontSize: 14,
-    fontWeight: "600",
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: "500",
   },
   toggleTextHighlight: {
-    color: theme.colors.accentBrand, // Electric orange highlight
-    fontWeight: "800",
-    textDecorationLine: "underline",
+    color: theme.colors.accentBrand,
+    fontWeight: "600",
   },
 });

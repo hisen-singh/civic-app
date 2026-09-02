@@ -12,6 +12,7 @@ import {
 import { Text, TextInput, Avatar, ActivityIndicator } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useFocusEffect } from "@react-navigation/native";
+import MapPreview from "../components/MapPreview";
 import { IssueService } from "../services/IssueService";
 import { useAuth } from "../contexts/AuthContext";
 import IssueCard from "../components/IssueCard";
@@ -569,6 +570,19 @@ export default function IssueDetailScreen({ route, navigation }) {
               </Text>
             </View>
           </View>
+
+          {/* Issue Map Preview */}
+          {currentIssue.latitude && currentIssue.longitude ? (
+            <View style={{ marginHorizontal: Spacing.lg, marginTop: Spacing.lg, marginBottom: Spacing.sm }}>
+              <Text style={[styles.sectionTitle, { marginBottom: Spacing.md }]}>LOCATION</Text>
+              <View style={{ height: 180, borderRadius: 0, overflow: "hidden", borderWidth: 2, borderColor: theme.colors.border }}>
+                <MapPreview
+                  latitude={Number(currentIssue.latitude)}
+                  longitude={Number(currentIssue.longitude)}
+                />
+              </View>
+            </View>
+          ) : null}
 
           {/* Comments */}
           <View style={styles.commentsSection}>

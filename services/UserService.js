@@ -265,6 +265,51 @@ export const UserService = {
   },
 
   /**
+   * Save (bookmark) an issue for a user.
+   */
+  saveIssue: async (userId, issueId) => {
+    if (!userId || !issueId) return;
+    try {
+      const docRef = doc(db, USERS_COLLECTION, userId, "savedIssues", issueId);
+      await setDoc(docRef, { savedAt: new Date().toISOString() });
+    } catch (error) {
+      console.error("[UserService] Error saving issue:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Unsave (remove bookmark) an issue for a user.
+   */
+  unsaveIssue: async (userId, issueId) => {
+    if (!userId || !issueId) return;
+    try {
+      const { deleteDoc } = require("firebase/firestore");
+      const docRef = doc(db, USERS_COLLECTION, userId, "savedIssues", issueId);
+      await deleteDoc(docRef);
+    } catch (error) {
+      console.error("[UserService] Error unsaving issue:", error);
+      throw error;
+    }
+  },
+
+  /**
+   * Get a user's saved issues.
+   */
+  getSavedIssues: async (userId) => {
+    if (!userId) return [];
+    try {
+      const savedRef = collection(db, USERS_COLLECTION, userId, "savedIssues");
+      const q = query(savedRef, orderBy("savedAt", "desc"), limit(50));
+      const snapshot = await getDocs(q);
+      return snapshot.docs.map(d => d.id);
+    } catch (error) {
+      console.error("[UserService] Error fetching saved issues:", error);
+      return [];
+    }
+  },
+
+  /**
    * Check if the current user follows another user.
    * Checks by trying to read the followers subcollection doc.
    */

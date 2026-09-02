@@ -170,8 +170,8 @@ export default function LeaderboardScreen() {
       showsVerticalScrollIndicator={false}
     >
       <View style={styles.header}>
-        <Text style={styles.headerTitle}>COMMUNITY IMPACT</Text>
-        <Text style={styles.headerSub}>RECOGNIZING ACTIVE CONTRIBUTORS</Text>
+        <Text style={styles.headerTitle}>Community Impact</Text>
+        <Text style={styles.headerSub}>Recognizing active contributors</Text>
 
         <View style={styles.tabContainer}>
           <TouchableOpacity
@@ -191,7 +191,7 @@ export default function LeaderboardScreen() {
                 activeTab === "heroes" && styles.tabTextActive,
               ]}
             >
-              CONTRIBUTORS
+              Contributors
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -213,7 +213,7 @@ export default function LeaderboardScreen() {
                 activeTab === "problems" && styles.tabTextActive,
               ]}
             >
-              TRENDING
+              Trending
             </Text>
           </TouchableOpacity>
         </View>
@@ -430,28 +430,28 @@ const styles = {
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.xxl,
     backgroundColor: theme.colors.surface,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
   },
   headerTitle: {
-    fontSize: 28,
-    fontWeight: "900",
+    fontSize: 24,
+    fontFamily: theme.type?.display?.fontFamily,
+    fontWeight: theme.type?.display?.fontWeight,
     color: theme.colors.textPrimary,
     marginBottom: 4,
-    letterSpacing: 0.5,
+    letterSpacing: -0.5,
   },
   headerSub: {
-    fontSize: 12,
-    fontWeight: "700",
+    fontSize: 13,
     color: theme.colors.textMuted,
     marginBottom: Spacing.xl,
   },
   tabContainer: {
     flexDirection: "row",
     backgroundColor: theme.colors.surface,
-    borderRadius: 0,
+    borderRadius: theme.radius.pill,
     padding: 4,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: theme.colors.border,
   },
   tab: {
@@ -460,14 +460,14 @@ const styles = {
     paddingVertical: 10,
     alignItems: "center",
     justifyContent: "center",
-    borderRadius: 0,
+    borderRadius: theme.radius.pill,
   },
   tabActive: {
     backgroundColor: theme.colors.accentBrand,
   },
   tabText: {
     color: theme.colors.textPrimary,
-    fontWeight: "800",
+    fontWeight: "600",
     fontSize: 13,
   },
   tabTextActive: {
@@ -492,8 +492,8 @@ const styles = {
   podiumAvatar: {
     width: 52,
     height: 52,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: 26,
+    borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
     justifyContent: "center",
@@ -502,13 +502,13 @@ const styles = {
   },
   podiumInitials: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   podiumRankBadge: {
     width: 22,
     height: 22,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: 11,
+    borderWidth: 1,
     justifyContent: "center",
     alignItems: "center",
     marginTop: -12,
@@ -516,15 +516,14 @@ const styles = {
   },
   podiumName: {
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.textPrimary,
     textAlign: "center",
     marginBottom: 2,
-    textTransform: "uppercase",
   },
   podiumScore: {
     fontSize: 16,
-    fontWeight: "900",
+    fontWeight: "700",
   },
   // Rank Cards
   emptyState: {
@@ -535,8 +534,8 @@ const styles = {
   emptyIcon: {
     width: 64,
     height: 64,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
     borderColor: theme.colors.border,
     backgroundColor: theme.colors.surface,
     justifyContent: "center",
@@ -545,7 +544,8 @@ const styles = {
   },
   emptyTitle: {
     fontSize: 18,
-    fontWeight: "900",
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: theme.type?.title?.fontWeight,
     color: theme.colors.textPrimary,
     marginBottom: Spacing.sm,
   },
@@ -561,15 +561,15 @@ const styles = {
     marginHorizontal: Spacing.lg,
     marginBottom: Spacing.sm,
     backgroundColor: theme.colors.surface,
-    borderRadius: 0,
+    borderRadius: theme.radius.md,
     padding: Spacing.lg,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
   },
   rankCardHighlight: {
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceElevated,
     borderColor: theme.colors.accentBrand,
-    borderWidth: 2,
+    borderWidth: 1,
   },
   rankBadge: {
     width: 36,
@@ -579,45 +579,46 @@ const styles = {
   rankAvatar: {
     width: 36,
     height: 36,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: 18,
+    borderWidth: 1,
     borderColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
+    backgroundColor: theme.colors.surfaceElevated,
     justifyContent: "center",
     alignItems: "center",
     marginRight: Spacing.md,
   },
   rankAvatarText: {
     fontSize: 12,
-    fontWeight: "900",
+    fontWeight: "700",
     color: theme.colors.textPrimary,
   },
   rankNumberPlain: {
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "700",
     color: theme.colors.textPrimary,
   },
   personName: {
     fontSize: 15,
-    fontWeight: "900",
+    fontWeight: "600",
     color: theme.colors.textPrimary,
     marginBottom: 2,
   },
   personTitle: {
     fontSize: 11,
     color: theme.colors.textMuted,
-    fontWeight: "600",
+    fontWeight: "500",
   },
   score: {
     fontSize: 18,
-    fontWeight: "900",
+    fontWeight: "700",
     color: theme.colors.accentBrand,
   },
   scoreLabel: {
     fontSize: 10,
+    fontFamily: theme.type?.micro?.fontFamily,
+    fontWeight: theme.type?.micro?.fontWeight,
     color: theme.colors.textPrimary,
-    textTransform: "uppercase",
-    fontWeight: "800",
+    letterSpacing: 0.5,
   },
   yourPosition: {
     flexDirection: "row",
@@ -627,15 +628,15 @@ const styles = {
     marginTop: Spacing.lg,
     padding: Spacing.lg,
     backgroundColor: theme.colors.surface,
-    borderRadius: 0,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
   },
   yourPositionText: {
     fontSize: 13,
     color: theme.colors.textPrimary,
     marginLeft: 8,
-    fontWeight: "700",
+    fontWeight: "600",
   },
   trendingLabel: {
     flexDirection: "row",
@@ -644,10 +645,10 @@ const styles = {
     marginBottom: Spacing.sm,
   },
   trendingLabelText: {
-    fontSize: 12,
-    fontWeight: "900",
+    fontSize: 11,
+    fontFamily: theme.type?.micro?.fontFamily,
+    fontWeight: theme.type?.micro?.fontWeight,
     color: theme.colors.accentBrand,
-    textTransform: "uppercase",
-    letterSpacing: 0.3,
+    letterSpacing: 0.5,
   },
 };

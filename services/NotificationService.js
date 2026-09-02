@@ -31,5 +31,31 @@ export const NotificationService = {
         } catch (error) {
             console.error("Error marking notification read:", error);
         }
+    },
+
+    /**
+     * Listens to the count of unread notifications for a user.
+     */
+    listenUnreadCount: (userId, callback) => {
+        if (!userId) {
+            callback(0);
+            return () => {};
+        }
+        
+        const q = query(
+            collection(db, NOTIFICATIONS_COLLECTION),
+            where("userId", "==", userId),
+            where("read", "==", false)
+        );
+
+        // We use onSnapshot to get real-time updates
+        const { onSnapshot } = require("firebase/firestore");
+        
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.size);
+        }, (error) => {
+            console.error("Error listening to unread notifications:", error);
+            callback(0);
+        });
     }
 };

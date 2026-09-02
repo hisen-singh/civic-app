@@ -1,7 +1,8 @@
 import React, { useEffect, useState, useRef } from "react";
 import { View, StyleSheet, TouchableOpacity, Dimensions } from "react-native";
 import { Text } from "react-native-paper";
-import MapView, { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
+import { Marker, Circle, PROVIDER_GOOGLE } from "react-native-maps";
+import MapViewCluster from "react-native-map-clustering";
 import * as Location from "expo-location";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAuth } from "../contexts/AuthContext";
@@ -74,75 +75,24 @@ export default function MapScreen({ navigation }) {
   const [locationLoaded, setLocationLoaded] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
 
+  const fetchIssuesForRegion = async (region) => {
+    try {
+      if (!region) return;
+      // We pass 50km radius as a broad sweep, filtering happens on backend
+      const nearbyIssues = await IssueService.getNearbyIssues(region.latitude, region.longitude, 50000, "All");
+      setIssues(nearbyIssues);
+    } catch (error) {
+      console.error("[MapScreen] Error fetching issues:", error);
+    }
+  };
+
   useFocusEffect(
     React.useCallback(() => {
-      const fetchIssues = async () => {
-        try {
-          const allIssuesRaw = await IssueService.getAllIssues();
-
-          const allIssues = allIssuesRaw.filter((issue) => {
-            let isIndia = false;
-            if (issue.latitude && issue.longitude) {
-              if (
-                issue.latitude >= 8.0 &&
-                issue.latitude <= 38.0 &&
-                issue.longitude >= 68.0 &&
-                issue.longitude <= 98.0
-              ) {
-                isIndia = true;
-              }
-            } else if (issue.location) {
-              const locLower = issue.location.toLowerCase();
-              const isUS =
-                locLower.includes("ave") ||
-                locLower.includes("st") ||
-                locLower.includes("chicago") ||
-                locLower.includes("il");
-              if (!isUS) {
-                isIndia = true;
-              }
-            }
-
-            const authorName = issue.authorName || "";
-            if (
-              authorName.toLowerCase().includes("city") ||
-              authorName.toLowerCase().includes("open data")
-            ) {
-              isIndia = false;
-            }
-            return isIndia;
-          });
-
-          // Use user's location or fallback
-          const baseLat = location ? location.latitude : 28.4595;
-          const baseLng = location ? location.longitude : 77.0266;
-
-          const mapIssues = allIssues.map((issue) => {
-            if (!issue.latitude || !issue.longitude) {
-              // Stable pseudo-random offset based on issue ID
-              let hash = 0;
-              for (let i = 0; i < issue.id.length; i++) {
-                hash = issue.id.charCodeAt(i) + ((hash << 5) - hash);
-              }
-              const pseudoRandom1 = (Math.abs(hash) % 100) / 100;
-              const pseudoRandom2 = (Math.abs(hash >> 8) % 100) / 100;
-
-              return {
-                ...issue,
-                latitude: baseLat + (pseudoRandom1 - 0.5) * 0.04,
-                longitude: baseLng + (pseudoRandom2 - 0.5) * 0.04,
-              };
-            }
-            return issue;
-          });
-
-          setIssues(mapIssues);
-        } catch (error) {
-          console.error("[MapScreen] Error fetching issues:", error);
-        }
-      };
-      fetchIssues();
-    }, [locationLoaded, location]), // Added location to dependencies
+      // Fetch once when focused if location is loaded
+      if (locationLoaded && location) {
+        fetchIssuesForRegion({ latitude: location.latitude, longitude: location.longitude });
+      }
+    }, [locationLoaded]), 
   );
 
   useEffect(() => {
@@ -275,12 +225,14 @@ export default function MapScreen({ navigation }) {
 
   return (
     <View style={styles.container}>
-      <MapView
+      <MapViewCluster
         ref={mapRef}
         provider={PROVIDER_GOOGLE}
         style={styles.map}
         customMapStyle={darkMapStyle}
         showsUserLocation={true}
+        clusterColor={theme.colors.accentBrand}
+        onRegionChangeComplete={(region) => fetchIssuesForRegion(region)}
         initialRegion={{
           latitude: location ? location.latitude : 28.4595,
           longitude: location ? location.longitude : 77.0266,
@@ -307,7 +259,9 @@ export default function MapScreen({ navigation }) {
                   {
                     borderColor:
                       issue.status === "Solved"
-                        ? Colors.success
+                        ? Colors.accentDark
+                        : issue.status === "In Progress"
+                        ? "#94A3B8"
                         : theme.colors.accentBrand,
                   },
                 ]}
@@ -317,8 +271,10 @@ export default function MapScreen({ navigation }) {
                   size={20}
                   color={
                     issue.status === "Solved"
-                      ? Colors.success
-                      : theme.colors.textPrimary
+                      ? Colors.accentDark
+                      : issue.status === "In Progress"
+                      ? "#94A3B8"
+                      : theme.colors.accentBrand
                   }
                 />
               </View>
@@ -328,7 +284,9 @@ export default function MapScreen({ navigation }) {
                   {
                     borderTopColor:
                       issue.status === "Solved"
-                        ? Colors.success
+                        ? Colors.accentDark
+                        : issue.status === "In Progress"
+                        ? "#94A3B8"
                         : theme.colors.accentBrand,
                   },
                 ]}
@@ -348,13 +306,15 @@ export default function MapScreen({ navigation }) {
             radius={500}
             fillColor={
               issue.status === "Solved"
-                ? "rgba(16, 185, 129, 0.1)"
-                : "rgba(255, 69, 0, 0.1)"
+                ? "rgba(29, 78, 216, 0.15)"
+                : issue.status === "In Progress"
+                ? "rgba(148, 163, 184, 0.15)"
+                : "rgba(59, 130, 246, 0.15)"
             }
             strokeWidth={0}
           />
         ))}
-      </MapView>
+      </MapViewCluster>
 
       {/* Top Gradient Overlay */}
       <LinearGradient

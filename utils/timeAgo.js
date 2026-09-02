@@ -8,7 +8,16 @@
 export function timeAgo(dateInput) {
     if (!dateInput) return '';
     const now = new Date();
-    const date = dateInput instanceof Date ? dateInput : new Date(dateInput);
+    let date;
+    if (dateInput instanceof Date) {
+        date = dateInput;
+    } else if (typeof dateInput === 'object' && typeof dateInput.toDate === 'function') {
+        date = dateInput.toDate();
+    } else if (typeof dateInput === 'object' && typeof dateInput.seconds === 'number') {
+        date = new Date(dateInput.seconds * 1000);
+    } else {
+        date = new Date(dateInput);
+    }
 
     // Guard against invalid dates
     if (isNaN(date.getTime())) return '';

@@ -14,7 +14,8 @@ import { SyncService } from "../services/SyncService";
 import { useAuth } from "../contexts/AuthContext";
 import * as Location from "expo-location";
 import NetInfo from "@react-native-community/netinfo";
-import { Colors, Spacing } from "../theme";
+import { theme, Colors, Spacing } from "../theme";
+import { LinearGradient } from "expo-linear-gradient";
 import { detectUrgency } from "../utils/urgencyDetector";
 import CategoryGrid from "../components/ui/CategoryGrid";
 import UrgencySelector from "../components/ui/UrgencySelector";
@@ -400,18 +401,18 @@ export default function ReportIssueScreen({ navigation }) {
             }}
             mode="outlined"
             style={styles.input}
-            textColor="#000000"
+            textColor={theme.colors.textPrimary}
             theme={{
               colors: {
-                primary: "#FF4500",
-                outline: "#000000",
-                background: "#FFFFFF",
+                primary: theme.colors.accentBrand,
+                outline: theme.colors.borderSubtle,
+                background: theme.colors.surface,
               },
-              roundness: 0,
+              roundness: theme.radius.sm,
             }}
             label="Issue Title"
             placeholder="e.g. Deep pothole on Main St."
-            placeholderTextColor={Colors.textTertiary}
+            placeholderTextColor={theme.colors.textMuted}
             maxLength={200}
             accessibilityLabel="Issue Title Input"
           />
@@ -426,16 +427,16 @@ export default function ReportIssueScreen({ navigation }) {
             numberOfLines={2}
             style={[
               styles.input,
-              { minHeight: 60, backgroundColor: "transparent" },
+              { minHeight: 60, backgroundColor: theme.colors.surface },
             ]}
-            textColor="#000000"
+            textColor={theme.colors.textPrimary}
             theme={{
               colors: {
-                primary: "#FF4500",
-                outline: "#000000",
-                background: "transparent",
+                primary: theme.colors.accentBrand,
+                outline: theme.colors.borderSubtle,
+                background: theme.colors.surface,
               },
-              roundness: 0,
+              roundness: theme.radius.sm,
             }}
             label="Description"
             placeholder="Describe the issue and its exact location..."
@@ -464,7 +465,7 @@ export default function ReportIssueScreen({ navigation }) {
                 <MaterialCommunityIcons
                   name="lightning-bolt"
                   size={10}
-                  color="#FF4500"
+                  color="#3B82F6"
                   style={{ marginRight: 3 }}
                 />
                 <Text style={styles.autoDetectText}>AUTO-DETECTED</Text>
@@ -506,7 +507,7 @@ export default function ReportIssueScreen({ navigation }) {
             textColor="#000000"
             theme={{
               colors: {
-                primary: "#FF4500",
+                primary: "#3B82F6",
                 outline: "#000000",
                 background: "#FFFFFF",
               },
@@ -583,7 +584,7 @@ export default function ReportIssueScreen({ navigation }) {
             textColor="#000000"
             theme={{
               colors: {
-                primary: "#FF4500",
+                primary: "#3B82F6",
                 outline: "#000000",
                 background: "#FFFFFF",
               },
@@ -621,24 +622,31 @@ export default function ReportIssueScreen({ navigation }) {
               onPress={handleSubmit}
               disabled={loading}
               activeOpacity={0.85}
-              style={[styles.submitBtn, loading && { opacity: 0.7 }]}
+              style={[{ transform: [{ scale: submitScale }] }, loading && { opacity: 0.7 }]}
               accessibilityRole="button"
               accessibilityLabel="Submit Report"
               accessibilityState={{ disabled: loading }}
             >
-              {loading ? (
-                <ActivityIndicator color="#FFF" size={20} />
-              ) : (
-                <View style={{ flexDirection: "row", alignItems: "center" }}>
-                  <MaterialCommunityIcons
-                    name="send"
-                    size={18}
-                    color="#FFF"
-                    style={{ marginRight: 8 }}
-                  />
-                  <Text style={styles.submitBtnText}>Submit Report</Text>
-                </View>
-              )}
+              <LinearGradient
+                colors={theme.gradients.primary}
+                style={styles.submitBtn}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 0 }}
+              >
+                {loading ? (
+                  <ActivityIndicator color="#FFF" size={20} />
+                ) : (
+                  <View style={{ flexDirection: "row", alignItems: "center" }}>
+                    <MaterialCommunityIcons
+                      name="send"
+                      size={18}
+                      color="#FFF"
+                      style={{ marginRight: 8 }}
+                    />
+                    <Text style={styles.submitBtnText}>Submit Report</Text>
+                  </View>
+                )}
+              </LinearGradient>
             </TouchableOpacity>
           </Animated.View>
           <Text style={styles.disclaimer}>
@@ -679,7 +687,7 @@ const styles = {
   submitHeaderText: {
     fontSize: 15,
     fontWeight: "800",
-    color: "#FF4500",
+    color: "#3B82F6",
     textTransform: "uppercase",
   },
   progressContainer: {
@@ -700,7 +708,7 @@ const styles = {
   },
   progressFill: {
     height: "100%",
-    backgroundColor: "#FF4500",
+    backgroundColor: "#3B82F6",
     borderRadius: 0,
   },
   progressText: {
@@ -733,8 +741,8 @@ const styles = {
     borderColor: "#FFFFFF",
   },
   sectionDotActive: {
-    backgroundColor: "#FF4500",
-    borderColor: "#FF4500",
+    backgroundColor: "#3B82F6",
+    borderColor: "#3B82F6",
   },
   sectionLabel: {
     fontSize: 16,
@@ -747,7 +755,7 @@ const styles = {
     fontSize: 11,
     fontWeight: "800",
     color: "#FFFFFF",
-    backgroundColor: "#FF4500", // Electric Orange
+    backgroundColor: "#3B82F6", // Electric Blue
     paddingHorizontal: 6,
     paddingVertical: 2,
     marginLeft: 8,
@@ -792,7 +800,7 @@ const styles = {
     width: 28,
     height: 28,
     borderRadius: 0,
-    backgroundColor: "#FF4500",
+    backgroundColor: "#3B82F6",
     justifyContent: "center",
     alignItems: "center",
     marginRight: 10,
@@ -826,7 +834,7 @@ const styles = {
   errorBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FF4500",
+    backgroundColor: "#3B82F6",
     padding: 12,
     borderRadius: 0,
     marginHorizontal: Spacing.xl,
@@ -835,18 +843,10 @@ const styles = {
     borderColor: "#FFFFFF",
   },
   submitBtn: {
-    backgroundColor: "#FF4500",
-    borderRadius: 0,
+    borderRadius: theme.radius.pill,
     paddingVertical: 16,
     alignItems: "center",
     justifyContent: "center",
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
-    shadowColor: "#FFFFFF",
-    shadowOffset: { width: 4, height: 4 },
-    shadowOpacity: 1,
-    shadowRadius: 0,
-    elevation: 0,
   },
   submitBtnText: {
     color: "#FFFFFF",
@@ -866,7 +866,7 @@ const styles = {
     flexDirection: "row",
     alignItems: "center",
     marginLeft: "auto",
-    backgroundColor: "#FF4500",
+    backgroundColor: "#3B82F6",
     paddingHorizontal: 8,
     paddingVertical: 3,
     borderRadius: 0,

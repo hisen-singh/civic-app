@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { View, Animated } from "react-native";
-import { Colors, Radius, Spacing } from "../../theme";
+import { theme, Spacing } from "../../theme";
 
 /**
  * Shimmering skeleton placeholder that mirrors the IssueCard layout.
@@ -32,27 +32,24 @@ export default function SkeletonCard() {
     <View style={styles.card}>
       <Animated.View style={[styles.media, { opacity: pulse }]} />
       <View style={styles.content}>
-        <View style={styles.authorRow}>
-          <Animated.View style={[styles.avatar, { opacity: pulse }]} />
-          <View style={{ flex: 1, gap: 6 }}>
-            <Animated.View
-              style={[styles.line, { width: "40%", opacity: pulse }]}
-            />
-            <Animated.View
-              style={[styles.line, { width: "25%", opacity: pulse }]}
-            />
-          </View>
-          <Animated.View style={[styles.badge, { opacity: pulse }]} />
+        <View style={styles.metaRow}>
+          <Animated.View style={[styles.line, { width: "25%", opacity: pulse }]} />
+          <Animated.View style={[styles.line, { width: "15%", opacity: pulse }]} />
         </View>
         <Animated.View
-          style={[
-            styles.line,
-            { width: "85%", height: 14, marginTop: Spacing.md, opacity: pulse },
-          ]}
+          style={[styles.line, { width: "85%", height: 14, marginTop: 12, opacity: pulse }]}
         />
         <Animated.View
-          style={[styles.line, { width: "60%", marginTop: 8, opacity: pulse }]}
+          style={[styles.line, { width: "60%", height: 14, marginTop: 8, opacity: pulse }]}
         />
+        <View style={styles.authorRow}>
+          <Animated.View style={[styles.avatar, { opacity: pulse }]} />
+          <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+            <Animated.View
+              style={[styles.line, { width: "50%", opacity: pulse }]}
+            />
+          </View>
+        </View>
         <View style={styles.actionsRow}>
           <Animated.View style={[styles.pill, { opacity: pulse }]} />
           <Animated.View style={[styles.pill, { opacity: pulse }]} />
@@ -65,42 +62,43 @@ export default function SkeletonCard() {
 
 const styles = {
   card: {
-    backgroundColor: Colors.surface,
-    borderRadius: Radius.xl,
-    marginHorizontal: Spacing.lg,
-    marginBottom: Spacing.lg,
-    borderWidth: 1,
-    borderColor: Colors.border,
+    backgroundColor: theme.colors.background,
+    marginBottom: Spacing.md,
     overflow: "hidden",
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderSubtle,
+    paddingBottom: Spacing.md,
   },
   media: {
-    height: 140,
-    backgroundColor: Colors.surfaceElevated,
+    width: "100%",
+    aspectRatio: 16 / 9,
+    backgroundColor: theme.colors.surfaceElevated,
   },
   content: {
-    padding: Spacing.lg,
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  metaRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
   authorRow: {
     flexDirection: "row",
     alignItems: "center",
     gap: Spacing.md,
+    marginTop: Spacing.md,
   },
   avatar: {
-    width: 38,
-    height: 38,
-    borderRadius: Radius.circle,
-    backgroundColor: Colors.surfaceElevated,
+    width: 24,
+    height: 24,
+    borderRadius: 12,
+    backgroundColor: theme.colors.surfaceElevated,
   },
   line: {
     height: 10,
     borderRadius: 5,
-    backgroundColor: Colors.surfaceElevated,
-  },
-  badge: {
-    width: 56,
-    height: 20,
-    borderRadius: 6,
-    backgroundColor: Colors.surfaceElevated,
+    backgroundColor: theme.colors.surfaceElevated,
   },
   actionsRow: {
     flexDirection: "row",
@@ -108,9 +106,9 @@ const styles = {
     marginTop: Spacing.lg,
   },
   pill: {
-    width: 64,
-    height: 28,
-    borderRadius: Radius.pill,
-    backgroundColor: Colors.surfaceElevated,
+    width: 48,
+    height: 24,
+    borderRadius: 8,
+    backgroundColor: theme.colors.surfaceElevated,
   },
 };

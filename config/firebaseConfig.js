@@ -22,9 +22,9 @@ const firebaseConfig = {
 };
 
 // Validate required config on init
-if (!firebaseConfig.apiKey || !firebaseConfig.projectId) {
+if (!firebaseConfig.apiKey || !firebaseConfig.projectId || !firebaseConfig.authDomain) {
   console.error(
-    "[firebaseConfig] FATAL: Missing required Firebase environment variables. " +
+    "[firebaseConfig] FATAL: Missing required Firebase environment variables (apiKey, projectId, authDomain). " +
       "Ensure .env file exists with EXPO_PUBLIC_FIREBASE_* variables.",
   );
 }

@@ -1,8 +1,7 @@
-import { Text, ActivityIndicator } from "react-native";
-import { LinearGradient } from "expo-linear-gradient";
+import { View, Text, ActivityIndicator } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import AnimatedPressable from "./AnimatedPressable";
-import { Colors, Radius, Shadows } from "../../theme";
+import { theme } from "../../theme";
 
 export default function GradientButton({
   label,
@@ -10,7 +9,6 @@ export default function GradientButton({
   loading = false,
   disabled = false,
   icon,
-  colors = [Colors.accentDark, Colors.accent, Colors.accentLight],
   style,
   textStyle,
   size = "md",
@@ -23,16 +21,17 @@ export default function GradientButton({
       onPress={onPress}
       disabled={disabled || loading}
       style={[
-        { borderRadius: Radius.lg, overflow: "hidden", ...Shadows.subtle },
+        {
+          borderRadius: theme.radius.md,
+          overflow: "hidden",
+          backgroundColor: disabled
+            ? theme.colors.surfaceElevated
+            : theme.colors.accentBrand,
+        },
         style,
       ]}
     >
-      <LinearGradient
-        colors={
-          disabled ? [Colors.surfaceElevated, Colors.surfaceElevated] : colors
-        }
-        start={{ x: 0, y: 0 }}
-        end={{ x: 1, y: 1 }}
+      <View
         style={{
           flexDirection: "row",
           alignItems: "center",
@@ -56,9 +55,10 @@ export default function GradientButton({
             <Text
               style={[
                 {
-                  color: disabled ? Colors.textTertiary : "#FFF",
+                  color: disabled ? theme.colors.textMuted : "#FFF",
                   fontSize,
-                  fontWeight: "700",
+                  fontFamily: theme.type?.meta?.fontFamily,
+                  fontWeight: "600",
                 },
                 textStyle,
               ]}
@@ -67,7 +67,7 @@ export default function GradientButton({
             </Text>
           </>
         )}
-      </LinearGradient>
+      </View>
     </AnimatedPressable>
   );
 }

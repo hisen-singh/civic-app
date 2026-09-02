@@ -6,6 +6,7 @@ import {
   RefreshControl,
   Image,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import { Text, ActivityIndicator } from "react-native-paper";
 import { useFocusEffect, useNavigation } from "@react-navigation/native";
 import { useTranslation } from "react-i18next";
@@ -37,6 +38,8 @@ export default function ProfileScreen() {
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.97)).current;
   const [myIssues, setMyIssues] = useState([]);
+  const [savedIssues, setSavedIssues] = useState([]);
+  const [activeTab, setActiveTab] = useState("reports");
   const scrollViewRef = useRef(null);
   const [reportsY, setReportsY] = useState(0);
 
@@ -52,6 +55,12 @@ export default function ProfileScreen() {
       const allIssues = await IssueService.getAllIssues(true);
       const filtered = allIssues.filter((i) => i.authorId === user.uid);
       setMyIssues(filtered);
+
+      const { UserService } = require("../services/UserService");
+      const savedIds = await UserService.getSavedIssues(user.uid);
+      const saved = allIssues.filter(i => savedIds.includes(i.id));
+      saved.sort((a, b) => savedIds.indexOf(a.id) - savedIds.indexOf(b.id));
+      setSavedIssues(saved);
     } catch (e) {
       console.warn("Failed to load user issues:", e);
     }
@@ -179,6 +188,29 @@ export default function ProfileScreen() {
 
   const displayName = user?.displayName || user?.email?.split("@")[0] || "User";
   const initials = displayName.substring(0, 2).toUpperCase();
+
+  const getAvatarColor = (name) => {
+    const colors = [
+      "#E53935",
+      "#D81B60",
+      "#8E24AA",
+      "#5E35B1",
+      "#3949AB",
+      "#1E88E5",
+      "#00ACC1",
+      "#00897B",
+      "#43A047",
+      "#7CB342",
+      "#F4511E",
+      "#FB8C00",
+    ];
+    let hash = 0;
+    for (let i = 0; i < (name || "").length; i++) {
+      hash = (name || "").charCodeAt(i) + ((hash << 5) - hash);
+    }
+    return colors[Math.abs(hash) % colors.length];
+  };
+  const avatarBgColor = getAvatarColor(displayName);
   const trustScore =
     stats.reported * 50 + stats.supported * 30 + stats.solved * 100;
   const joinDate = user?.metadata?.creationTime
@@ -351,7 +383,7 @@ export default function ProfileScreen() {
       }}
     >
       {/* Profile Header */}
-      <View style={styles.headerSection}>
+      <LinearGradient colors={theme.gradients.hero} style={styles.headerSection}>
         <View style={styles.avatarRow}>
           <AnimatedPressable
             onPress={() => navigation.navigate("EditProfile")}
@@ -361,7 +393,7 @@ export default function ProfileScreen() {
               {user?.photoURL ? (
                 <Image source={{ uri: user.photoURL }} style={styles.avatar} />
               ) : (
-                <View style={styles.avatar}>
+                <View style={[styles.avatar, { backgroundColor: avatarBgColor }]}>
                   <Text style={styles.avatarText}>{initials}</Text>
                 </View>
               )}
@@ -432,7 +464,7 @@ export default function ProfileScreen() {
             <Text style={styles.statLabel}>Solved</Text>
           </View>
         </View>
-      </View>
+      </LinearGradient>
 
       <View
         style={{ paddingHorizontal: Spacing.xl, paddingVertical: Spacing.xxl }}
@@ -575,44 +607,41 @@ export default function ProfileScreen() {
         ))}
       </View>
 
-      {/* My Reports Feed */}
+      {/* Tab Switcher */}
       <View
         onLayout={(event) => {
           const layout = event.nativeEvent.layout;
           setReportsY(layout.y);
         }}
-        style={{ paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl }}
+        style={{ paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, flexDirection: "row", marginBottom: Spacing.md }}
       >
-        <Text style={styles.sectionTitle}>My Reports</Text>
-        {myIssues.length === 0 ? (
-          <View
-            style={{
-              alignItems: "center",
-              paddingVertical: Spacing.xl,
-              backgroundColor: theme.colors.surfaceSubtle,
-              borderRadius: theme.radius.inner,
-              borderWidth: 1,
-              borderColor: theme.colors.border,
-            }}
-          >
-            <MaterialCommunityIcons
-              name="clipboard-text-off-outline"
-              size={24}
-              color={theme.colors.textMuted}
-              style={{ marginBottom: 8 }}
-            />
-            <Text
-              style={{
-                color: theme.colors.textMuted,
-                fontSize: 13,
-                fontWeight: "700",
-              }}
-            >
-              No reports filed yet
-            </Text>
-          </View>
+        <TouchableOpacity onPress={() => setActiveTab("reports")} style={{ marginRight: Spacing.xl }}>
+          <Text style={[styles.sectionTitle, activeTab !== "reports" && { color: theme.colors.textMuted }]}>My Reports</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={() => setActiveTab("saved")}>
+          <Text style={[styles.sectionTitle, activeTab !== "saved" && { color: theme.colors.textMuted }]}>Saved</Text>
+        </TouchableOpacity>
+      </View>
+
+      <View style={{ paddingHorizontal: Spacing.xl }}>
+        {activeTab === "reports" ? (
+          myIssues.length === 0 ? (
+            <View style={styles.emptyFeed}>
+              <MaterialCommunityIcons name="clipboard-text-off-outline" size={24} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
+              <Text style={styles.emptyFeedText}>No reports filed yet</Text>
+            </View>
+          ) : (
+            myIssues.map((issue) => <IssueCard key={issue.id} issue={issue} />)
+          )
         ) : (
-          myIssues.map((issue) => <IssueCard key={issue.id} issue={issue} />)
+          savedIssues.length === 0 ? (
+            <View style={styles.emptyFeed}>
+              <MaterialCommunityIcons name="bookmark-off-outline" size={24} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
+              <Text style={styles.emptyFeedText}>No saved issues yet</Text>
+            </View>
+          ) : (
+            savedIssues.map((issue) => <IssueCard key={`saved-${issue.id}`} issue={issue} />)
+          )
         )}
       </View>
 
@@ -642,13 +671,25 @@ export default function ProfileScreen() {
 }
 
 const styles = {
+  emptyFeed: {
+    alignItems: "center",
+    paddingVertical: Spacing.xl,
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderRadius: theme.radius.inner,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+  },
+  emptyFeedText: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontWeight: "700",
+  },
   headerSection: {
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.headerTop + 16,
     paddingBottom: Spacing.xxl,
-    borderBottomWidth: 2,
+    borderBottomWidth: 1,
     borderBottomColor: theme.colors.border,
-    backgroundColor: theme.colors.surface,
   },
   avatarRow: {
     flexDirection: "row",
@@ -657,15 +698,14 @@ const styles = {
   },
   avatarRing: {
     padding: 3,
-    borderRadius: 0,
+    borderRadius: 9999,
     borderWidth: 2,
-    borderColor: theme.colors.border,
+    borderColor: theme.colors.accentBrand,
   },
   avatar: {
     width: 68,
     height: 68,
-    borderRadius: 0,
-    backgroundColor: theme.colors.accentBrand,
+    borderRadius: 34,
     alignItems: "center",
     justifyContent: "center",
   },
@@ -705,9 +745,9 @@ const styles = {
     width: "100%",
     flexDirection: "row",
     backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: 0,
+    borderRadius: theme.radius.lg,
     padding: Spacing.lg,
-    borderWidth: 2,
+    borderWidth: 1,
     borderColor: theme.colors.border,
   },
   statItem: {
@@ -742,8 +782,8 @@ const styles = {
   activityCard: {
     flex: 1,
     backgroundColor: theme.colors.surface,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
     borderColor: theme.colors.border,
     padding: Spacing.lg,
     alignItems: "center",
@@ -751,7 +791,7 @@ const styles = {
   activityIcon: {
     width: 40,
     height: 40,
-    borderRadius: 0,
+    borderRadius: theme.radius.sm,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: Spacing.sm,
@@ -774,8 +814,8 @@ const styles = {
     alignItems: "center",
     backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
     borderColor: theme.colors.border,
     marginBottom: Spacing.sm,
   },
@@ -801,7 +841,7 @@ const styles = {
   unlockedBadge: {
     width: 24,
     height: 24,
-    borderRadius: 0,
+    borderRadius: 12,
     backgroundColor: theme.colors.surfaceSubtle,
     borderWidth: 1,
     borderColor: theme.colors.border,
@@ -813,8 +853,8 @@ const styles = {
     alignItems: "center",
     backgroundColor: theme.colors.surface,
     padding: Spacing.lg,
-    borderRadius: 0,
-    borderWidth: 2,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
     borderColor: theme.colors.border,
   },
   settingsIcon: {
@@ -840,7 +880,7 @@ const styles = {
     justifyContent: "center",
     paddingVertical: 16,
     marginTop: Spacing.xxl,
-    borderRadius: 0,
+    borderRadius: theme.radius.md,
     borderWidth: 0,
     backgroundColor: theme.colors.accentBrand,
   },

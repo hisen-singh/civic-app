@@ -65,8 +65,8 @@ const styles = StyleSheet.create({
     borderColor: "#FFFFFF", // High-contrast border
   },
   categoryChipActive: {
-    backgroundColor: "#FF4500", // Electric Orange
-    borderColor: "#FF4500",
+    backgroundColor: "#3B82F6", // Electric Blue
+    borderColor: "#3B82F6",
   },
   categoryIconWrap: {
     width: 28,

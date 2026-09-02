@@ -12,7 +12,7 @@ import {
 } from "react-native";
 import { TextInput, ActivityIndicator } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Spacing } from "../theme";
+import { theme, Spacing } from "../theme";
 import { useAuth } from "../contexts/AuthContext";
 import { doc, setDoc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
@@ -21,11 +21,11 @@ const REPORT_REASONS = [
   { id: "spam", label: "Spam", icon: "email-alert-outline" },
   {
     id: "inappropriate",
-    label: "Inappropriate Content",
+    label: "Inappropriate content",
     icon: "alert-octagon-outline",
   },
   { id: "duplicate", label: "Duplicate", icon: "content-duplicate" },
-  { id: "misleading", label: "Misleading / False", icon: "eye-off-outline" },
+  { id: "misleading", label: "Misleading or false", icon: "eye-off-outline" },
   { id: "other", label: "Other", icon: "dots-horizontal-circle-outline" },
 ];
 
@@ -166,10 +166,10 @@ export default function ReportBottomSheet({
           <View style={styles.header}>
             <View>
               <Text style={styles.headerTitle}>
-                REPORT {contentType === "comment" ? "COMMENT" : "ISSUE"}
+                Report {contentType === "comment" ? "Comment" : "Issue"}
               </Text>
               <Text style={styles.headerSubtitle}>
-                WHY ARE YOU REPORTING THIS?
+                Why are you reporting this?
               </Text>
             </View>
             <TouchableOpacity
@@ -177,7 +177,7 @@ export default function ReportBottomSheet({
               style={styles.closeButton}
               activeOpacity={0.7}
             >
-              <MaterialCommunityIcons name="close" size={22} color="#F1F5F9" />
+              <MaterialCommunityIcons name="close" size={22} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -187,7 +187,7 @@ export default function ReportBottomSheet({
               <MaterialCommunityIcons
                 name="check-circle-outline"
                 size={16}
-                color="#10B981"
+                color={theme.colors.accentBrand}
                 style={{ marginRight: 8 }}
               />
               <Text style={styles.alreadyText}>
@@ -211,24 +211,24 @@ export default function ReportBottomSheet({
                 <MaterialCommunityIcons
                   name={reason.icon}
                   size={20}
-                  color={selectedReason === reason.id ? "#FF4500" : "#94A3B8"}
+                  color={selectedReason === reason.id ? theme.colors.accentBrand : theme.colors.textMuted}
                   style={styles.optionIcon}
                 />
                 <Text
                   style={[
                     styles.optionTitle,
                     selectedReason === reason.id && {
-                      color: "#FF4500",
+                      color: theme.colors.accentBrand,
                     },
                   ]}
                 >
-                  {reason.label.toUpperCase()}
+                  {reason.label}
                 </Text>
                 {selectedReason === reason.id && (
                   <MaterialCommunityIcons
                     name="check"
                     size={18}
-                    color="#FF4500"
+                    color={theme.colors.accentBrand}
                     style={{ marginLeft: "auto" }}
                   />
                 )}
@@ -242,18 +242,19 @@ export default function ReportBottomSheet({
               value={details}
               onChangeText={setDetails}
               placeholder="Additional details (optional)..."
-              placeholderTextColor="#64748B"
+              placeholderTextColor={theme.colors.textMuted}
               mode="outlined"
               multiline
               numberOfLines={2}
               style={styles.detailsInput}
-              textColor="#F1F5F9"
+              textColor={theme.colors.textPrimary}
               theme={{
                 colors: {
-                  primary: "#FF4500",
-                  outline: "rgba(255, 255, 255, 0.15)",
-                  background: "rgba(255, 255, 255, 0.05)",
+                  primary: theme.colors.accentBrand,
+                  outline: theme.colors.borderSubtle,
+                  background: theme.colors.surface,
                 },
+                roundness: theme.radius.sm,
               }}
               maxLength={500}
             />
@@ -281,7 +282,7 @@ export default function ReportBottomSheet({
                   color="#FFF"
                   style={{ marginRight: 8 }}
                 />
-                <Text style={styles.submitBtnText}>SUBMIT REPORT</Text>
+                <Text style={styles.submitBtnText}>Submit Report</Text>
               </View>
             )}
           </TouchableOpacity>
@@ -304,10 +305,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheetContainer: {
-    backgroundColor: "#121212",
-    borderRadius: 0,
-    borderTopWidth: 2,
-    borderTopColor: "#FF4500",
+    backgroundColor: theme.colors.surfaceElevated,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
     paddingHorizontal: Spacing.lg || 16,
     paddingTop: 20,
     paddingBottom: Platform.OS === "ios" ? 36 : 24,
@@ -319,20 +321,19 @@ const styles = StyleSheet.create({
     marginBottom: 16,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: theme.colors.borderSubtle,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#F1F5F9",
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: theme.type?.title?.fontWeight,
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.3,
   },
   headerSubtitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#94A3B8",
+    fontSize: 12,
+    color: theme.colors.textMuted,
     marginTop: 2,
-    letterSpacing: 0.3,
   },
   closeButton: {
     padding: 6,
@@ -340,16 +341,17 @@ const styles = StyleSheet.create({
   alreadyBanner: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(16, 185, 129, 0.12)",
+    backgroundColor: theme.colors.accentBrandSubtle,
     padding: 12,
     marginBottom: 12,
+    borderRadius: theme.radius.sm,
     borderWidth: 1,
-    borderColor: "rgba(16, 185, 129, 0.3)",
+    borderColor: theme.colors.accentBrand,
   },
   alreadyText: {
-    color: "#10B981",
+    color: theme.colors.accentBrand,
     fontSize: 13,
-    fontWeight: "700",
+    fontWeight: "600",
     flex: 1,
   },
   optionsContainer: {
@@ -357,51 +359,50 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     width: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: theme.colors.surface,
     paddingVertical: 14,
     paddingHorizontal: 16,
-    borderRadius: 0,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.08)",
+    borderColor: theme.colors.borderSubtle,
     marginBottom: 8,
     flexDirection: "row",
     alignItems: "center",
   },
   optionButtonSelected: {
-    borderColor: "#FF4500",
-    backgroundColor: "rgba(255, 69, 0, 0.08)",
+    borderColor: theme.colors.accentBrand,
+    backgroundColor: theme.colors.accentBrandSubtle,
   },
   optionButtonPressed: {
-    backgroundColor: "rgba(255, 255, 255, 0.15)",
+    backgroundColor: theme.colors.surfaceHover,
   },
   optionIcon: {
     marginRight: 12,
   },
   optionTitle: {
-    fontSize: 13,
-    fontWeight: "800",
-    color: "#F1F5F9",
-    letterSpacing: 0.5,
+    fontSize: 14,
+    fontFamily: theme.type?.meta?.fontFamily,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
   },
   detailsInput: {
-    backgroundColor: "rgba(255, 255, 255, 0.05)",
+    backgroundColor: theme.colors.surface,
     marginTop: 8,
     marginBottom: 16,
     fontSize: 13,
   },
   submitBtn: {
-    backgroundColor: "#FF4500",
-    paddingVertical: 16,
+    backgroundColor: theme.colors.accentBrand,
+    paddingVertical: 14,
+    borderRadius: theme.radius.md,
     alignItems: "center",
     justifyContent: "center",
     marginTop: 8,
-    borderWidth: 2,
-    borderColor: "#FF4500",
   },
   submitBtnText: {
     color: "#FFF",
     fontSize: 14,
-    fontWeight: "900",
-    letterSpacing: 0.5,
+    fontFamily: theme.type?.meta?.fontFamily,
+    fontWeight: "600",
   },
 });

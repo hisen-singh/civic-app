@@ -10,7 +10,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Spacing } from "../theme";
+import { theme, Spacing } from "../theme";
 
 export default function BottomSheet({ visible, onClose, onSelectOption }) {
   const slideAnim = useRef(new Animated.Value(500)).current;
@@ -73,9 +73,9 @@ export default function BottomSheet({ visible, onClose, onSelectOption }) {
           {/* Header */}
           <View style={styles.header}>
             <View>
-              <Text style={styles.headerTitle}>HELP SOLVE THIS ISSUE</Text>
+              <Text style={styles.headerTitle}>Help Solve This Issue</Text>
               <Text style={styles.headerSubtitle}>
-                CHOOSE HOW YOU WANT TO CONTRIBUTE
+                Choose how you want to contribute
               </Text>
             </View>
             <TouchableOpacity
@@ -83,7 +83,7 @@ export default function BottomSheet({ visible, onClose, onSelectOption }) {
               style={styles.closeButton}
               activeOpacity={0.7}
             >
-              <MaterialCommunityIcons name="close" size={22} color="#F1F5F9" />
+              <MaterialCommunityIcons name="close" size={22} color={theme.colors.textPrimary} />
             </TouchableOpacity>
           </View>
 
@@ -100,11 +100,11 @@ export default function BottomSheet({ visible, onClose, onSelectOption }) {
               <MaterialCommunityIcons
                 name="currency-usd"
                 size={24}
-                color="#F1F5F9"
+                color={theme.colors.accentBrand}
                 style={styles.optionIcon}
               />
               <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>FUND THE FIX</Text>
+                <Text style={styles.optionTitle}>Fund the Fix</Text>
                 <Text style={styles.optionDescription}>
                   Contribute financial support toward materials or resources
                 </Text>
@@ -122,11 +122,11 @@ export default function BottomSheet({ visible, onClose, onSelectOption }) {
               <MaterialCommunityIcons
                 name="hand-heart-outline"
                 size={24}
-                color="#F1F5F9"
+                color={theme.colors.accentBrand}
                 style={styles.optionIcon}
               />
               <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>PLEDGE YOUR TIME</Text>
+                <Text style={styles.optionTitle}>Pledge Your Time</Text>
                 <Text style={styles.optionDescription}>
                   Volunteer on the ground to help fix this issue
                 </Text>
@@ -144,11 +144,11 @@ export default function BottomSheet({ visible, onClose, onSelectOption }) {
               <MaterialCommunityIcons
                 name="bullhorn-outline"
                 size={24}
-                color="#F1F5F9"
+                color={theme.colors.accentBrand}
                 style={styles.optionIcon}
               />
               <View style={styles.optionTextWrap}>
-                <Text style={styles.optionTitle}>AMPLIFY ISSUE</Text>
+                <Text style={styles.optionTitle}>Amplify Issue</Text>
                 <Text style={styles.optionDescription}>
                   Share with neighbors and urge local authorities to act
                 </Text>
@@ -174,10 +174,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   sheetContainer: {
-    backgroundColor: "#121212",
-    borderRadius: 0,
-    borderTopWidth: 2,
-    borderTopColor: "#000000",
+    backgroundColor: theme.colors.surfaceElevated,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
     paddingHorizontal: Spacing.lg || 16,
     paddingTop: 20,
     paddingBottom: Platform.OS === "ios" ? 36 : 24,
@@ -189,20 +190,19 @@ const styles = StyleSheet.create({
     marginBottom: 20,
     paddingBottom: 12,
     borderBottomWidth: 1,
-    borderBottomColor: "rgba(255, 255, 255, 0.1)",
+    borderBottomColor: theme.colors.borderSubtle,
   },
   headerTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#F1F5F9",
-    letterSpacing: 0.5,
+    fontSize: 18,
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: theme.type?.title?.fontWeight,
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.3,
   },
   headerSubtitle: {
-    fontSize: 11,
-    fontWeight: "700",
-    color: "#94A3B8",
+    fontSize: 12,
+    color: theme.colors.textMuted,
     marginTop: 2,
-    letterSpacing: 0.3,
   },
   closeButton: {
     padding: 6,
@@ -212,19 +212,19 @@ const styles = StyleSheet.create({
   },
   optionButton: {
     width: "100%",
-    backgroundColor: "rgba(255, 255, 255, 0.08)",
-    paddingVertical: 18,
-    paddingHorizontal: 20,
-    borderRadius: 0,
+    backgroundColor: theme.colors.surface,
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
-    borderColor: "rgba(255, 255, 255, 0.1)",
+    borderColor: theme.colors.borderSubtle,
     marginBottom: 12,
     flexDirection: "row",
     alignItems: "center",
   },
   optionButtonPressed: {
-    backgroundColor: "rgba(255, 255, 255, 0.22)",
-    borderColor: "#FF4500",
+    backgroundColor: theme.colors.surfaceHover,
+    borderColor: theme.colors.accentBrand,
   },
   optionIcon: {
     marginRight: 16,
@@ -233,15 +233,14 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   optionTitle: {
-    fontSize: 16,
-    fontWeight: "900",
-    color: "#F1F5F9",
-    letterSpacing: 0.5,
+    fontSize: 15,
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
   },
   optionDescription: {
     fontSize: 12,
-    fontWeight: "600",
-    color: "#94A3B8",
+    color: theme.colors.textMuted,
     marginTop: 2,
   },
 });

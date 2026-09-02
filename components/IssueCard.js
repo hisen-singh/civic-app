@@ -1,4 +1,4 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import {
   View,
   TouchableOpacity,
@@ -7,13 +7,14 @@ import {
   Linking,
   Animated,
 } from "react-native";
-import { Card, Text } from "react-native-paper";
-import { MaterialCommunityIcons, FontAwesome5 } from "@expo/vector-icons";
+import { Text } from "react-native-paper";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Haptics from "expo-haptics";
 import { useAuth } from "../contexts/AuthContext";
 import { IssueService } from "../services/IssueService";
+import { UserService } from "../services/UserService";
 import { useNavigation } from "@react-navigation/native";
-import { Spacing, Shadows, theme } from "../theme";
+import { Spacing, theme } from "../theme";
 import { timeAgo, isValidYouTubeUrl } from "../utils/timeAgo";
 import ShareModal from "./ShareModal";
 import CommentBottomSheet from "./CommentBottomSheet";
@@ -30,52 +31,24 @@ const getYouTubeID = (url) => {
 
 const StatusBadge = ({ status }) => {
   const statuses = {
-    Open: {
-      label: "OPEN",
-      color: theme.colors.textPrimary,
-      bg: theme.colors.surface,
-      borderColor: theme.colors.border,
-    },
-    "In Progress": {
-      label: "IN PROGRESS",
-      color: theme.colors.textPrimary,
-      bg: theme.colors.surface,
-      borderColor: theme.colors.accentBrand,
-    },
-    Solved: {
-      label: "RESOLVED",
-      color: "#FFFFFF",
-      bg: theme.colors.accentBrand,
-    },
-    Failed: {
-      label: "FAILED",
-      color: "#FFFFFF",
-      bg: theme.colors.statusCritical,
-    },
+    Open: { label: "OPEN", color: theme.colors.textMuted },
+    "In Progress": { label: "IN PROGRESS", color: theme.colors.accentBrand },
+    Solved: { label: "RESOLVED", color: theme.colors.accentBrand },
+    Failed: { label: "FAILED", color: theme.colors.statusCritical },
   };
   const data = statuses[status] || statuses["Open"];
   return (
-    <View
+    <Text
       style={{
-        backgroundColor: data.bg,
-        borderWidth: 1,
-        borderColor: data.borderColor || data.bg,
-        paddingHorizontal: 8,
-        paddingVertical: 3,
-        borderRadius: 9999,
+        color: data.color,
+        fontSize: 11,
+        fontFamily: theme.type?.micro?.fontFamily,
+        fontWeight: theme.type?.micro?.fontWeight,
+        letterSpacing: 0.5,
       }}
     >
-      <Text
-        style={{
-          color: data.color,
-          fontSize: 10,
-          fontWeight: "900",
-          letterSpacing: 0.5,
-        }}
-      >
-        {data.label}
-      </Text>
-    </View>
+      {data.label}
+    </Text>
   );
 };
 
@@ -103,6 +76,15 @@ export default function IssueCard({
     issue.commentsCount ?? (issue.comments || []).length;
   const [localCommentCount, setLocalCommentCount] =
     useState(initialCommentCount);
+  const [isSaved, setIsSaved] = useState(false);
+
+  useEffect(() => {
+    if (user && issue.id) {
+      UserService.getSavedIssues(user.uid).then((saved) => {
+        setIsSaved(saved.includes(issue.id));
+      });
+    }
+  }, [user, issue.id]);
 
   // Animation refs
   const scaleAnim = useRef(new Animated.Value(1)).current;
@@ -222,10 +204,33 @@ export default function IssueCard({
     }
   };
 
+  const lastTapRef = useRef(0);
   const handleCardPress = () => {
-    animatePress();
-    if (!disablePress) {
-      navigation.navigate("IssueDetail", { issueId: issue.id });
+    const now = Date.now();
+    const DOUBLE_PRESS_DELAY = 300;
+    if (now - lastTapRef.current < DOUBLE_PRESS_DELAY) {
+      handleUpvote();
+    } else {
+      animatePress();
+      if (!disablePress) {
+        navigation.navigate("IssueDetail", { issueId: issue.id });
+      }
+    }
+    lastTapRef.current = now;
+  };
+
+  const handleSave = async () => {
+    if (!user) return;
+    triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
+    setIsSaved(!isSaved);
+    try {
+      if (isSaved) {
+        await UserService.unsaveIssue(user.uid, issue.id);
+      } else {
+        await UserService.saveIssue(user.uid, issue.id);
+      }
+    } catch (e) {
+      setIsSaved(isSaved);
     }
   };
 
@@ -259,20 +264,24 @@ export default function IssueCard({
   const initials = authorName.substring(0, 2).toUpperCase();
 
   const getAvatarColor = (name) => {
-    let hash = 0;
-    for (let i = 0; i < name.length; i++) {
-      hash = name.charCodeAt(i) + ((hash << 5) - hash);
-    }
     const colors = [
-      theme.colors.accentBrand,
-      theme.colors.statusLow,
-      theme.colors.statusMedium,
-      theme.colors.statusCritical,
-      "#3B82F6", // Blue
-      "#8B5CF6", // Violet
-      "#EC4899", // Pink
-      "#10B981", // Emerald
+      "#E53935",
+      "#D81B60",
+      "#8E24AA",
+      "#5E35B1",
+      "#3949AB",
+      "#1E88E5",
+      "#00ACC1",
+      "#00897B",
+      "#43A047",
+      "#7CB342",
+      "#F4511E",
+      "#FB8C00",
     ];
+    let hash = 0;
+    for (let i = 0; i < (name || "").length; i++) {
+      hash = (name || "").charCodeAt(i) + ((hash << 5) - hash);
+    }
     return colors[Math.abs(hash) % colors.length];
   };
   const avatarBg = getAvatarColor(authorName);
@@ -283,46 +292,20 @@ export default function IssueCard({
   const urgencyColor =
     {
       critical: theme.colors.statusCritical,
-      high: theme.colors.statusMedium,
+      high: theme.colors.textPrimary,
       medium: theme.colors.statusMedium,
       low: theme.colors.statusLow,
     }[issue.urgency] || theme.colors.statusMedium;
 
-  const urgencyBgColor = theme.colors.surfaceCard;
-  const urgencyLabel = (issue.urgency || "medium").toUpperCase() + " URGENCY";
-
-  const textColor = "#FFFFFF";
-  const textMuted = "rgba(255, 255, 255, 0.9)";
-  const surfaceSubtle = hasMedia
-    ? "rgba(255,255,255,0.15)"
-    : theme.colors.surfaceSubtle;
-  const borderColor = hasMedia ? "rgba(255,255,255,0.2)" : theme.colors.border;
-  const accentColor = hasMedia ? "#FFFFFF" : urgencyColor;
-
-  // urgencyColor moved up
-
   return (
     <Animated.View style={{ transform: [{ scale: scaleAnim }] }}>
-      <Card
-        style={[
-          styles.card,
-          {
-            backgroundColor: urgencyBgColor,
-            backdropFilter: "blur(16px)",
-            WebkitBackdropFilter: "blur(16px)",
-          },
-          hasMedia && { borderWidth: 0 },
-        ]}
-      >
+      <View style={styles.card}>
+        {/* Media — full-bleed, edge-to-edge */}
         {hasMedia && (
-          <View
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
-            }}
+          <TouchableOpacity
+            activeOpacity={disablePress ? 1 : 0.92}
+            onPress={handleCardPress}
+            style={styles.mediaWrap}
           >
             <Image
               source={{
@@ -330,74 +313,54 @@ export default function IssueCard({
                   issue.photo ||
                   `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`,
               }}
-              style={{ width: "100%", height: "100%" }}
+              style={styles.mediaImage}
               resizeMode="cover"
             />
-          </View>
+            {ytId && (
+              <TouchableOpacity
+                style={styles.playOverlay}
+                onPress={handlePlayVideo}
+              >
+                <View style={[styles.playButton, { width: 44, height: 44, borderRadius: 22, backgroundColor: "rgba(255,255,255,0.15)", borderWidth: 1, borderColor: "rgba(255,255,255,0.3)" }]}>
+                  <MaterialCommunityIcons
+                    name="play"
+                    size={24}
+                    color="#FFF"
+                  />
+                </View>
+              </TouchableOpacity>
+            )}
+          </TouchableOpacity>
         )}
 
-        {/* Media Section (Top) */}
-        <TouchableOpacity
-          activeOpacity={disablePress ? 1 : 0.92}
-          onPress={handleCardPress}
-          style={hasMedia ? { height: 180 } : {}}
-        >
-          {hasMedia ? (
-            <View style={{ flex: 1 }}>
-              {ytId && (
-                <TouchableOpacity
-                  style={styles.playOverlay}
-                  onPress={handlePlayVideo}
-                >
-                  <View style={styles.playButton}>
-                    <MaterialCommunityIcons
-                      name="play"
-                      size={32}
-                      color="#FFF"
-                    />
-                  </View>
-                </TouchableOpacity>
-              )}
-              <View style={styles.topBadges}>
-                <View style={styles.categoryChip}>
-                  <View
-                    style={[
-                      styles.urgencyDot,
-                      { backgroundColor: urgencyColor },
-                    ]}
-                  />
-                  <Text style={styles.categoryChipText}>{urgencyLabel}</Text>
-                </View>
-                <StatusBadge status={localStatus} />
+        {/* Content below media */}
+        <View style={styles.contentSection}>
+          <View style={styles.metaLine}>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <View style={[styles.urgencyDot, { backgroundColor: urgencyColor, width: 8, height: 8, borderRadius: 4, marginRight: 8 }]} />
+              <View style={styles.categoryPill}>
+                <Text style={styles.categoryPillText}>{(issue.category || "General")}</Text>
               </View>
             </View>
-          ) : (
-            <View style={styles.textOnlyMedia}>
-              <View style={styles.categoryChipInline}>
-                <View
-                  style={[styles.urgencyDot, { backgroundColor: urgencyColor }]}
-                />
-                <Text
-                  style={[
-                    styles.categoryChipText,
-                    { color: theme.colors.textPrimary },
-                  ]}
-                >
-                  {urgencyLabel}
-                </Text>
-              </View>
-              <StatusBadge status={localStatus} />
-            </View>
-          )}
-        </TouchableOpacity>
+            <StatusBadge status={localStatus} />
+          </View>
 
-        {/* Content & Actions */}
-        <View
-          style={[
-            styles.contentSection,
-            hasMedia && styles.contentSectionGlass,
-          ]}
-        >
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={handleCardPress}
+            disabled={disablePress}
+          >
+            <Text style={styles.titleText} numberOfLines={2}>
+              {(issue.title || "").replace(/\[.*?\]\s*/g, '')}
+            </Text>
+          </TouchableOpacity>
+
+          {issue.description ? (
+            <Text style={styles.descriptionText} numberOfLines={2}>
+              {issue.description}
+            </Text>
+          ) : null}
+
           <View style={styles.authorRow}>
             <TouchableOpacity
               style={{ flexDirection: "row", alignItems: "center", flex: 1 }}
@@ -414,265 +377,107 @@ export default function IssueCard({
               <View
                 style={[
                   styles.authorAvatar,
-                  { backgroundColor: avatarBg, borderColor: avatarBg },
+                  { backgroundColor: avatarBg, borderColor: avatarBg, width: 24, height: 24 },
                 ]}
               >
-                <Text style={[styles.authorInitials, { color: "#FFFFFF" }]}>
-                  {initials}
-                </Text>
+                <Text style={[styles.authorInitials, { fontSize: 9 }]}>{initials}</Text>
               </View>
-              <View style={{ flex: 1, marginRight: 8 }}>
-                <Text style={[styles.authorName, { color: textColor }]}>
-                  {authorName}
+              <View style={{ flex: 1, flexDirection: "row", alignItems: "center" }}>
+                <Text style={styles.authorName}>{authorName}</Text>
+                <Text style={styles.authorMeta} numberOfLines={1}>
+                  {` · ${timeAgo(issue.createdAt)} · ${issue.location || "Location not set"}`}
                 </Text>
-                <View
-                  style={{
-                    flexDirection: "row",
-                    alignItems: "center",
-                    marginTop: 2,
-                  }}
-                >
-                  <Text
-                    style={[
-                      styles.authorMeta,
-                      { color: textMuted, marginRight: 8 },
-                    ]}
-                  >
-                    {timeAgo(issue.createdAt)}
-                  </Text>
-
-                  <View
-                    style={[
-                      styles.metaRow,
-                      {
-                        backgroundColor: surfaceSubtle,
-                        marginBottom: 0,
-                        paddingVertical: 2,
-                        paddingHorizontal: 6,
-                      },
-                    ]}
-                  >
-                    <MaterialCommunityIcons
-                      name="map-marker-outline"
-                      size={11}
-                      color={accentColor}
-                    />
-                    <Text
-                      style={[
-                        styles.metaText,
-                        { color: textMuted, fontSize: 10, marginLeft: 3 },
-                      ]}
-                      numberOfLines={1}
-                    >
-                      {issue.location || "Location not set"}
-                    </Text>
-                  </View>
-                </View>
               </View>
             </TouchableOpacity>
           </View>
 
-          <Text
-            style={[styles.titleText, { color: textColor }]}
-            numberOfLines={2}
-          >
-            {issue.title}
-            {!issue.description && (
-              <Text
-                style={{
-                  color: theme.colors.accentBrand,
-                  fontWeight: "900",
-                  fontSize: 12,
-                }}
-              >
-                {`  [${(issue.category || "General").toUpperCase()}]`}
-              </Text>
-            )}
-          </Text>
-
-          {issue.description ? (
-            <Text
-              style={[styles.descriptionText, { color: textMuted }]}
-              numberOfLines={3}
-            >
-              {issue.description}
-              <Text
-                style={{
-                  color: theme.colors.accentBrand,
-                  fontWeight: "900",
-                  fontSize: 12,
-                }}
-              >
-                {`  [${(issue.category || "General").toUpperCase()}]`}
-              </Text>
-            </Text>
-          ) : null}
-
-          <View style={[styles.actionsRow, { borderTopColor: borderColor }]}>
+          <View style={styles.actionsRow}>
             <View style={styles.socialActions}>
-              <AnimatedPressable onPress={handleUpvote} activeScale={0.92}>
-                <View
-                  style={[
-                    styles.actionBtn,
-                    { backgroundColor: surfaceSubtle, borderColor },
-                    hasVoted && styles.actionBtnActive,
-                  ]}
-                >
+              <AnimatedPressable onPress={handleUpvote} activeScale={0.9}>
+                <View style={styles.actionBtn}>
                   <Animated.View style={{ transform: [{ scale: voteAnim }] }}>
                     <MaterialCommunityIcons
-                      name={
-                        hasVoted ? "arrow-up-bold" : "arrow-up-bold-outline"
-                      }
-                      size={20}
-                      color={hasVoted ? accentColor : textMuted}
+                      name={hasVoted ? "arrow-up-bold" : "arrow-up-bold-outline"}
+                      size={18}
+                      color={hasVoted ? theme.colors.accentBrand : theme.colors.textMuted}
                     />
                   </Animated.View>
-                  <Text
-                    style={[
-                      styles.actionCount,
-                      { color: textMuted },
-                      hasVoted && { color: accentColor },
-                    ]}
-                  >
-                    {localVotes}
-                  </Text>
+                  {localVotes > 0 && (
+                    <Text style={[styles.actionCount, hasVoted && styles.actionCountActive]}>
+                      {localVotes}
+                    </Text>
+                  )}
                 </View>
               </AnimatedPressable>
 
-              <AnimatedPressable onPress={handleComment} activeScale={0.92}>
-                <View
-                  style={[
-                    styles.actionBtn,
-                    { backgroundColor: surfaceSubtle, borderColor },
-                  ]}
-                >
+              <AnimatedPressable onPress={handleComment} activeScale={0.9}>
+                <View style={styles.actionBtn}>
                   <MaterialCommunityIcons
                     name="comment-text-outline"
-                    size={19}
-                    color={textMuted}
+                    size={18}
+                    color={theme.colors.textMuted}
                   />
-                  <Text style={[styles.actionCount, { color: textMuted }]}>
-                    {localCommentCount}
-                  </Text>
+                  {localCommentCount > 0 && (
+                    <Text style={styles.actionCount}>{localCommentCount}</Text>
+                  )}
                 </View>
               </AnimatedPressable>
 
-              <AnimatedPressable onPress={handleShare} activeScale={0.92}>
-                <View
-                  style={[
-                    styles.actionBtn,
-                    { backgroundColor: surfaceSubtle, borderColor },
-                  ]}
-                >
+              <AnimatedPressable onPress={handleSave} activeScale={0.9}>
+                <View style={styles.actionBtn}>
+                  <MaterialCommunityIcons
+                    name={isSaved ? "bookmark" : "bookmark-outline"}
+                    size={18}
+                    color={isSaved ? theme.colors.accentBrand : theme.colors.textMuted}
+                  />
+                </View>
+              </AnimatedPressable>
+
+              <AnimatedPressable onPress={handleShare} activeScale={0.9}>
+                <View style={styles.actionBtn}>
                   <MaterialCommunityIcons
                     name="share-variant-outline"
-                    size={19}
-                    color={textMuted}
+                    size={18}
+                    color={theme.colors.textMuted}
                   />
                 </View>
               </AnimatedPressable>
 
               {!isAuthor && (
-                <AnimatedPressable
-                  onPress={() => setReportSheetVisible(true)}
-                  activeScale={0.92}
-                >
-                  <View
-                    style={[
-                      styles.actionBtn,
-                      { backgroundColor: surfaceSubtle, borderColor },
-                    ]}
-                  >
+                <AnimatedPressable onPress={() => setReportSheetVisible(true)} activeScale={0.9}>
+                  <View style={styles.actionBtn}>
                     <MaterialCommunityIcons
                       name="flag-outline"
-                      size={19}
-                      color={textMuted}
+                      size={18}
+                      color={theme.colors.textMuted}
                     />
                   </View>
                 </AnimatedPressable>
               )}
             </View>
 
-            {showActions &&
-              localStatus !== "Solved" &&
-              localStatus !== "Failed" &&
-              !isAuthor && (
-                <AnimatedPressable
-                  onPress={() => setSolveSheetVisible(true)}
-                  disabled={isSolving}
-                  activeScale={0.95}
-                >
-                  {isSolving ? (
-                    <View
-                      style={[
-                        styles.primaryActionBtn,
-                        styles.primaryActionBtnActive,
-                        { borderColor: theme.colors.accentBrand },
-                      ]}
-                    >
-                      <FontAwesome5
-                        name="fist-raised"
-                        size={12}
-                        color={theme.colors.accentBrand}
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text
-                        style={[
-                          styles.primaryActionText,
-                          { color: theme.colors.accentBrand },
-                        ]}
-                      >
-                        Solving
-                      </Text>
-                    </View>
-                  ) : (
-                    <View
-                      style={[
-                        styles.primaryActionBtn,
-                        { backgroundColor: theme.colors.accentBrand },
-                      ]}
-                    >
-                      <FontAwesome5
-                        name="fist-raised"
-                        size={12}
-                        color="#FFFFFF"
-                        style={{ marginRight: 6 }}
-                      />
-                      <Text style={styles.primaryActionText}>Help Solve</Text>
-                    </View>
-                  )}
-                </AnimatedPressable>
-              )}
+            {showActions && localStatus !== "Solved" && localStatus !== "Failed" && !isAuthor && (
+              <AnimatedPressable onPress={() => setSolveSheetVisible(true)} disabled={isSolving} activeScale={0.95}>
+                <View style={[styles.primaryActionBtn, isSolving ? styles.primaryActionBtnActive : { backgroundColor: theme.colors.accentBrandSubtle }]}>
+                  <Text style={[styles.primaryActionText, { color: theme.colors.accentBrand }]}>
+                    {isSolving ? "Solving" : "Help Solve"}
+                  </Text>
+                </View>
+              </AnimatedPressable>
+            )}
 
-            {showActions &&
-              isAuthor &&
-              localStatus !== "Solved" &&
-              localStatus !== "Failed" && (
-                <AnimatedPressable
-                  onPress={() => handleUpdateStatus("Solved")}
-                  activeScale={0.95}
-                >
-                  <View style={[styles.primaryActionBtn, styles.markFixedBtn]}>
-                    <MaterialCommunityIcons
-                      name="check-circle-outline"
-                      size={14}
-                      color={theme.colors.accentBrand}
-                      style={{ marginRight: 4 }}
-                    />
-                    <Text
-                      style={[
-                        styles.primaryActionText,
-                        { color: theme.colors.accentBrand },
-                      ]}
-                    >
-                      Mark Fixed
-                    </Text>
-                  </View>
-                </AnimatedPressable>
-              )}
+            {showActions && isAuthor && localStatus !== "Solved" && localStatus !== "Failed" && (
+              <AnimatedPressable onPress={() => handleUpdateStatus("Solved")} activeScale={0.95}>
+                <View style={[styles.primaryActionBtn, styles.markFixedBtn]}>
+                  <Text style={[styles.primaryActionText, { color: theme.colors.accentBrand }]}>
+                    Mark Fixed
+                  </Text>
+                </View>
+              </AnimatedPressable>
+            )}
           </View>
         </View>
-      </Card>
+      </View>
       <ShareModal
         visible={shareVisible}
         onClose={() => setShareVisible(false)}
@@ -703,214 +508,20 @@ export default function IssueCard({
 
 const styles = {
   card: {
-    marginBottom: Spacing.lg,
-    marginHorizontal: Spacing.lg,
-    backgroundColor: theme.colors.surfaceCard,
-    borderRadius: theme.radius.outer,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    overflow: "hidden",
-    ...Shadows.card,
-  },
-  media: {
-    width: "100%",
-    height: 200,
-    backgroundColor: theme.colors.surfaceSubtle,
-  },
-  mediaGradient: {
-    position: "absolute",
-    left: 0,
-    right: 0,
-    bottom: 0,
-    height: 80,
-  },
-  topBadges: {
-    position: "absolute",
-    top: 12,
-    left: 12,
-    right: 12,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  categoryChip: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "rgba(0, 0, 0, 0.55)",
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.1)",
-  },
-  categoryChipInline: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.colors.surfaceSubtle,
-    paddingHorizontal: 10,
-    paddingVertical: 5,
-    borderRadius: 0,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  urgencyDot: {
-    width: 6,
-    height: 6,
-    borderRadius: 9999,
-    marginRight: 6,
-  },
-  categoryChipText: {
-    color: "#FFF",
-    fontSize: 11,
-    fontWeight: "700",
-    letterSpacing: 0.3,
-  },
-  textOnlyMedia: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.xs,
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-  },
-  contentSection: {
-    paddingHorizontal: Spacing.lg,
-    paddingTop: Spacing.md,
-    paddingBottom: Spacing.lg,
-  },
-  contentSectionGlass: {
-    backgroundColor: "transparent",
-    borderTopWidth: 0,
-  },
-  authorRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Spacing.sm,
-  },
-  authorAvatar: {
-    width: 32,
-    height: 32,
-    borderRadius: 9999,
-    backgroundColor: theme.colors.accentBrandSubtle,
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: Spacing.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  authorInitials: {
-    fontSize: 11,
-    fontWeight: "800",
-    color: theme.colors.accentBrand,
-  },
-  authorName: {
-    fontSize: 13,
-    fontWeight: "700",
-    color: theme.colors.textPrimary,
-  },
-  authorMeta: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-    marginTop: 1,
-  },
-  titleText: {
-    fontSize: 18,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    lineHeight: 24,
-    marginBottom: Spacing.sm,
-    letterSpacing: -0.2,
-    textShadowColor: "rgba(0, 0, 0, 0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
-  },
-  descriptionText: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "rgba(255,255,255,0.9)",
-    lineHeight: 22,
     marginBottom: Spacing.md,
-    textShadowColor: "rgba(0, 0, 0, 0.8)",
-    textShadowOffset: { width: 0, height: 1 },
-    textShadowRadius: 3,
+    backgroundColor: theme.colors.background,
+    borderBottomWidth: 1,
+    borderBottomColor: theme.colors.borderSubtle,
+    paddingBottom: Spacing.md,
   },
-  metaRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    marginBottom: Spacing.lg,
-    backgroundColor: theme.colors.surfaceSubtle,
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: theme.radius.inner,
-    alignSelf: "flex-start",
+  mediaWrap: {
+    width: "100%",
+    aspectRatio: 16 / 9,
+    backgroundColor: theme.colors.surfaceElevated,
   },
-  metaText: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-    marginLeft: 4,
-    flexShrink: 1,
-    fontWeight: "500",
-  },
-  actionsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingTop: Spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: theme.colors.border,
-  },
-  socialActions: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  actionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    backgroundColor: theme.colors.surfaceSubtle,
-    paddingHorizontal: 12,
-    minHeight: 44,
-    minWidth: 44,
-    borderRadius: 9999,
-    marginRight: 6,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  actionBtnActive: {
-    backgroundColor: theme.colors.accentBrandSubtle,
-    borderColor: "rgba(37, 99, 235, 0.3)",
-  },
-  actionCount: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-    fontWeight: "700",
-    marginLeft: 4,
-  },
-  actionCountActive: {
-    color: theme.colors.accentBrand,
-  },
-  primaryActionBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 16,
-    minHeight: 44,
-    borderRadius: 9999,
-  },
-  primaryActionBtnActive: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.accentBrand,
-  },
-  markFixedBtn: {
-    backgroundColor: theme.colors.surface,
-    borderWidth: 1,
-    borderColor: theme.colors.accentBrand,
-  },
-  primaryActionText: {
-    color: "#FFF",
-    fontSize: 12,
-    fontWeight: "700",
+  mediaImage: {
+    width: "100%",
+    height: "100%",
   },
   playOverlay: {
     position: "absolute",
@@ -920,15 +531,121 @@ const styles = {
     bottom: 0,
     justifyContent: "center",
     alignItems: "center",
-    backgroundColor: "rgba(0,0,0,0.25)",
   },
   playButton: {
-    width: 56,
-    height: 56,
-    borderRadius: 9999,
-    backgroundColor: "rgba(0,0,0,0.7)",
     justifyContent: "center",
     alignItems: "center",
-    paddingLeft: 3,
+  },
+  contentSection: {
+    paddingHorizontal: Spacing.lg,
+    paddingTop: Spacing.md,
+  },
+  metaLine: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: Spacing.sm,
+  },
+  categoryPill: {
+    backgroundColor: theme.colors.surfaceElevated,
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: theme.radius.sm,
+  },
+  categoryPillText: {
+    fontSize: 11,
+    color: theme.colors.textMuted,
+    fontFamily: theme.type?.meta?.fontFamily,
+    fontWeight: theme.type?.meta?.fontWeight,
+  },
+  titleText: {
+    fontSize: 17,
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: theme.type?.title?.fontWeight,
+    color: theme.colors.textPrimary,
+    lineHeight: 22,
+    letterSpacing: -0.2,
+    marginBottom: Spacing.xs,
+  },
+  descriptionText: {
+    fontSize: 13,
+    fontFamily: theme.type?.body?.fontFamily,
+    fontWeight: theme.type?.body?.fontWeight,
+    color: theme.colors.textMuted,
+    lineHeight: 18,
+    marginBottom: Spacing.sm,
+  },
+  authorRow: {
+    marginBottom: Spacing.sm,
+  },
+  authorAvatar: {
+    borderRadius: 9999,
+    alignItems: "center",
+    justifyContent: "center",
+    marginRight: Spacing.sm,
+  },
+  authorInitials: {
+    fontWeight: "800",
+    color: "#FFFFFF",
+  },
+  authorName: {
+    fontSize: 13,
+    fontFamily: theme.type?.meta?.fontFamily,
+    fontWeight: theme.type?.meta?.fontWeight,
+    color: theme.colors.textPrimary,
+  },
+  authorMeta: {
+    fontSize: 13,
+    fontFamily: theme.type?.body?.fontFamily,
+    fontWeight: theme.type?.body?.fontWeight,
+    color: theme.colors.textMuted,
+  },
+  actionsRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+  },
+  socialActions: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginLeft: -8,
+  },
+  actionBtn: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 10,
+    minHeight: 40,
+    minWidth: 40,
+  },
+  actionCount: {
+    color: theme.colors.textMuted,
+    fontSize: 13,
+    fontFamily: theme.type?.meta?.fontFamily,
+    fontWeight: theme.type?.meta?.fontWeight,
+    marginLeft: 5,
+  },
+  actionCountActive: {
+    color: theme.colors.accentBrand,
+  },
+  primaryActionBtn: {
+    paddingHorizontal: 16,
+    minHeight: 32,
+    borderRadius: theme.radius.pill,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  primaryActionBtnActive: {
+    backgroundColor: theme.colors.surface,
+  },
+  primaryActionText: {
+    fontSize: 12,
+    fontFamily: theme.type?.meta?.fontFamily,
+    fontWeight: theme.type?.meta?.fontWeight,
+  },
+  markFixedBtn: {
+    backgroundColor: theme.colors.surface,
+    borderWidth: 1,
+    borderColor: theme.colors.borderSubtle,
   },
 };

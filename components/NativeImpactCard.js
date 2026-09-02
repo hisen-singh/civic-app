@@ -4,7 +4,7 @@ export default function NativeImpactCard({ issue }) {
   if (!issue) return null;
 
   const isResolved = issue.status === "Solved";
-  const accentColor = "#FF4500"; // Electric Orange for Utilitarian branding
+  const accentColor = "#3B82F6"; // Electric Blue for Utilitarian branding
 
   const createdDate = new Date(issue.createdAt);
   const now = new Date();

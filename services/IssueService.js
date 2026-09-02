@@ -16,6 +16,7 @@ import {
   serverTimestamp,
   onSnapshot,
   getCountFromServer,
+  runTransaction,
 } from "firebase/firestore";
 import {
   ref,
@@ -23,7 +24,8 @@ import {
   uploadString,
   getDownloadURL,
 } from "firebase/storage";
-import { db, storage } from "../config/firebaseConfig";
+import { getFunctions, httpsCallable } from "firebase/functions";
+import { db, storage, app } from "../config/firebaseConfig";
 import * as ImageManipulator from "expo-image-manipulator";
 import * as FileSystem from "expo-file-system";
 import * as Sentry from "@sentry/react-native";
@@ -96,6 +98,21 @@ export const IssueService = {
     })();
 
     return _pendingRequest;
+  },
+
+  /**
+   * Fetch issues within a given radius using the Cloud Function.
+   */
+  getNearbyIssues: async (lat, lng, radiusInMeters = 50000, category = "All") => {
+    try {
+      const functions = getFunctions(app);
+      const getNearbyIssuesCall = httpsCallable(functions, "getNearbyIssues");
+      const response = await getNearbyIssuesCall({ latitude: lat, longitude: lng, radiusInMeters, category });
+      return response.data.data || [];
+    } catch (error) {
+      console.error("[IssueService] Error fetching nearby issues:", error);
+      return [];
+    }
   },
 
   getAppStats: async () => {
@@ -254,6 +271,58 @@ export const IssueService = {
   },
 
   /**
+   * Search issues by title, description, category, or location.
+   * Uses client-side filtering for now (suitable for <1000 issues).
+   * For production scale, replace with Algolia or Cloud Function.
+   *
+   * @param {string} searchQuery - The search term
+   * @param {number} limit - Max results to return (default 20)
+   * @returns {Promise<Array>} Array of matching issues
+   */
+  searchIssues: async (searchQuery, limit = 20) => {
+    if (!searchQuery || searchQuery.trim().length < 2) return [];
+    try {
+      // Use cached issues if available (faster)
+      let allIssues = _issueCache;
+      if (allIssues.length === 0) {
+        // Fetch fresh if cache is empty
+        const q = query(
+          collection(db, ISSUES_COLLECTION),
+          orderBy("createdAt", "desc"),
+          limit(100), // Fetch more for better search results
+        );
+        const snapshot = await getDocs(q);
+        allIssues = snapshot.docs.map((d) => ({ id: d.id, ...d.data() }));
+      }
+
+      const lowerQuery = searchQuery.toLowerCase().trim();
+      const results = allIssues
+        .filter((issue) => {
+          // Search in multiple fields
+          const title = (issue.title || "").toLowerCase();
+          const description = (issue.description || "").toLowerCase();
+          const category = (issue.category || "").toLowerCase();
+          const location = (issue.location || "").toLowerCase();
+          const authorName = (issue.authorName || "").toLowerCase();
+
+          return (
+            title.includes(lowerQuery) ||
+            description.includes(lowerQuery) ||
+            category.includes(lowerQuery) ||
+            location.includes(lowerQuery) ||
+            authorName.includes(lowerQuery)
+          );
+        })
+        .slice(0, limit);
+
+      return results;
+    } catch (error) {
+      console.error("Error searching issues:", error);
+      return [];
+    }
+  },
+
+  /**
    * Fetch issues with pagination and optional category filtering.
    * Reduces data transfer by limiting document count per request.
    */
@@ -276,6 +345,10 @@ export const IssueService = {
 
       // "Nearby" requires Geo-queries, so we skip adding a 'where' clause here
       // and rely on client-side filtering if they select Nearby, or we just fetch 'All'.
+
+      if (category === "Trending") {
+        constraints.push(orderBy("votes", "desc"));
+      }
 
       constraints.push(orderBy("createdAt", "desc"));
 
@@ -308,6 +381,8 @@ export const IssueService = {
       throw error;
     }
   },
+
+
 
   /**
    * Upload image to Firebase Storage and return the download URL.
@@ -422,26 +497,31 @@ export const IssueService = {
    */
   upvoteIssue: async (id, userId) => {
     try {
-      // Fresh read to verify the user hasn't already voted
       const issueRef = doc(db, ISSUES_COLLECTION, id);
-      const snap = await getDoc(issueRef);
-      if (snap.exists()) {
+      const newVotes = await runTransaction(db, async (transaction) => {
+        const snap = await transaction.get(issueRef);
+        if (!snap.exists()) {
+          throw new Error("Issue does not exist!");
+        }
         const data = snap.data();
         if ((data.voters || []).includes(userId)) {
-          return false; // Already voted — no-op
+          return null; // Already voted
         }
-      }
+        const newCount = (data.votes ?? 0) + 1;
+        transaction.update(issueRef, {
+          votes: newCount,
+          voters: arrayUnion(userId),
+        });
+        return newCount;
+      });
 
-      await updateDoc(issueRef, {
-        votes: increment(1),
-        voters: arrayUnion(userId),
-      });
+      if (newVotes === null) return false;
+
       // Update cache in place so the next read sees fresh data immediately
-      const prevData = snap.exists() ? snap.data() : {};
-      const patched = IssueService._patchCachedIssue(id, {
-        votes: (prevData.votes ?? 0) + 1,
-        voters: [...(prevData.voters || []), userId],
-      });
+      const patched = IssueService._patchCachedIssue(id, (cached) => ({
+        votes: newVotes,
+        voters: [...(cached.voters || []), userId],
+      }));
       if (!patched) IssueService.invalidateCache();
       return true;
     } catch (error) {

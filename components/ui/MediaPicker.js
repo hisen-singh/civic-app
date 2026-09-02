@@ -8,6 +8,7 @@ import {
 } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
+import { theme } from "../../theme";
 
 export default function MediaPicker({ photo, setPhoto }) {
   const pickImage = async () => {
@@ -56,7 +57,7 @@ export default function MediaPicker({ photo, setPhoto }) {
           accessibilityRole="button"
           accessibilityLabel="Remove attached photo"
         >
-          <MaterialCommunityIcons name="close" size={24} color="#FFF" />
+          <MaterialCommunityIcons name="close" size={20} color="#FFF" />
         </TouchableOpacity>
       </View>
     );
@@ -72,7 +73,7 @@ export default function MediaPicker({ photo, setPhoto }) {
         accessibilityLabel="Take a photo with camera"
       >
         <View style={styles.photoBtnIcon}>
-          <MaterialCommunityIcons name="camera" size={24} color="#FF4500" />
+          <MaterialCommunityIcons name="camera" size={24} color="#3B82F6" />
         </View>
         <Text style={styles.photoBtnTitle}>Camera</Text>
         <Text style={styles.photoBtnSub}>Take a photo</Text>
@@ -88,7 +89,7 @@ export default function MediaPicker({ photo, setPhoto }) {
           <MaterialCommunityIcons
             name="image-multiple"
             size={24}
-            color="#FF4500"
+            color="#3B82F6"
           />
         </View>
         <Text style={styles.photoBtnTitle}>Gallery</Text>
@@ -106,58 +107,59 @@ const styles = StyleSheet.create({
   photoPreviewWrap: {
     position: "relative",
     marginBottom: 20,
-    borderRadius: 0, // Brutalist sharp
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     overflow: "hidden",
   },
   photoPreview: {
     width: "100%",
     height: 220,
-    backgroundColor: "#000000",
+    backgroundColor: theme.colors.surfaceElevated,
   },
   removePhotoBtn: {
     position: "absolute",
-    top: -2,
-    right: -2,
-    width: 48,
-    height: 48,
-    borderRadius: 0, // Blocky brutalist
-    backgroundColor: "#FF4500", // Electric Orange
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    top: 12,
+    right: 12,
+    width: 40,
+    height: 40,
+    borderRadius: theme.radius.pill,
+    backgroundColor: "rgba(0,0,0,0.6)",
+    borderWidth: 1,
+    borderColor: "rgba(255,255,255,0.2)",
     justifyContent: "center",
     alignItems: "center",
+    backdropFilter: "blur(12px)",
+    WebkitBackdropFilter: "blur(12px)",
   },
   photoBtn: {
     flex: 1,
-    backgroundColor: "#000000",
-    borderRadius: 0, // Sharp
-    borderWidth: 2,
-    borderColor: "#FFFFFF",
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
     paddingVertical: 20,
     alignItems: "center",
+    ...theme.shadows.soft,
   },
   photoBtnIcon: {
     width: 48,
     height: 48,
-    borderRadius: 0, // Sharp
-    backgroundColor: "#222222",
+    borderRadius: theme.radius.sm,
+    backgroundColor: theme.colors.surfaceSubtle,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
-    borderWidth: 1,
-    borderColor: "#444444",
   },
   photoBtnTitle: {
-    color: "#FFFFFF",
+    color: theme.colors.textPrimary,
     fontWeight: "800",
     fontSize: 14,
     marginBottom: 2,
     textTransform: "uppercase",
   },
   photoBtnSub: {
-    color: "#A0AAB5",
+    color: theme.colors.textMuted,
     fontSize: 11,
   },
 });

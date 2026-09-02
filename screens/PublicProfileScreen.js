@@ -23,11 +23,11 @@ const getAvatarColor = (name) => {
     "#43A047",
     "#7CB342",
     "#F4511E",
-    "#6D4C41",
+    "#FB8C00",
   ];
   let hash = 0;
   for (let i = 0; i < (name || "").length; i++) {
-    hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    hash = (name || "").charCodeAt(i) + ((hash << 5) - hash);
   }
   return colors[Math.abs(hash) % colors.length];
 };

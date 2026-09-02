@@ -1,15 +1,21 @@
 /**
  * Civic — Centralized Design System
- * Single source of truth for all colors, spacing, typography, and design tokens.
+ * Three-color palette principle (60-30-10):
+ *   60% Dominant  — Ink: #08090F and its tints (backgrounds, surfaces)
+ *   30% Secondary — White/Slate: text, borders, inactive UI
+ *   10% Accent    — Electric Blue #3B82F6 family: CTAs, active states, "Solved"
+ *   Reserved semantic — Red #EF4444: critical urgency / failed ONLY
  * Import this everywhere instead of hardcoding values.
  */
 
+import { MD3DarkTheme } from "react-native-paper";
+
 export const Colors = {
   // ─── Core Backgrounds ─────────────────────────────────────────────────────
-  background: "#0A0E1A", // Primary app background
-  surface: "#131925", // Cards, containers
-  surfaceElevated: "#1A2133", // Elevated surfaces (modals, menus)
-  surfaceHover: "#1F2940", // Hover / active states
+  background: "#090A10", // Primary app background
+  surface: "#101218", // Cards, containers
+  surfaceElevated: "#151824", // Elevated surfaces (modals, menus)
+  surfaceHover: "#1A1E2A", // Hover / active states
 
   // ─── Text ──────────────────────────────────────────────────────────────────
   textPrimary: "#F1F5F9", // Headings, primary content
@@ -17,36 +23,36 @@ export const Colors = {
   textTertiary: "#64748B", // Disabled, placeholder
   textInverse: "#0A0E1A", // Text on light backgrounds
 
-  // ─── Brand Accent ─────────────────────────────────────────────────────────
-  accent: "#6366F1", // Primary accent (Indigo-500)
-  accentLight: "#818CF8", // Lighter accent
-  accentDark: "#4338CA", // Darker accent
-  accentSurface: "rgba(99, 102, 241, 0.12)", // Accent tinted surface
+  // ─── Brand Accent (10%) ────────────────────────────────────────────────────
+  accent: "#3B82F6", // Primary accent (Electric Blue)
+  accentLight: "#60A5FA", // Lighter accent
+  accentDark: "#1D4ED8", // Darker accent
+  accentSurface: "rgba(59, 130, 246, 0.12)", // Accent tinted surface
 
-  // ─── Status ────────────────────────────────────────────────────────────────
-  success: "#10B981", // Solved, positive
-  successSurface: "rgba(16, 185, 129, 0.12)",
-  warning: "#F59E0B", // In progress, caution
-  warningSurface: "rgba(245, 158, 11, 0.12)",
+  // ─── Status (folded into palette; red reserved for critical) ──────────────
+  success: "#3B82F6", // Solved, positive → accent blue
+  successSurface: "rgba(59, 130, 246, 0.12)",
+  warning: "#94A3B8", // Caution → slate
+  warningSurface: "rgba(148, 163, 184, 0.12)",
   error: "#EF4444", // Failed, destructive
-  errorSurface: "rgba(239, 68, 68, 0.12)",
-  info: "#3B82F6", // Informational
-  infoSurface: "rgba(59, 130, 246, 0.12)",
+  errorSurface: "rgba(239, 68, 68, 0.20)",
+  info: "#60A5FA", // Informational → accent light
+  infoSurface: "rgba(96, 165, 250, 0.12)",
 
-  // ─── Urgency ───────────────────────────────────────────────────────────────
+  // ─── Urgency (slate ramp; red only for critical) ───────────────────────────
   critical: "#EF4444",
   criticalBg: "rgba(239, 68, 68, 0.15)",
-  high: "#F97316",
-  highBg: "rgba(249, 115, 22, 0.15)",
-  medium: "#EAB308",
-  mediumBg: "rgba(234, 179, 8, 0.15)",
-  low: "#22C55E",
-  lowBg: "rgba(34, 197, 94, 0.15)",
+  high: "#F5F5F7",
+  highBg: "rgba(245, 245, 247, 0.12)",
+  medium: "#94A3B8",
+  mediumBg: "rgba(148, 163, 184, 0.12)",
+  low: "#64748B",
+  lowBg: "rgba(100, 116, 139, 0.12)",
 
   // ─── Borders ───────────────────────────────────────────────────────────────
-  border: "rgba(255, 255, 255, 0.06)",
-  borderSubtle: "rgba(255, 255, 255, 0.03)",
-  borderFocus: "rgba(99, 102, 241, 0.5)",
+  border: "rgba(255, 255, 255, 0.08)",
+  borderSubtle: "rgba(255, 255, 255, 0.05)",
+  borderFocus: "rgba(59, 130, 246, 0.5)",
 
   // ─── Overlay ───────────────────────────────────────────────────────────────
   overlay: "rgba(0, 0, 0, 0.6)",
@@ -64,8 +70,8 @@ export const Colors = {
 export const Gradients = {
   header: ["#0A0E1A", "#131925"],
   heroCard: ["#131925", "#1A2133"],
-  accentHeader: ["#4338CA", "#6366F1"],
-  reportHeader: ["#6366F1", "#8B5CF6"],
+  accentHeader: ["#1D4ED8", "#3B82F6"],
+  reportHeader: ["#1D4ED8", "#2563EB"],
   mapOverlay: ["rgba(10, 14, 26, 0.95)", "rgba(10, 14, 26, 0)"],
   authBg: ["#0A0E1A", "#131925"],
 };
@@ -132,28 +138,88 @@ export const Shadows = {
   },
 };
 
-// Unified Kimi-style mature design system theme
 export const theme = {
+  ...MD3DarkTheme,
   colors: {
-    surface: "#121212",
-    surfaceSubtle: "#121212",
-    surfaceCard: "rgba(255, 255, 255, 0.08)",
-    textPrimary: "#e0e0e0",
-    textMuted: "#A0A0A0",
-    actionDefault: "#e0e0e0",
-    actionHover: "#FF4500",
-    accentBrand: "#FF4500",
-    accentBrandSubtle: "#121212",
-    border: "rgba(255, 255, 255, 0.1)",
-    statusLow: "#008080",
-    statusMedium: "#8B5CF6",
-    statusCritical: "#E53935",
-    statusLowBg: "rgba(0, 128, 128, 0.20)",
-    statusMediumBg: "rgba(139, 92, 246, 0.20)",
-    statusCriticalBg: "rgba(229, 57, 53, 0.20)",
+    ...MD3DarkTheme.colors,
+    primary: "#3B82F6",
+    onPrimary: "#FFFFFF",
+    background: "#090A10",
+    onBackground: "#F5F5F7",
+    surface: "#101218",
+    onSurface: "#F5F5F7",
+    surfaceVariant: "#151824",
+    onSurfaceVariant: "#8F95A3",
+    surfaceElevated: "#151824",
+    surfaceHover: "#1A1E2A",
+    surfaceCard: "rgba(255, 255, 255, 0.05)",
+    textPrimary: "#F5F5F7",
+    textMuted: "#8F95A3",
+    actionDefault: "#F5F5F7",
+    actionHover: "#3B82F6",
+    accentBrand: "#3B82F6",
+    accentBrandLight: "#60A5FA",
+    accentBrandSubtle: "rgba(59, 130, 246, 0.14)",
+    border: "rgba(255, 255, 255, 0.08)",
+    borderSubtle: "rgba(255, 255, 255, 0.05)",
+    statusLow: "#64748B",
+    statusMedium: "#94A3B8",
+    statusCritical: "#EF4444",
+    statusLowBg: "rgba(100, 116, 139, 0.20)",
+    statusMediumBg: "rgba(148, 163, 184, 0.20)",
+    statusCriticalBg: "rgba(239, 68, 68, 0.20)",
+    error: "#EF4444",
+  },
+  gradients: {
+    cta: ["#60A5FA", "#2563EB"],
+    glowButton: ["#60A5FA", "#1D4ED8"],
+    headerFade: ["rgba(8,9,15,0.96)", "rgba(8,9,15,0)"],
+    hero: ["#181A25", "#08090F"],
+    success: ["#3B82F6", "#1D4ED8"],
   },
   radius: {
-    outer: 28,
-    inner: 16,
+    outer: 24,
+    inner: 18,
+    sm: 10,
+    md: 14,
+    lg: 18,
+    xl: 24,
+  },
+  font: {
+    display: "SpaceGrotesk_700Bold",
+    displayMedium: "SpaceGrotesk_500Medium",
+    body: "Inter_400Regular",
+    bodyMedium: "Inter_500Medium",
+    bodyBold: "Inter_700Bold",
+  },
+  type: {
+    display: { fontFamily: "SpaceGrotesk_700Bold", fontWeight: "600", letterSpacing: -0.2 },
+    title: { fontFamily: "SpaceGrotesk_700Bold", fontWeight: "600", letterSpacing: -0.2 },
+    body: { fontFamily: "Inter_400Regular", fontWeight: "400" },
+    meta: { fontFamily: "Inter_500Medium", fontWeight: "500" },
+    micro: { fontFamily: "Inter_500Medium", fontWeight: "500", letterSpacing: 0.5, fontSize: 11, textTransform: "uppercase" },
+  },
+  shadows: {
+    card: {
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 8 },
+      shadowOpacity: 0.45,
+      shadowRadius: 16,
+      elevation: 8,
+    },
+    soft: {
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.3,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    ambient: {
+      shadowColor: "#000000",
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.25,
+      shadowRadius: 14,
+      elevation: 4,
+    }
   },
 };

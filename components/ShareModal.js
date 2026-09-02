@@ -10,13 +10,13 @@ import {
 } from "react-native";
 import { Text } from "react-native-paper";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { Colors, Radius, Spacing, Shadows } from "../theme";
+import { theme, Spacing } from "../theme";
 
 const STATUS_COLORS = {
-  Open: Colors.textSecondary,
-  "In Progress": Colors.info,
-  Solved: Colors.success,
-  Failed: Colors.error,
+  Open: theme.colors.textMuted,
+  "In Progress": theme.colors.accentBrand,
+  Solved: theme.colors.accentBrand,
+  Failed: theme.colors.statusCritical,
 };
 
 export default function ShareModal({ visible, onClose, issue }) {
@@ -105,14 +105,14 @@ export default function ShareModal({ visible, onClose, issue }) {
                   {
                     justifyContent: "center",
                     alignItems: "center",
-                    backgroundColor: Colors.surfaceElevated,
+                    backgroundColor: theme.colors.surfaceElevated,
                   },
                 ]}
               >
                 <MaterialCommunityIcons
                   name="image-off-outline"
                   size={32}
-                  color={Colors.textTertiary}
+                  color={theme.colors.textMuted}
                 />
               </View>
             )}
@@ -122,7 +122,7 @@ export default function ShareModal({ visible, onClose, issue }) {
                   styles.statusDot,
                   {
                     backgroundColor:
-                      STATUS_COLORS[issue.status] || Colors.textTertiary,
+                      STATUS_COLORS[issue.status] || theme.colors.textMuted,
                   },
                 ]}
               />
@@ -183,13 +183,13 @@ export default function ShareModal({ visible, onClose, issue }) {
               <View
                 style={[
                   styles.optionIcon,
-                  { backgroundColor: Colors.accentSurface },
+                  { backgroundColor: theme.colors.accentBrandSubtle },
                 ]}
               >
                 <MaterialCommunityIcons
                   name="share-variant-outline"
                   size={24}
-                  color={Colors.accent}
+                  color={theme.colors.accentBrand}
                 />
               </View>
               <Text style={styles.optionLabel}>More</Text>
@@ -220,35 +220,38 @@ const styles = {
     backgroundColor: "rgba(0,0,0,0.6)",
   },
   sheet: {
-    backgroundColor: Colors.surface,
-    borderTopLeftRadius: 24,
-    borderTopRightRadius: 24,
+    backgroundColor: theme.colors.surfaceElevated,
+    borderTopLeftRadius: theme.radius.lg,
+    borderTopRightRadius: theme.radius.lg,
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.border,
     paddingBottom: 34,
     paddingHorizontal: Spacing.xl,
-    ...Shadows.card,
+    ...theme.shadows.card,
   },
   handle: {
-    width: 40,
+    width: 36,
     height: 4,
     borderRadius: 2,
-    backgroundColor: Colors.border,
+    backgroundColor: theme.colors.border,
     alignSelf: "center",
     marginTop: 12,
     marginBottom: 20,
   },
   sheetTitle: {
     fontSize: 18,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: theme.type?.title?.fontWeight,
+    color: theme.colors.textPrimary,
     marginBottom: 20,
     letterSpacing: -0.3,
   },
   previewCard: {
     flexDirection: "row",
-    backgroundColor: Colors.background,
-    borderRadius: Radius.lg,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
     borderWidth: 1,
-    borderColor: Colors.border,
+    borderColor: theme.colors.borderSubtle,
     overflow: "hidden",
     marginBottom: 24,
   },
@@ -257,12 +260,13 @@ const styles = {
   statusDot: { width: 8, height: 8, borderRadius: 4, marginBottom: 6 },
   previewTitle: {
     fontSize: 14,
-    fontWeight: "700",
-    color: Colors.textPrimary,
+    fontFamily: theme.type?.title?.fontFamily,
+    fontWeight: "600",
+    color: theme.colors.textPrimary,
     lineHeight: 18,
     marginBottom: 4,
   },
-  previewMeta: { fontSize: 12, color: Colors.textTertiary },
+  previewMeta: { fontSize: 12, color: theme.colors.textMuted },
   optionsRow: {
     flexDirection: "row",
     justifyContent: "space-around",
@@ -270,19 +274,19 @@ const styles = {
   },
   optionBtn: { alignItems: "center" },
   optionIcon: {
-    width: 56,
-    height: 56,
-    borderRadius: 18,
+    width: 52,
+    height: 52,
+    borderRadius: theme.radius.md,
     justifyContent: "center",
     alignItems: "center",
     marginBottom: 8,
   },
-  optionLabel: { fontSize: 12, fontWeight: "600", color: Colors.textSecondary },
+  optionLabel: { fontSize: 12, fontWeight: "500", color: theme.colors.textMuted },
   cancelBtn: {
-    backgroundColor: Colors.surfaceElevated,
-    borderRadius: Radius.md,
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.radius.md,
     paddingVertical: 14,
     alignItems: "center",
   },
-  cancelText: { fontSize: 15, fontWeight: "600", color: Colors.textSecondary },
+  cancelText: { fontSize: 15, fontWeight: "500", color: theme.colors.textMuted },
 };

@@ -1,5 +1,6 @@
 const functions = require("firebase-functions/v1");
 const admin = require("firebase-admin");
+const geofire = require("geofire-common");
 
 admin.initializeApp();
 const db = admin.firestore();
@@ -231,6 +232,34 @@ exports.onIssueCreated = functions.firestore
   .onCreate(async (snapshot, context) => {
     const issue = snapshot.data();
     const issueId = context.params.issueId;
+
+    // Generate geohash for new issues and reverse geocode location
+    if (issue.latitude && issue.longitude) {
+      try {
+        const hash = geofire.geohashForLocation([Number(issue.latitude), Number(issue.longitude)]);
+        const updateData = { geohash: hash };
+        
+        // Reverse Geocode if no text location exists
+        if (!issue.location || issue.location.trim() === "") {
+          try {
+             const url = `https://nominatim.openstreetmap.org/reverse?format=json&lat=${issue.latitude}&lon=${issue.longitude}&zoom=14`;
+             const res = await fetch(url, { headers: { 'User-Agent': 'CivicHeroApp/1.0' } });
+             const data = await res.json();
+             if (data && data.address) {
+                const city = data.address.city || data.address.town || data.address.village || data.address.county || "";
+                const state = data.address.state || "";
+                updateData.location = city ? `${city}, ${state}`.trim().replace(/(^,)|(,$)/g, "") : data.display_name.split(",").slice(0,2).join(",");
+             }
+          } catch(e) {
+             console.error("Reverse geocoding failed:", e);
+          }
+        }
+        
+        await snapshot.ref.update(updateData);
+      } catch (err) {
+        console.error("Failed to generate geohash or geocode:", err);
+      }
+    }
 
     // Award impact points to author
     if (issue.authorId && issue.authorId !== "anonymous") {
@@ -589,7 +618,7 @@ exports.onFollowDeleted = functions.firestore
 // ────────────────────────────────────────────────────────────────────────────
 exports.recalculateImpactScores = functions.pubsub
   .schedule("0 0 * * *")
-  .timeZone("Asia/Kolkata")
+  .timeZone(process.env.TIMEZONE || "Asia/Kolkata")
   .onRun(async () => {
     console.log("[recalculateImpactScores] Starting...");
 
@@ -653,7 +682,7 @@ exports.recalculateImpactScores = functions.pubsub
 // ────────────────────────────────────────────────────────────────────────────
 exports.calculateTrendingScores = functions.pubsub
   .schedule("*/15 * * * *")
-  .timeZone("Asia/Kolkata")
+  .timeZone(process.env.TIMEZONE || "Asia/Kolkata")
   .onRun(async () => {
     console.log("[calculateTrendingScores] Starting...");
 
@@ -700,7 +729,7 @@ exports.calculateTrendingScores = functions.pubsub
 // ────────────────────────────────────────────────────────────────────────────
 exports.checkViralIssues = functions.pubsub
   .schedule("0 * * * *")
-  .timeZone("Asia/Kolkata")
+  .timeZone(process.env.TIMEZONE || "Asia/Kolkata")
   .onRun(async () => {
     console.log("[checkViralIssues] Starting...");
 
@@ -755,7 +784,7 @@ exports.checkViralIssues = functions.pubsub
 // ────────────────────────────────────────────────────────────────────────────
 exports.archiveOldIssues = functions.pubsub
   .schedule("0 0 * * 0")
-  .timeZone("Asia/Kolkata")
+  .timeZone(process.env.TIMEZONE || "Asia/Kolkata")
   .onRun(async () => {
     console.log("[archiveOldIssues] Starting...");
 
@@ -788,13 +817,76 @@ exports.archiveOldIssues = functions.pubsub
 // ────────────────────────────────────────────────────────────────────────────
 exports.cleanupNotifications = functions.pubsub
   .schedule("0 1 * * *")
-  .timeZone("Asia/Kolkata")
+  .timeZone(process.env.TIMEZONE || "Asia/Kolkata")
   .onRun(async () => {
     console.log("[cleanupNotifications] Starting...");
 
     const sevenDaysAgo = new Date();
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const cutoff = sevenDaysAgo.toISOString();
+
+// ────────────────────────────────────────────────────────────────────────────
+// 7. GET NEARBY ISSUES (CALLABLE)
+// ────────────────────────────────────────────────────────────────────────────
+exports.getNearbyIssues = functions.https.onCall(async (data, context) => {
+  if (!context.auth) {
+    throw new functions.https.HttpsError("unauthenticated", "Must be logged in to search nearby.");
+  }
+
+  const { latitude, longitude, radiusInMeters = 50000, category = "All" } = data;
+  if (!latitude || !longitude) {
+    throw new functions.https.HttpsError("invalid-argument", "Missing latitude or longitude.");
+  }
+
+  const center = [Number(latitude), Number(longitude)];
+  const radiusInM = Number(radiusInMeters);
+  const bounds = geofire.geohashQueryBounds(center, radiusInM);
+  const promises = [];
+
+  for (const b of bounds) {
+    let q = db.collection("issues")
+      .orderBy("geohash")
+      .startAt(b[0])
+      .endAt(b[1])
+      .limit(200); // Cap per bound to prevent massive reads
+    promises.push(q.get());
+  }
+
+  const snapshots = await Promise.all(promises);
+  const matchingDocs = [];
+  const addedIds = new Set();
+
+  for (const snap of snapshots) {
+    for (const doc of snap.docs) {
+      if (addedIds.has(doc.id)) continue;
+      
+      const issue = doc.data();
+      if (category !== "All" && issue.category !== category) continue;
+      
+      if (!issue.latitude || !issue.longitude) continue;
+
+      const lat = Number(issue.latitude);
+      const lng = Number(issue.longitude);
+      const distanceInKm = geofire.distanceBetween([lat, lng], center);
+      const distanceInM = distanceInKm * 1000;
+      
+      if (distanceInM <= radiusInM) {
+        matchingDocs.push({ id: doc.id, ...issue });
+        addedIds.add(doc.id);
+      }
+    }
+  }
+
+  // Sort by createdAt descending
+  matchingDocs.sort((a, b) => {
+    const timeA = new Date(a.createdAt || 0).getTime();
+    const timeB = new Date(b.createdAt || 0).getTime();
+    return timeB - timeA;
+  });
+
+  // Cap at 100 results for payload efficiency
+  return { data: matchingDocs.slice(0, 100) };
+});
 
     const snap = await db
       .collection("notifications")
@@ -816,7 +908,7 @@ exports.cleanupNotifications = functions.pubsub
 // ────────────────────────────────────────────────────────────────────────────
 exports.cleanupOldFeedItems = functions.pubsub
   .schedule("0 2 * * *")
-  .timeZone("Asia/Kolkata")
+  .timeZone(process.env.TIMEZONE || "Asia/Kolkata")
   .onRun(async () => {
     console.log("[cleanupOldFeedItems] Starting...");
 
@@ -1031,10 +1123,10 @@ exports.getUserRank = functions.https.onCall(async (data, context) => {
   // Global rank
   const globalSnap = await db
     .collection("users")
-    .orderBy("impactScore", "desc")
+    .where("impactScore", ">", user.impactScore || 0)
+    .count()
     .get();
-  const globalRank =
-    globalSnap.docs.findIndex((d) => d.id === context.auth.uid) + 1;
+  const globalRank = globalSnap.data().count + 1;
 
   // City rank
   let cityRank = 0;
@@ -1042,9 +1134,10 @@ exports.getUserRank = functions.https.onCall(async (data, context) => {
     const citySnap = await db
       .collection("users")
       .where("city", "==", user.city)
-      .orderBy("impactScore", "desc")
+      .where("impactScore", ">", user.impactScore || 0)
+      .count()
       .get();
-    cityRank = citySnap.docs.findIndex((d) => d.id === context.auth.uid) + 1;
+    cityRank = citySnap.data().count + 1;
   }
 
   return {
@@ -1316,6 +1409,12 @@ exports.reportContent = functions.https.onCall(async (data, context) => {
     throw new functions.https.HttpsError(
       "invalid-argument",
       "issueId and reason are required.",
+    );
+  }
+  if (reason.length > 500) {
+    throw new functions.https.HttpsError(
+      "invalid-argument",
+      "reason must not exceed 500 characters.",
     );
   }
 

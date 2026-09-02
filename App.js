@@ -33,6 +33,15 @@ import {
 } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as Font from "expo-font";
+import {
+  SpaceGrotesk_500Medium,
+  SpaceGrotesk_700Bold,
+} from "@expo-google-fonts/space-grotesk";
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_700Bold,
+} from "@expo-google-fonts/inter";
 import { Colors, theme } from "./theme";
 
 // Screens
@@ -48,6 +57,7 @@ import NotificationsScreen from "./screens/NotificationsScreen";
 import EditProfileScreen from "./screens/EditProfileScreen";
 import AnalyticsScreen from "./screens/AnalyticsScreen";
 import PublicProfileScreen from "./screens/PublicProfileScreen";
+import SearchScreen from "./screens/SearchScreen";
 
 // Auth
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
@@ -61,7 +71,7 @@ const navTheme = {
   colors: {
     ...NavDarkTheme.colors,
     primary: theme.colors.accentBrand,
-    background: theme.colors.surface,
+    background: theme.colors.background,
     card: theme.colors.surface,
     text: theme.colors.textPrimary,
     border: theme.colors.border,
@@ -75,74 +85,55 @@ import NetworkBanner from "./components/NetworkBanner";
 // ─── Custom Tab Bar Icon with Active Indicator ────────────────────────────────
 function TabIcon({ name, focused }) {
   return (
-    <View
-      style={{ alignItems: "center", justifyContent: "center", minWidth: 48 }}
-    >
-      <View
-        style={{
-          width: 40,
-          height: 40,
-          borderRadius: 9999,
-          backgroundColor: focused ? theme.colors.accentBrand : "transparent",
-          alignItems: "center",
-          justifyContent: "center",
-        }}
-      >
-        <MaterialCommunityIcons
-          name={name}
-          color={focused ? "#FFFFFF" : theme.colors.textPrimary}
-          size={22}
-        />
-      </View>
-      {focused && (
-        <View
-          style={{
-            width: 4,
-            height: 4,
-            borderRadius: 9999,
-            backgroundColor: theme.colors.accentBrand,
-            marginTop: 4,
-          }}
-        />
-      )}
+    <View style={{ alignItems: "center", justifyContent: "center" }}>
+      <MaterialCommunityIcons
+        name={name}
+        color={focused ? theme.colors.accentBrand : theme.colors.textMuted}
+        size={22}
+      />
     </View>
   );
 }
 
+const withErrorBoundary = (Component) => (props) => (
+  <ErrorBoundary>
+    <Component {...props} />
+  </ErrorBoundary>
+);
+
 function MainTabs() {
   const insets = useSafeAreaInsets();
-  const tabBarHeight = 64 + Math.max(insets.bottom, 8);
+  const tabBarHeight = 66 + Math.max(insets.bottom, 8);
 
   return (
-    <View style={{ flex: 1, backgroundColor: theme.colors.surface }}>
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
       <Tab.Navigator
         screenOptions={{
           headerShown: false,
           tabBarStyle: {
-            backgroundColor: theme.colors.surface,
-            borderTopWidth: 2,
-            borderTopColor: theme.colors.border,
-            elevation: 0,
+            position: "absolute",
+            backgroundColor: "rgba(9, 10, 16, 0.95)",
+            borderTopWidth: 1,
+            borderTopColor: theme.colors.borderSubtle,
             height: tabBarHeight,
             paddingBottom: Math.max(insets.bottom, 8),
             paddingTop: 8,
             paddingHorizontal: 8,
           },
           tabBarActiveTintColor: theme.colors.accentBrand,
-          tabBarInactiveTintColor: theme.colors.textPrimary,
+          tabBarInactiveTintColor: theme.colors.textMuted,
           tabBarLabelStyle: {
             fontSize: 10,
-            fontWeight: "800",
+            fontFamily: theme.type?.meta?.fontFamily,
+            fontWeight: "500",
             marginTop: 2,
-            letterSpacing: 0.5,
-            textTransform: "uppercase",
           },
           tabBarHideOnKeyboard: true,
         }}
       >
         <Tab.Screen
           name="Home"
-          component={HomeScreen}
+          component={withErrorBoundary(HomeScreen)}
           options={{
             tabBarLabel: "Feed",
             tabBarIcon: ({ focused }) => (
@@ -152,7 +143,7 @@ function MainTabs() {
         />
         <Tab.Screen
           name="Map"
-          component={MapScreen}
+          component={withErrorBoundary(MapScreen)}
           options={{
             tabBarIcon: ({ focused }) => (
               <TabIcon name="map-marker-radius" focused={focused} />
@@ -176,16 +167,16 @@ function MainTabs() {
                 style={{
                   width: 48,
                   height: 48,
-                  borderRadius: 9999,
-                  marginTop: -8,
-                  backgroundColor: theme.colors.accentBrand,
+                  borderRadius: 24,
+                  marginTop: -12,
                   justifyContent: "center",
                   alignItems: "center",
-                  borderWidth: 3,
-                  borderColor: theme.colors.surface,
+                  backgroundColor: theme.colors.accentBrand,
+                  borderWidth: 2,
+                  borderColor: theme.colors.background,
                 }}
               >
-                <MaterialCommunityIcons name="plus" color="#FFF" size={28} />
+                <MaterialCommunityIcons name="plus" color="#FFF" size={26} />
               </View>
             ),
           }}
@@ -193,7 +184,7 @@ function MainTabs() {
 
         <Tab.Screen
           name="Solve"
-          component={SolveScreen}
+          component={withErrorBoundary(SolveScreen)}
           options={{
             tabBarIcon: ({ focused }) => (
               <TabIcon name="hand-heart-outline" focused={focused} />
@@ -202,7 +193,7 @@ function MainTabs() {
         />
         <Tab.Screen
           name="Profile"
-          component={ProfileScreen}
+          component={withErrorBoundary(ProfileScreen)}
           options={{
             tabBarIcon: ({ focused }) => (
               <TabIcon name="account-circle-outline" focused={focused} />
@@ -230,6 +221,11 @@ function AppStack() {
       <Stack.Screen name="EditProfile" component={EditProfileScreen} />
       <Stack.Screen name="Leaderboard" component={LeaderboardScreen} />
       <Stack.Screen name="Analytics" component={AnalyticsScreen} />
+      <Stack.Screen 
+        name="Search" 
+        component={SearchScreen} 
+        options={{ animationEnabled: false }}
+      />
     </Stack.Navigator>
   );
 }
@@ -346,6 +342,11 @@ function AppContent() {
 function App() {
   const [fontsLoaded, fontError] = Font.useFonts({
     ...MaterialCommunityIcons.font,
+    SpaceGrotesk_500Medium,
+    SpaceGrotesk_700Bold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_700Bold,
   });
 
   // Proceed if fonts loaded OR if there was an error (don't block forever)
