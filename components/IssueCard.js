@@ -174,8 +174,8 @@ export default function IssueCard({
     setLocalStatus("In Progress");
     try {
       await IssueService.joinIssue(issue.id, user.uid);
-    } catch (e) {
-      console.error("Failed to join issue:", e);
+    } catch (error) {
+      console.error("Failed to share issue:", error);
       setIsSolving(false);
       setLocalStatus(issue.status || "Open");
     }
@@ -204,33 +204,26 @@ export default function IssueCard({
     }
   };
 
-  const lastTapRef = useRef(0);
   const handleCardPress = () => {
-    const now = Date.now();
-    const DOUBLE_PRESS_DELAY = 300;
-    if (now - lastTapRef.current < DOUBLE_PRESS_DELAY) {
-      handleUpvote();
-    } else {
-      animatePress();
-      if (!disablePress) {
-        navigation.navigate("IssueDetail", { issueId: issue.id });
-      }
+    animatePress();
+    if (!disablePress) {
+      navigation.navigate("IssueDetail", { issueId: issue.id });
     }
-    lastTapRef.current = now;
   };
 
   const handleSave = async () => {
     if (!user) return;
     triggerHaptic(Haptics.ImpactFeedbackStyle.Light);
-    setIsSaved(!isSaved);
+    const next = !isSaved;
+    setIsSaved(next);
     try {
-      if (isSaved) {
+      if (!next) {
         await UserService.unsaveIssue(user.uid, issue.id);
       } else {
         await UserService.saveIssue(user.uid, issue.id);
       }
-    } catch (e) {
-      setIsSaved(isSaved);
+    } catch (error) {
+      setIsSaved(!next);
     }
   };
 

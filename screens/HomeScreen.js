@@ -8,6 +8,7 @@ import {
   Animated,
   Image,
   ScrollView,
+  StyleSheet,
 } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { Text, ActivityIndicator } from "react-native-paper";
@@ -22,29 +23,8 @@ import LoginOverlay from "../components/LoginOverlay";
 import { IssueService } from "../services/IssueService";
 import { useAuth } from "../contexts/AuthContext";
 import { Spacing, theme } from "../theme";
+import { getAvatarColor } from "../utils/avatarColor";
 import * as Location from "expo-location";
-
-const getAvatarColor = (name) => {
-  const colors = [
-    "#E53935",
-    "#D81B60",
-    "#8E24AA",
-    "#5E35B1",
-    "#3949AB",
-    "#1E88E5",
-    "#00ACC1",
-    "#00897B",
-    "#43A047",
-    "#7CB342",
-    "#F4511E",
-    "#FB8C00",
-  ];
-  let hash = 0;
-  for (let i = 0; i < (name || "").length; i++) {
-    hash = (name || "").charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export default function HomeScreen() {
   const { t } = useTranslation();
@@ -250,7 +230,12 @@ export default function HomeScreen() {
           if (isRefresh) {
             setIssues(validData);
           } else {
-            setIssues((prev) => [...prev, ...validData]);
+            setIssues((prev) => {
+              const newItems = validData.filter(
+                (d) => !prev.some((p) => p.id === d.id)
+              );
+              return [...prev, ...newItems];
+            });
           }
           setLastDoc(newLastDoc);
           setHasMore(validData.length === 10);
@@ -288,6 +273,10 @@ export default function HomeScreen() {
     if (selectedCategory === "Nearby") return issue.latitude && issue.longitude;
     return true;
   });
+
+  if (selectedCategory === "Trending") {
+    filteredIssues.sort((a, b) => (b.votes || 0) - (a.votes || 0));
+  }
 
   const categories = [
     {
@@ -528,22 +517,15 @@ export default function HomeScreen() {
                       overflow: "hidden",
                     }}
                   >
-                    {story.photoURL ? (
-                      <Image
-                        source={{ uri: story.photoURL }}
-                        style={{ width: "100%", height: "100%" }}
-                      />
-                    ) : (
-                      <Text
-                        style={{
-                          fontSize: 16,
-                          fontWeight: "900",
-                          color: "#FFFFFF",
-                        }}
-                      >
-                        {sInitials}
-                      </Text>
-                    )}
+                    <Text
+                      style={{
+                        fontSize: 16,
+                        fontWeight: "900",
+                        color: "#FFFFFF",
+                      }}
+                    >
+                      {sInitials}
+                    </Text>
                   </View>
                 </View>
                 <Text
@@ -693,12 +675,13 @@ export default function HomeScreen() {
   return (
     <View style={{ flex: 1, backgroundColor: theme.colors.surfaceSubtle }}>
       <StatusBar
-        barStyle="dark-content"
+        barStyle="light-content"
         backgroundColor={theme.colors.surfaceSubtle}
       />
 
       {/* Header — search first, CIVIC on the right */}
-      <View
+      <LinearGradient
+        colors={["rgba(0,0,0,0.8)", "transparent"]}
         style={[
           styles.header,
           { maxWidth: 800, alignSelf: "center", width: "100%" },
@@ -740,7 +723,7 @@ export default function HomeScreen() {
             {unreadCount > 0 && <View style={styles.notifDot} />}
           </View>
         </AnimatedPressable>
-      </View>
+      </LinearGradient>
 
       {/* Main Feed using High-Performance FlatList */}
       <FlatList
@@ -753,6 +736,7 @@ export default function HomeScreen() {
         )}
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
+          paddingTop: 100, // Space for the floating transparent header
           paddingBottom: 120,
           maxWidth: 800,
           alignSelf: "center",
@@ -801,15 +785,16 @@ export default function HomeScreen() {
 
 const styles = {
   header: {
+    position: "absolute",
+    top: 0,
+    zIndex: 100,
     paddingHorizontal: Spacing.xl,
     paddingTop: Spacing.headerTop + 4,
     paddingBottom: Spacing.lg,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",
-    backgroundColor: theme.colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
+    backgroundColor: "transparent",
   },
   brandTitle: {
     fontSize: 15,
@@ -858,73 +843,6 @@ const styles = {
     backgroundColor: theme.colors.accentBrand,
     borderWidth: 2,
     borderColor: theme.colors.surface,
-  },
-  heroCard: {
-    borderRadius: 0,
-    padding: Spacing.xl,
-    backgroundColor: theme.colors.surface,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-  },
-  heroTop: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: Spacing.lg,
-  },
-  heroLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: theme.colors.accentBrand,
-    letterSpacing: 1,
-    marginBottom: 4,
-    textTransform: "uppercase",
-  },
-  heroTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: theme.colors.textPrimary,
-    textTransform: "uppercase",
-  },
-  heroIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 0,
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  statsRow: {
-    flexDirection: "row",
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: 0,
-    padding: Spacing.md,
-    borderWidth: 2,
-    borderColor: theme.colors.border,
-  },
-  statPill: {
-    flex: 1,
-    alignItems: "center",
-  },
-  statValue: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: "#FFFFFF",
-    marginBottom: 2,
-  },
-  statLabel: {
-    fontSize: 10,
-    fontWeight: "800",
-    color: theme.colors.textMuted,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: theme.colors.border,
-    marginVertical: 4,
   },
   loadingContainer: {
     alignItems: "center",

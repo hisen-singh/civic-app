@@ -15,7 +15,10 @@
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.civic.app",
-      "buildNumber": "1"
+      "buildNumber": "1",
+      "config": {
+        "googleMapsApiKey": "AIzaSyBWMXZGwMOr7r2wZ-_xMyPr2aHp8_XwV-0"
+      }
     },
     "android": {
       "package": "com.civic.app",

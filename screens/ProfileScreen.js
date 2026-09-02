@@ -1,5 +1,6 @@
 import { useState, useCallback, useRef, useEffect } from "react";
 import {
+  Dimensions,
   View,
   TouchableOpacity,
   Animated,
@@ -356,39 +357,50 @@ export default function ProfileScreen() {
     },
   ];
 
+  const { width } = Dimensions.get('window');
+  // 3-column grid width calculation
+  const gridItemSize = (Math.min(width, 800) - (Spacing.xl * 2) - (Spacing.sm * 2)) / 3;
+
   return (
-    <Animated.ScrollView
-      ref={scrollViewRef}
-      style={{
-        flex: 1,
-        backgroundColor: theme.colors.surface,
-        opacity: fadeAnim,
-        transform: [{ scale: scaleAnim }],
-      }}
-      refreshControl={
-        <RefreshControl
-          refreshing={refreshing}
-          onRefresh={onRefresh}
-          tintColor={theme.colors.accentBrand}
-          colors={[theme.colors.accentBrand]}
-          progressBackgroundColor={theme.colors.surface}
-        />
-      }
-      showsVerticalScrollIndicator={false}
-      contentContainerStyle={{
-        paddingBottom: 120,
-        maxWidth: 800,
-        alignSelf: "center",
-        width: "100%",
-      }}
-    >
-      {/* Profile Header */}
-      <LinearGradient colors={theme.gradients.hero} style={styles.headerSection}>
-        <View style={styles.avatarRow}>
-          <AnimatedPressable
-            onPress={() => navigation.navigate("EditProfile")}
-            activeScale={0.95}
-          >
+    <View style={{ flex: 1, backgroundColor: theme.colors.background }}>
+      {/* Top Navigation Bar */}
+      <View style={styles.topBar}>
+        <Text style={styles.topBarName}>{displayName}</Text>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Settings")}
+          hitSlop={{ top: 10, right: 10, bottom: 10, left: 10 }}
+        >
+          <MaterialCommunityIcons name="cog-outline" size={26} color={theme.colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
+
+      <Animated.ScrollView
+        ref={scrollViewRef}
+        style={{
+          flex: 1,
+          opacity: fadeAnim,
+          transform: [{ scale: scaleAnim }],
+        }}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={theme.colors.accentBrand}
+            colors={[theme.colors.accentBrand]}
+            progressBackgroundColor={theme.colors.background}
+          />
+        }
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{
+          paddingBottom: 120,
+          maxWidth: 800,
+          alignSelf: "center",
+          width: "100%",
+        }}
+      >
+        {/* Profile Info (Instagram Style) */}
+        <View style={styles.profileHeader}>
+          <View style={styles.avatarContainer}>
             <View style={styles.avatarRing}>
               {user?.photoURL ? (
                 <Image source={{ uri: user.photoURL }} style={styles.avatar} />
@@ -398,504 +410,282 @@ export default function ProfileScreen() {
                 </View>
               )}
             </View>
-          </AnimatedPressable>
-          <View style={{ flex: 1, marginLeft: Spacing.lg }}>
-            <Text style={styles.displayName}>{displayName}</Text>
-            <Text style={styles.email}>{user?.email || ""}</Text>
-            {joinDate ? (
-              <Text style={styles.joinDate}>Member since {joinDate}</Text>
-            ) : null}
           </View>
-          <AnimatedPressable
+          
+          <View style={styles.statsContainer}>
+            <TouchableOpacity style={styles.statBox} onPress={scrollToReports}>
+              <Text style={styles.statNum}>{stats.reported}</Text>
+              <Text style={styles.statLabel}>Reports</Text>
+            </TouchableOpacity>
+            <View style={styles.statBox}>
+              <Text style={styles.statNum}>{stats.solved}</Text>
+              <Text style={styles.statLabel}>Solved</Text>
+            </View>
+            <View style={styles.statBox}>
+              <Text style={styles.statNum}>{stats.rank}</Text>
+              <Text style={styles.statLabel}>Rank</Text>
+            </View>
+          </View>
+        </View>
+
+        {/* Bio */}
+        <View style={styles.bioContainer}>
+          <Text style={styles.bioName}>{displayName}</Text>
+          <Text style={styles.bioDesc}>Member since {joinDate}</Text>
+        </View>
+
+        {/* Action Row */}
+        <View style={styles.actionRow}>
+          <TouchableOpacity 
+            style={styles.actionButton} 
             onPress={() => navigation.navigate("EditProfile")}
-            activeScale={0.92}
+            activeOpacity={0.8}
           >
-            <View style={styles.editBtn}>
-              <MaterialCommunityIcons
-                name="pencil-outline"
-                size={18}
-                color={theme.colors.accentBrand}
-              />
-            </View>
-          </AnimatedPressable>
-        </View>
-
-        {/* Stats Row */}
-        <View style={styles.statsRow}>
-          <View style={styles.statItem}>
-            <Text
-              style={{
-                fontSize: 64,
-                fontWeight: "900",
-                color: theme.colors.textPrimary,
-                letterSpacing: -2,
-                lineHeight: 68,
-              }}
-            >
-              {trustScore}
-            </Text>
-            <Text style={styles.statLabel}>TRUST SCORE</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text
-              style={[styles.statValue, { color: theme.colors.textPrimary }]}
-            >
-              #{stats.rank}
-            </Text>
-            <Text style={styles.statLabel}>City Rank</Text>
-          </View>
-          <View style={styles.statDivider} />
-          <TouchableOpacity
-            style={styles.statItem}
-            activeOpacity={0.7}
-            onPress={scrollToReports}
-          >
-            <Text style={styles.statValue}>{stats.reported}</Text>
-            <Text style={styles.statLabel}>Reports</Text>
+            <Text style={styles.actionButtonText}>Edit Profile</Text>
           </TouchableOpacity>
-          <View style={styles.statDivider} />
-          <View style={styles.statItem}>
-            <Text
-              style={[styles.statValue, { color: theme.colors.accentBrand }]}
-            >
-              {stats.solved}
-            </Text>
-            <Text style={styles.statLabel}>Solved</Text>
-          </View>
-        </View>
-      </LinearGradient>
-
-      <View
-        style={{ paddingHorizontal: Spacing.xl, paddingVertical: Spacing.xxl }}
-      >
-        {/* Activity Cards */}
-        <Text style={styles.sectionTitle}>Activity Overview</Text>
-        <View style={{ flexDirection: "row", marginBottom: Spacing.xxxl }}>
-          <TouchableOpacity
-            style={[styles.activityCard, { marginRight: Spacing.md }]}
-            activeOpacity={0.7}
-            onPress={scrollToReports}
+          <TouchableOpacity 
+            style={styles.actionButton} 
+            onPress={() => navigation.navigate("Analytics")}
+            activeOpacity={0.8}
           >
-            <View
-              style={[
-                styles.activityIcon,
-                { backgroundColor: theme.colors.surfaceSubtle },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="clipboard-text-outline"
-                size={22}
-                color={theme.colors.textPrimary}
-              />
-            </View>
-            <Text style={styles.activityValue}>{stats.reported}</Text>
-            <Text style={styles.activityLabel}>Reports Filed</Text>
+            <Text style={styles.actionButtonText}>Share Profile</Text>
           </TouchableOpacity>
-          <View style={[styles.activityCard, { marginRight: Spacing.md }]}>
-            <View
-              style={[
-                styles.activityIcon,
-                { backgroundColor: theme.colors.surfaceSubtle },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="hand-heart-outline"
-                size={22}
-                color={theme.colors.accentBrand}
-              />
-            </View>
-            <Text style={styles.activityValue}>{stats.supported}</Text>
-            <Text style={styles.activityLabel}>Helping On</Text>
-          </View>
-          <View style={styles.activityCard}>
-            <View
-              style={[
-                styles.activityIcon,
-                { backgroundColor: theme.colors.surfaceSubtle },
-              ]}
-            >
-              <MaterialCommunityIcons
-                name="check-decagram-outline"
-                size={22}
-                color={theme.colors.accentBrand}
-              />
-            </View>
-            <Text style={styles.activityValue}>{stats.solved}</Text>
-            <Text style={styles.activityLabel}>Resolved</Text>
-          </View>
         </View>
 
-        {/* Badges */}
-        <Text style={styles.sectionTitle}>Achievements</Text>
-        <View style={{ marginBottom: Spacing.xxxl }}>
-          {stats.badges.map((badge) => (
-            <View
-              key={badge.id}
-              style={[styles.badgeRow, !badge.unlocked && { opacity: 0.35 }]}
-            >
-              <View
-                style={[
-                  styles.badgeIconWrap,
-                  badge.unlocked && {
-                    backgroundColor: theme.colors.surfaceSubtle,
-                  },
-                ]}
-              >
-                <MaterialCommunityIcons
-                  name={badge.icon}
-                  size={22}
-                  color={
-                    badge.unlocked
-                      ? theme.colors.accentBrand
-                      : theme.colors.textMuted
-                  }
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.badgeName}>{badge.name}</Text>
-                <Text style={styles.badgeDesc}>
-                  {badge.unlocked ? badge.desc : "Locked — keep contributing"}
-                </Text>
-              </View>
-              {badge.unlocked && (
-                <View style={styles.unlockedBadge}>
-                  <MaterialCommunityIcons
-                    name="check"
-                    size={12}
-                    color={theme.colors.accentBrand}
-                  />
-                </View>
-              )}
-            </View>
-          ))}
-        </View>
-
-        {/* Settings */}
-        <Text style={styles.sectionTitle}>Settings</Text>
-        {settingsItems.map((item, index) => (
-          <AnimatedPressable
-            key={item.title}
-            onPress={item.onPress}
-            activeScale={0.98}
-            style={{
-              marginBottom:
-                index < settingsItems.length - 1 ? Spacing.sm : Spacing.xxxl,
-            }}
-          >
-            <View style={styles.settingsRow}>
-              <View
-                style={[styles.settingsIcon, { backgroundColor: item.iconBg }]}
-              >
-                <MaterialCommunityIcons
-                  name={item.icon}
-                  size={20}
-                  color={item.iconColor}
-                />
-              </View>
-              <View style={{ flex: 1 }}>
-                <Text style={styles.settingsTitle}>{item.title}</Text>
-                <Text style={styles.settingsDesc}>{item.desc}</Text>
-              </View>
-              <MaterialCommunityIcons
-                name="chevron-right"
-                size={20}
-                color={theme.colors.textMuted}
-              />
-            </View>
-          </AnimatedPressable>
-        ))}
-      </View>
-
-      {/* Tab Switcher */}
-      <View
-        onLayout={(event) => {
-          const layout = event.nativeEvent.layout;
-          setReportsY(layout.y);
-        }}
-        style={{ paddingHorizontal: Spacing.xl, paddingTop: Spacing.xl, flexDirection: "row", marginBottom: Spacing.md }}
-      >
-        <TouchableOpacity onPress={() => setActiveTab("reports")} style={{ marginRight: Spacing.xl }}>
-          <Text style={[styles.sectionTitle, activeTab !== "reports" && { color: theme.colors.textMuted }]}>My Reports</Text>
-        </TouchableOpacity>
-        <TouchableOpacity onPress={() => setActiveTab("saved")}>
-          <Text style={[styles.sectionTitle, activeTab !== "saved" && { color: theme.colors.textMuted }]}>Saved</Text>
-        </TouchableOpacity>
-      </View>
-
-      <View style={{ paddingHorizontal: Spacing.xl }}>
-        {activeTab === "reports" ? (
-          myIssues.length === 0 ? (
-            <View style={styles.emptyFeed}>
-              <MaterialCommunityIcons name="clipboard-text-off-outline" size={24} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
-              <Text style={styles.emptyFeedText}>No reports filed yet</Text>
-            </View>
-          ) : (
-            myIssues.map((issue) => <IssueCard key={issue.id} issue={issue} />)
-          )
-        ) : (
-          savedIssues.length === 0 ? (
-            <View style={styles.emptyFeed}>
-              <MaterialCommunityIcons name="bookmark-off-outline" size={24} color={theme.colors.textMuted} style={{ marginBottom: 8 }} />
-              <Text style={styles.emptyFeedText}>No saved issues yet</Text>
-            </View>
-          ) : (
-            savedIssues.map((issue) => <IssueCard key={`saved-${issue.id}`} issue={issue} />)
-          )
-        )}
-      </View>
-
-      {/* Footer / Logout */}
-      <View style={{ paddingHorizontal: Spacing.xl, paddingBottom: 40 }}>
-        <TouchableOpacity
-          onPress={handleLogout}
-          activeOpacity={0.7}
-          style={styles.logoutBtn}
+        {/* Tab Switcher */}
+        <View
+          onLayout={(event) => {
+            const layout = event.nativeEvent.layout;
+            setReportsY(layout.y);
+          }}
+          style={styles.tabContainer}
         >
-          <MaterialCommunityIcons
-            name="logout"
-            size={18}
-            color="#FFFFFF"
-            style={{ marginRight: 8 }}
-          />
-          <Text style={styles.logoutText}>
-            {t("profile.sign_out", "SIGN OUT")}
-          </Text>
-        </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => setActiveTab("reports")} 
+            style={[styles.tabButton, activeTab === "reports" && styles.tabButtonActive]}
+          >
+            <MaterialCommunityIcons 
+              name="grid" 
+              size={24} 
+              color={activeTab === "reports" ? theme.colors.textPrimary : theme.colors.textMuted} 
+            />
+          </TouchableOpacity>
+          <TouchableOpacity 
+            onPress={() => setActiveTab("saved")}
+            style={[styles.tabButton, activeTab === "saved" && styles.tabButtonActive]}
+          >
+            <MaterialCommunityIcons 
+              name="bookmark-outline" 
+              size={24} 
+              color={activeTab === "saved" ? theme.colors.textPrimary : theme.colors.textMuted} 
+            />
+          </TouchableOpacity>
+        </View>
 
-        <Text style={styles.versionText}>Civic v1.0</Text>
-        <View style={{ height: 40 }} />
-      </View>
-    </Animated.ScrollView>
+        {/* Grid Feed */}
+        <View style={styles.gridContainer}>
+          {activeTab === "reports" ? (
+            myIssues.length === 0 ? (
+              <View style={styles.emptyFeed}>
+                <MaterialCommunityIcons name="image-off-outline" size={32} color={theme.colors.textMuted} style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyFeedText}>No posts yet</Text>
+              </View>
+            ) : (
+              myIssues.map((issue) => (
+                <TouchableOpacity 
+                  key={issue.id} 
+                  style={[styles.gridItem, { width: gridItemSize, height: gridItemSize }]}
+                  onPress={() => navigation.navigate("IssueDetail", { id: issue.id, issue })}
+                  activeOpacity={0.9}
+                >
+                  {issue.photo ? (
+                    <Image source={{ uri: issue.photo }} style={styles.gridImage} />
+                  ) : (
+                    <View style={styles.gridFallback}>
+                      <MaterialCommunityIcons name="alert-circle-outline" size={32} color={theme.colors.textMuted} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))
+            )
+          ) : (
+            savedIssues.length === 0 ? (
+              <View style={styles.emptyFeed}>
+                <MaterialCommunityIcons name="bookmark-off-outline" size={32} color={theme.colors.textMuted} style={{ marginBottom: 12 }} />
+                <Text style={styles.emptyFeedText}>No saved posts</Text>
+              </View>
+            ) : (
+              savedIssues.map((issue) => (
+                <TouchableOpacity 
+                  key={`saved-${issue.id}`} 
+                  style={[styles.gridItem, { width: gridItemSize, height: gridItemSize }]}
+                  onPress={() => navigation.navigate("IssueDetail", { id: issue.id, issue })}
+                  activeOpacity={0.9}
+                >
+                  {issue.photo ? (
+                    <Image source={{ uri: issue.photo }} style={styles.gridImage} />
+                  ) : (
+                    <View style={styles.gridFallback}>
+                      <MaterialCommunityIcons name="bookmark-outline" size={32} color={theme.colors.textMuted} />
+                    </View>
+                  )}
+                </TouchableOpacity>
+              ))
+            )
+          )}
+        </View>
+
+      </Animated.ScrollView>
+    </View>
   );
 }
 
 const styles = {
-  emptyFeed: {
-    alignItems: "center",
-    paddingVertical: Spacing.xl,
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.inner,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  emptyFeedText: {
-    color: theme.colors.textMuted,
-    fontSize: 13,
-    fontWeight: "700",
-  },
-  headerSection: {
-    paddingHorizontal: Spacing.xl,
-    paddingTop: Spacing.headerTop + 16,
-    paddingBottom: Spacing.xxl,
-    borderBottomWidth: 1,
-    borderBottomColor: theme.colors.border,
-  },
-  avatarRow: {
+  topBar: {
     flexDirection: "row",
+    justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: Spacing.xxl,
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.headerTop,
+    paddingBottom: Spacing.md,
+    backgroundColor: theme.colors.background,
+  },
+  topBarName: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
+    letterSpacing: -0.5,
+  },
+  profileHeader: {
+    flexDirection: "row",
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.md,
+    alignItems: "center",
+  },
+  avatarContainer: {
+    marginRight: Spacing.xl,
   },
   avatarRing: {
     padding: 3,
     borderRadius: 9999,
     borderWidth: 2,
-    borderColor: theme.colors.accentBrand,
+    borderColor: theme.colors.surfaceSubtle,
   },
   avatar: {
-    width: 68,
-    height: 68,
-    borderRadius: 34,
+    width: 80,
+    height: 80,
+    borderRadius: 40,
     alignItems: "center",
     justifyContent: "center",
   },
   avatarText: {
-    fontSize: 24,
+    fontSize: 28,
     fontWeight: "900",
     color: "#FFF",
   },
-  displayName: {
-    fontSize: 22,
-    fontWeight: "900",
-    color: theme.colors.textPrimary,
-    letterSpacing: -0.5,
-    marginBottom: 2,
-    textTransform: "uppercase",
-  },
-  email: {
-    fontSize: 13,
-    color: theme.colors.textMuted,
-    marginBottom: 2,
-  },
-  joinDate: {
-    fontSize: 11,
-    color: theme.colors.textMuted,
-  },
-  editBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 0,
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  statsRow: {
-    width: "100%",
-    flexDirection: "row",
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderRadius: theme.radius.lg,
-    padding: Spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  statItem: {
-    alignItems: "center",
+  statsContainer: {
     flex: 1,
+    flexDirection: "row",
+    justifyContent: "space-around",
+    alignItems: "center",
   },
-  statValue: {
-    fontSize: 20,
-    fontWeight: "900",
+  statBox: {
+    alignItems: "center",
+  },
+  statNum: {
+    fontSize: 18,
+    fontWeight: "800",
+    color: theme.colors.textPrimary,
+  },
+  statLabel: {
+    fontSize: 12,
+    color: theme.colors.textMuted,
+    marginTop: 2,
+  },
+  bioContainer: {
+    paddingHorizontal: Spacing.xl,
+    paddingTop: Spacing.lg,
+    paddingBottom: Spacing.lg,
+  },
+  bioName: {
+    fontSize: 14,
+    fontWeight: "700",
     color: theme.colors.textPrimary,
     marginBottom: 4,
   },
-  statLabel: {
-    fontSize: 10,
-    color: theme.colors.textMuted,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  statDivider: {
-    width: 1,
-    backgroundColor: theme.colors.border,
-  },
-  sectionTitle: {
+  bioDesc: {
     fontSize: 14,
-    fontWeight: "800",
     color: theme.colors.textPrimary,
-    marginBottom: Spacing.lg,
-    letterSpacing: 1,
-    textTransform: "uppercase",
   },
-  activityCard: {
+  actionRow: {
+    flexDirection: "row",
+    paddingHorizontal: Spacing.xl,
+    paddingBottom: Spacing.xl,
+    gap: Spacing.sm,
+  },
+  actionButton: {
     flex: 1,
-    backgroundColor: theme.colors.surface,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    padding: Spacing.lg,
-    alignItems: "center",
-  },
-  activityIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: theme.radius.sm,
-    justifyContent: "center",
-    alignItems: "center",
-    marginBottom: Spacing.sm,
-  },
-  activityValue: {
-    fontSize: 20,
-    fontWeight: "900",
-    color: theme.colors.textPrimary,
-    marginBottom: 2,
-  },
-  activityLabel: {
-    fontSize: 10,
-    color: theme.colors.textMuted,
-    fontWeight: "700",
-    textAlign: "center",
-    textTransform: "uppercase",
-  },
-  badgeRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.colors.surface,
-    padding: Spacing.lg,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: Spacing.sm,
-  },
-  badgeIconWrap: {
-    width: 40,
-    height: 40,
-    borderRadius: 0,
     backgroundColor: theme.colors.surfaceSubtle,
-    justifyContent: "center",
+    borderRadius: theme.radius.md,
+    paddingVertical: 8,
     alignItems: "center",
-    marginRight: Spacing.md,
+    borderWidth: 1,
+    borderColor: theme.colors.border,
   },
-  badgeName: {
+  actionButtonText: {
+    color: theme.colors.textPrimary,
+    fontSize: 13,
+    fontWeight: "700",
+  },
+  tabContainer: {
+    flexDirection: "row",
+    borderTopWidth: 1,
+    borderTopColor: theme.colors.borderSubtle,
+  },
+  tabButton: {
+    flex: 1,
+    alignItems: "center",
+    paddingVertical: 12,
+    borderBottomWidth: 1,
+    borderBottomColor: "transparent",
+  },
+  tabButtonActive: {
+    borderBottomColor: theme.colors.textPrimary,
+  },
+  gridContainer: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    paddingHorizontal: Spacing.xl,
+    gap: Spacing.sm,
+    paddingTop: Spacing.sm,
+  },
+  gridItem: {
+    backgroundColor: theme.colors.surfaceSubtle,
+    borderRadius: 4,
+    overflow: "hidden",
+  },
+  gridImage: {
+    width: "100%",
+    height: "100%",
+  },
+  gridFallback: {
+    width: "100%",
+    height: "100%",
+    backgroundColor: theme.colors.surfaceSubtle,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+    borderColor: theme.colors.border,
+    borderRadius: 4,
+  },
+  emptyFeed: {
+    width: "100%",
+    alignItems: "center",
+    paddingVertical: 40,
+  },
+  emptyFeedText: {
+    color: theme.colors.textMuted,
     fontSize: 14,
-    fontWeight: "700",
-    color: theme.colors.textPrimary,
-    marginBottom: 2,
-  },
-  badgeDesc: {
-    fontSize: 12,
-    color: theme.colors.textMuted,
-  },
-  unlockedBadge: {
-    width: 24,
-    height: 24,
-    borderRadius: 12,
-    backgroundColor: theme.colors.surfaceSubtle,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  settingsRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: theme.colors.surface,
-    padding: Spacing.lg,
-    borderRadius: theme.radius.md,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  settingsIcon: {
-    width: 40,
-    height: 40,
-    borderRadius: 0,
-    justifyContent: "center",
-    alignItems: "center",
-    marginRight: Spacing.md,
-  },
-  settingsTitle: {
-    color: theme.colors.textPrimary,
-    fontSize: 15,
-    fontWeight: "700",
-  },
-  settingsDesc: {
-    color: theme.colors.textMuted,
-    fontSize: 12,
-  },
-  logoutBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    paddingVertical: 16,
-    marginTop: Spacing.xxl,
-    borderRadius: theme.radius.md,
-    borderWidth: 0,
-    backgroundColor: theme.colors.accentBrand,
-  },
-  logoutText: {
-    color: "#FFFFFF",
-    fontSize: 15,
-    fontWeight: "800",
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  versionText: {
-    color: theme.colors.textMuted,
-    fontSize: 11,
-    textAlign: "center",
-    marginTop: Spacing.xxl,
-    fontWeight: "500",
+    fontWeight: "600",
   },
 };

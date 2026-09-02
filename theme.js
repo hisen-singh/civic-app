@@ -123,7 +123,7 @@ export const Shadows = {
     elevation: 6,
   },
   fab: {
-    shadowColor: "#6366F1",
+    shadowColor: "#3B82F6",
     shadowOffset: { width: 0, height: 6 },
     shadowOpacity: 0.35,
     shadowRadius: 16,
@@ -149,6 +149,7 @@ export const theme = {
     surface: "#101218",
     onSurface: "#F5F5F7",
     surfaceVariant: "#151824",
+    surfaceSubtle: "#0C0E14",
     onSurfaceVariant: "#8F95A3",
     surfaceElevated: "#151824",
     surfaceHover: "#1A1E2A",
@@ -173,7 +174,6 @@ export const theme = {
   gradients: {
     cta: ["#60A5FA", "#2563EB"],
     glowButton: ["#60A5FA", "#1D4ED8"],
-    headerFade: ["rgba(8,9,15,0.96)", "rgba(8,9,15,0)"],
     hero: ["#181A25", "#08090F"],
     success: ["#3B82F6", "#1D4ED8"],
   },

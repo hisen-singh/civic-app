@@ -628,7 +628,7 @@ export default function ReportIssueScreen({ navigation }) {
               accessibilityState={{ disabled: loading }}
             >
               <LinearGradient
-                colors={theme.gradients.primary}
+                colors={theme.gradients.cta}
                 style={styles.submitBtn}
                 start={{ x: 0, y: 0 }}
                 end={{ x: 1, y: 0 }}

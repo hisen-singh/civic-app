@@ -17,6 +17,7 @@ try {
   );
 }
 import { View, Text, Animated, Image } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
 import {
   NavigationContainer,
   DarkTheme as NavDarkTheme,
@@ -112,16 +113,22 @@ function MainTabs() {
           headerShown: false,
           tabBarStyle: {
             position: "absolute",
-            backgroundColor: "rgba(9, 10, 16, 0.95)",
-            borderTopWidth: 1,
-            borderTopColor: theme.colors.borderSubtle,
+            backgroundColor: "transparent",
+            borderTopWidth: 0,
+            elevation: 0,
             height: tabBarHeight,
             paddingBottom: Math.max(insets.bottom, 8),
             paddingTop: 8,
             paddingHorizontal: 8,
           },
-          tabBarActiveTintColor: theme.colors.accentBrand,
-          tabBarInactiveTintColor: theme.colors.textMuted,
+          tabBarBackground: () => (
+            <LinearGradient
+              colors={["transparent", "rgba(0,0,0,0.85)"]}
+              style={{ flex: 1 }}
+            />
+          ),
+          tabBarActiveTintColor: "#FFFFFF",
+          tabBarInactiveTintColor: "rgba(255,255,255,0.6)",
           tabBarLabelStyle: {
             fontSize: 10,
             fontFamily: theme.type?.meta?.fontFamily,

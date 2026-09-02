@@ -75,16 +75,43 @@ export default function MapScreen({ navigation }) {
   const [locationLoaded, setLocationLoaded] = useState(false);
   const [isLoginVisible, setIsLoginVisible] = useState(false);
 
-  const fetchIssuesForRegion = async (region) => {
-    try {
-      if (!region) return;
-      // We pass 50km radius as a broad sweep, filtering happens on backend
-      const nearbyIssues = await IssueService.getNearbyIssues(region.latitude, region.longitude, 50000, "All");
-      setIssues(nearbyIssues);
-    } catch (error) {
-      console.error("[MapScreen] Error fetching issues:", error);
-    }
+  const fetchTimerRef = useRef(null);
+  const lastFetchCenterRef = useRef(null);
+
+  const fetchIssuesForRegion = (region) => {
+    if (!region) return;
+    if (fetchTimerRef.current) clearTimeout(fetchTimerRef.current);
+    fetchTimerRef.current = setTimeout(async () => {
+      // Skip refetch when the map center barely moved (< ~1 km)
+      const prev = lastFetchCenterRef.current;
+      if (prev) {
+        const dLatKm = Math.abs(region.latitude - prev.latitude) * 111;
+        const dLngKm =
+          Math.abs(region.longitude - prev.longitude) *
+          111 *
+          Math.cos((region.latitude * Math.PI) / 180);
+        if (Math.sqrt(dLatKm * dLatKm + dLngKm * dLngKm) < 1) return;
+      }
+      lastFetchCenterRef.current = {
+        latitude: region.latitude,
+        longitude: region.longitude,
+      };
+      try {
+        // We pass 50km radius as a broad sweep, filtering happens on backend
+        const nearbyIssues = await IssueService.getNearbyIssues(
+          region.latitude,
+          region.longitude,
+          50000,
+          "All",
+        );
+        setIssues(nearbyIssues);
+      } catch (error) {
+        console.error("[MapScreen] Error fetching issues:", error);
+      }
+    }, 500);
   };
+
+  useEffect(() => () => clearTimeout(fetchTimerRef.current), []);
 
   useFocusEffect(
     React.useCallback(() => {
@@ -92,7 +119,7 @@ export default function MapScreen({ navigation }) {
       if (locationLoaded && location) {
         fetchIssuesForRegion({ latitude: location.latitude, longitude: location.longitude });
       }
-    }, [locationLoaded]), 
+    }, [locationLoaded, location]),
   );
 
   useEffect(() => {

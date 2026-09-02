@@ -7,30 +7,8 @@ import { doc, getDoc } from "firebase/firestore";
 import { db } from "../config/firebaseConfig";
 import { IssueService } from "../services/IssueService";
 import { theme, Spacing } from "../theme";
+import { getAvatarColor } from "../utils/avatarColor";
 import IssueCard from "../components/IssueCard";
-
-// Deterministic avatar color from name
-const getAvatarColor = (name) => {
-  const colors = [
-    "#E53935",
-    "#D81B60",
-    "#8E24AA",
-    "#5E35B1",
-    "#3949AB",
-    "#1E88E5",
-    "#00ACC1",
-    "#00897B",
-    "#43A047",
-    "#7CB342",
-    "#F4511E",
-    "#FB8C00",
-  ];
-  let hash = 0;
-  for (let i = 0; i < (name || "").length; i++) {
-    hash = (name || "").charCodeAt(i) + ((hash << 5) - hash);
-  }
-  return colors[Math.abs(hash) % colors.length];
-};
 
 export default function PublicProfileScreen() {
   const navigation = useNavigation();

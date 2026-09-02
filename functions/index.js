@@ -201,9 +201,10 @@ async function checkAchievements(userId) {
 
 const RATE_BUCKET = new Map(); // uid -> { count, resetAt }
 function enforceRateLimit(context, name, limit, windowMs) {
-  if (!context?.auth?.uid) return; // unauthenticated throws elsewhere
+  const identity = context?.auth?.uid || context?.rawRequest?.ip;
+  if (!identity) return; // nothing to key the bucket on
   const now = Date.now();
-  const key = `${name}:${context.auth.uid}`;
+  const key = `${name}:${identity}`;
   const b = RATE_BUCKET.get(key);
   if (!b || now > b.resetAt) {
     // Periodic cleanup: prune expired entries when map grows too large
@@ -825,16 +826,29 @@ exports.cleanupNotifications = functions.pubsub
     sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
     const cutoff = sevenDaysAgo.toISOString();
 
+    const snap = await db
+      .collection("notifications")
+      .where("read", "==", true)
+      .where("createdAt", "<", cutoff)
+      .get();
+
+    const batch = db.batch();
+    snap.forEach((doc) => batch.delete(doc.ref));
+    await batch.commit();
+    console.log(
+      `[cleanupNotifications] Deleted ${snap.size} old notifications.`,
+    );
+    return null;
+  });
+
 // ────────────────────────────────────────────────────────────────────────────
 // 7. GET NEARBY ISSUES (CALLABLE)
 // ────────────────────────────────────────────────────────────────────────────
 exports.getNearbyIssues = functions.https.onCall(async (data, context) => {
-  if (!context.auth) {
-    throw new functions.https.HttpsError("unauthenticated", "Must be logged in to search nearby.");
-  }
+  enforceRateLimit(context, "getNearbyIssues", 60, 60 * 1000);
 
   const { latitude, longitude, radiusInMeters = 50000, category = "All" } = data;
-  if (!latitude || !longitude) {
+  if (latitude == null || longitude == null) {
     throw new functions.https.HttpsError("invalid-argument", "Missing latitude or longitude.");
   }
 
@@ -887,21 +901,6 @@ exports.getNearbyIssues = functions.https.onCall(async (data, context) => {
   // Cap at 100 results for payload efficiency
   return { data: matchingDocs.slice(0, 100) };
 });
-
-    const snap = await db
-      .collection("notifications")
-      .where("read", "==", true)
-      .where("createdAt", "<", cutoff)
-      .get();
-
-    const batch = db.batch();
-    snap.forEach((doc) => batch.delete(doc.ref));
-    await batch.commit();
-    console.log(
-      `[cleanupNotifications] Deleted ${snap.size} old notifications.`,
-    );
-    return null;
-  });
 
 // ────────────────────────────────────────────────────────────────────────────
 // SCHEDULED: CLEANUP OLD FEED ITEMS (daily)
